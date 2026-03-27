@@ -1,0 +1,24 @@
+{
+  "name": "meme-swap",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Swap faces in animated media using FaceFusion",
+  "scripts": {
+    "dev": "turbo run dev",
+    "build": "turbo run build",
+    "test": "turbo run test",
+    "lint": "turbo run lint",
+    "clean": "turbo run clean && rm -rf node_modules",
+    "frontend:dev": "turbo run dev --filter=frontend",
+    "frontend:build": "turbo run build --filter=frontend",
+    "raycast:dev": "turbo run dev --filter=raycast-extension",
+    "raycast:build": "turbo run build --filter=raycast-extension"
+  },
+  "devDependencies": {
+    "turbo": "^2.0.0"
+  },
+  "packageManager": "pnpm@9.0.0",
+  "engines": {
+    "node": ">=18.0.0"
+  }
+}

@@ -132,29 +132,28 @@ graph LR
         ROOT[meme-swap/]
     end
     
-    subgraph "Frontend"
-        ROOT --> FRONTEND[frontend/]
+    subgraph "Apps"
+        ROOT --> APPS[apps/]
+        APPS --> FRONTEND[frontend/]
         FRONTEND --> FE_SRC[src/]
         FE_SRC --> FE_COMP[components/]
         FE_SRC --> FE_HOOKS[hooks/]
         FE_SRC --> FE_UTILS[utils/]
         FRONTEND --> FE_PUB[public/]
         FRONTEND --> FE_CONF[config/]
-    end
-    
-    subgraph "Raycast Extension"
-        ROOT --> RAYCAST[raycast-extension/]
+        
+        APPS --> RAYCAST[raycast-extension/]
         RAYCAST --> RS_SRC[src/]
         RS_SRC --> RS_CMD[commands/]
         RS_SRC --> RS_COMP[components/]
         RAYCAST --> RS_CONF[package.json]
     end
     
-    subgraph "Shared"
-        ROOT --> SHARED[packages/]
-        SHARED --> PKG_API[api-client/]
-        SHARED --> PKG_FACESWAP[faceswap-core/]
-        SHARED --> PKG_VIDEO[video-processor/]
+    subgraph "Packages"
+        ROOT --> PACKAGES[packages/]
+        PACKAGES --> PKG_API[api-client/]
+        PACKAGES --> PKG_FACESWAP[faceswap-core/]
+        PACKAGES --> PKG_VIDEO[video-processor/]
     end
     
     ROOT --> DOCS[docs/]
@@ -196,37 +195,38 @@ flowchart TD
 
 ```
 meme-swap/
-├── frontend/                 # Main React/Vue application
-│   ├── src/
-│   │   ├── components/       # Reusable UI components
-│   │   │   ├── GiphySearch/
-│   │   │   ├── ImageUpload/
-│   │   │   ├── MediaPreview/
-│   │   │   └── FaceswapResult/
-│   │   ├── hooks/            # Custom React hooks
-│   │   │   ├── useGiphySearch.ts
-│   │   │   ├── useFaceswap.ts
-│   │   │   └── useVideoProcessor.ts
-│   │   ├── services/         # API services
-│   │   │   ├── giphy.ts
-│   │   │   ├── faceswap.ts
-│   │   │   └── videoProcessor.ts
-│   │   ├── utils/            # Utilities
-│   │   └── types/            # TypeScript definitions
-│   ├── public/
-│   ├── package.json
-│   └── vite.config.ts
-│
-├── raycast-extension/        # Raycast extension
-│   ├── src/
-│   │   ├── commands/         # Raycast commands
-│   │   │   ├── search-media.ts
-│   │   │   ├── faceswap.ts
-│   │   │   └── trending.ts
-│   │   ├── components/       # Raycast components
-│   │   └── lib/              # Extension utilities
-│   ├── package.json
-│   └── raycast.json
+├── apps/                     # Application packages
+│   ├── frontend/             # Main React/Vue application
+│   │   ├── src/
+│   │   │   ├── components/   # Reusable UI components
+│   │   │   │   ├── GiphySearch/
+│   │   │   │   ├── ImageUpload/
+│   │   │   │   ├── MediaPreview/
+│   │   │   │   └── FaceswapResult/
+│   │   │   ├── hooks/        # Custom React hooks
+│   │   │   │   ├── useGiphySearch.ts
+│   │   │   │   ├── useFaceswap.ts
+│   │   │   │   └── useVideoProcessor.ts
+│   │   │   ├── services/     # API services
+│   │   │   │   ├── giphy.ts
+│   │   │   │   ├── faceswap.ts
+│   │   │   │   └── videoProcessor.ts
+│   │   │   ├── utils/        # Utilities
+│   │   │   └── types/        # TypeScript definitions
+│   │   ├── public/
+│   │   ├── package.json
+│   │   └── vite.config.ts
+│   │
+│   └── raycast-extension/    # Raycast extension
+│       ├── src/
+│       │   ├── commands/     # Raycast commands
+│       │   │   ├── search-media.ts
+│       │   │   ├── faceswap.ts
+│       │   │   └── trending.ts
+│       │   ├── components/   # Raycast components
+│       │   └── lib/          # Extension utilities
+│       ├── package.json
+│       └── raycast.json
 │
 ├── packages/                 # Shared packages
 │   ├── api-client/           # Shared API client
@@ -365,7 +365,7 @@ open http://localhost:3000
 
 ```bash
 # Install extension in development mode
-cd raycast-extension
+cd apps/raycast-extension
 pnpm link --global
 
 # Or open Raycast > Preferences > Extensions > Develop > Open Development Folder
@@ -382,12 +382,12 @@ pnpm lint         # Lint code
 pnpm clean        # Clean builds
 
 # Frontend specific
-pnpm frontend:dev  # Start frontend only
-pnpm frontend:build # Build frontend
+pnpm frontend:dev     # Start frontend only
+pnpm frontend:build   # Build frontend
 
 # Raycast specific
-pnpm raycast:dev   # Develop Raycast extension
-pnpm raycast:build # Build Raycast extension
+pnpm raycast:dev      # Develop Raycast extension
+pnpm raycast:build    # Build Raycast extension
 ```
 
 ---
@@ -532,6 +532,7 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - [Giphy](https://www.giphy.com/) for the GIF API
 - [FaceFusion](https://github.com/facefusion/facefusion) for the faceswap engine
+- [FaceFusion Docs](https://docs.facefusion.io) for documentation
 - [FFmpeg](https://ffmpeg.org/) for media conversion
 - [Raycast](https://www.raycast.com/) for the extension platform
 - The open source community
