@@ -198,6 +198,23 @@ pnpm frontend:dev
 pnpm desktop:dev
 ```
 
+#### Build a distributable DMG
+
+```bash
+# 1. Build all shared packages
+pnpm build
+
+# 2. Compile the desktop TypeScript + copy assets
+pnpm desktop:build
+
+# 3. Package into a .dmg via electron-builder
+pnpm desktop:package
+```
+
+The `.dmg` is output to `apps/desktop/dist/`. Double-click it to install **Meme Swap.app** into your Applications folder.
+
+> **Note:** `gatekeeperAssess` is disabled in the build config, so macOS may show an unverified developer warning. Right-click → Open to bypass it, or sign the app with an Apple Developer certificate.
+
 ### MCP Server
 
 ```bash

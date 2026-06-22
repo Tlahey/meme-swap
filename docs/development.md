@@ -78,11 +78,32 @@ The frontend is a Next.js 14 App Router application. Hot-reload is enabled. Chan
 
 ### Desktop App
 
+#### Development
+
 ```bash
 pnpm desktop:dev
 ```
 
 Starts Electron in development mode. On first run, the setup wizard will appear if FaceFusion has not been installed yet.
+
+#### Build a distributable DMG
+
+```bash
+# 1. Build all shared packages (required — desktop depends on faceswap-core + video-processor)
+pnpm build
+
+# 2. Compile the desktop TypeScript + copy HTML/PNG assets into build/
+pnpm desktop:build
+
+# 3. Package into a signed .dmg via electron-builder
+pnpm desktop:package
+```
+
+Output: `apps/desktop/dist/Meme Swap-<version>-arm64.dmg` (or `x64` on Intel).
+
+Double-click the `.dmg` to mount it, then drag **Meme Swap.app** into your Applications folder.
+
+> **Gatekeeper warning:** The app is not signed with an Apple Developer certificate by default. macOS may block it on first open. Right-click → **Open** to bypass the warning, or add your certificate to the `build.mac` section of `apps/desktop/package.json` and set `gatekeeperAssess: true`.
 
 ### MCP Server
 
