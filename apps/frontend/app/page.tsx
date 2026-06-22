@@ -4,15 +4,15 @@ import { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 
 import {
-  UploadSimple,
-  FileVideo,
-  Cpu,
-  Sparkle,
-  Warning,
-  Lightning,
-  ArrowsLeftRight,
-  Moon,
-  Sun,
+  UploadSimpleIcon as UploadSimple,
+  FileVideoIcon as FileVideo,
+  CpuIcon as Cpu,
+  SparkleIcon as Sparkle,
+  WarningIcon as Warning,
+  LightningIcon as Lightning,
+  ArrowsLeftRightIcon as ArrowsLeftRight,
+  MoonIcon as Moon,
+  SunIcon as Sun,
 } from '@phosphor-icons/react';
 import { UploadZone } from './components/UploadZone';
 import { ProcessSteps, Step } from './components/ProcessSteps';

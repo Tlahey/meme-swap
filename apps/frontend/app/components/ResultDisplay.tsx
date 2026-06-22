@@ -2,7 +2,13 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, useReducedMotion } from 'motion/react';
-import { DownloadSimple, ArrowCounterClockwise, Columns, Square, ArrowsLeftRight } from '@phosphor-icons/react';
+import {
+  DownloadSimpleIcon as DownloadSimple,
+  ArrowCounterClockwiseIcon as ArrowCounterClockwise,
+  ColumnsIcon as Columns,
+  SquareIcon as Square,
+  ArrowsLeftRightIcon as ArrowsLeftRight,
+} from '@phosphor-icons/react';
 
 interface ResultDisplayProps {
   originalUrl: string | null;

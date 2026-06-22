@@ -3,16 +3,16 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import {
-  Sliders,
-  CaretDown,
-  Cpu,
-  User,
-  Users,
-  Terminal,
-  Info,
-  Sparkle,
-  Drop,
-  Waveform,
+  SlidersIcon as Sliders,
+  CaretDownIcon as CaretDown,
+  CpuIcon as Cpu,
+  UserIcon as User,
+  UsersIcon as Users,
+  TerminalIcon as Terminal,
+  InfoIcon as Info,
+  SparkleIcon as Sparkle,
+  DropIcon as Drop,
+  WaveformIcon as Waveform,
 } from '@phosphor-icons/react';
 
 export type ExecutionProvider = 'coreml' | 'cpu' | 'cuda';

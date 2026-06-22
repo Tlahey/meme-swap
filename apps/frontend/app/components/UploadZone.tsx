@@ -2,7 +2,13 @@
 
 import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { UploadSimple, Image, VideoCamera, Trash, File as FileIcon } from '@phosphor-icons/react';
+import {
+  UploadSimpleIcon as UploadSimple,
+  ImageIcon as Image,
+  VideoCameraIcon as VideoCamera,
+  TrashIcon as Trash,
+  FileIcon,
+} from '@phosphor-icons/react';
 
 interface UploadZoneProps {
   id: string;

@@ -2,7 +2,7 @@
 
 import React from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
-import { Check, Cpu } from '@phosphor-icons/react';
+import { CheckIcon as Check, CpuIcon as Cpu } from '@phosphor-icons/react';
 
 export interface Step {
   id: number;
