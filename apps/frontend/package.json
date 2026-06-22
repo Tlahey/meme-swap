@@ -1,0 +1,33 @@
+{
+  "name": "frontend",
+  "version": "0.0.1",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "eslint ."
+  },
+  "dependencies": {
+    "@meme-swap/faceswap-core": "workspace:*",
+    "@meme-swap/video-processor": "workspace:*",
+    "@phosphor-icons/react": "^2.1.10",
+    "motion": "^12.40.0",
+    "next": "16.2.9",
+    "react": "19.0.0",
+    "react-dom": "19.0.0"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3.0.0",
+    "@tailwindcss/postcss": "^4.3.1",
+    "@types/node": "^20.10.0",
+    "@types/react": "^19.0.0",
+    "@types/react-dom": "^19.0.0",
+    "eslint": "^9.0.0",
+    "eslint-config-next": "16.2.9",
+    "postcss": "^8.4.0",
+    "tailwindcss": "^4.3.1",
+    "typescript": "^5.3.0"
+  }
+}
