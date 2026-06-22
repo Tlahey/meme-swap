@@ -1,6 +1,10 @@
-# meme-swap
+<p align="center">
+  <img src="docs/assets/logo.png" alt="Meme Swap" width="600" />
+</p>
 
-> Swap faces in animated GIFs and videos using [FaceFusion](https://github.com/facefusion/facefusion) — available as a web app, desktop app, and MCP server.
+<p align="center">
+  <strong>Swap faces in animated GIFs and videos using <a href="https://github.com/facefusion/facefusion">FaceFusion</a> — available as a web app, desktop app, and MCP server.</strong>
+</p>
 
 ---
 
