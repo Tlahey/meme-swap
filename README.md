@@ -1,8 +1,8 @@
 # meme-swap
 
-Swap your favorite gif with a new visage
+Swap faces in animated media (GIFs and videos) using FaceFusion.
 
-## 📖 Table of Contents
+## 📋 Table of Contents
 
 - [Description](#-description)
 - [Architecture](#-architecture)
@@ -18,7 +18,7 @@ Swap your favorite gif with a new visage
 
 ## 📝 Description
 
-**meme-swap** is a mono-repo application that allows you to replace a person's face in animated media (GIFs or videos) with another face of your choice using FaceFusion.
+**meme-swap** is a monorepo application that allows you to replace a person's face in animated media (GIFs or videos) with another face of your choice using FaceFusion.
 
 ### Core Features
 
@@ -38,9 +38,10 @@ Swap your favorite gif with a new visage
 
 ```mermaid
 graph TB
-    subgraph "Frontend Application"
-        FE[React/Vue Application]
+    subgraph "Frontend Application (Next.js)"
+        FE[Next.js Application]
         UI[UI Components]
+        API[API Routes]
         GiphySearch[Giphy Search Module]
         ImageUpload[Image Upload]
         Preview[Preview Component]
@@ -52,32 +53,31 @@ graph TB
         RR[Raycast Results]
     end
     
-    subgraph "Backend Services"
-        API[API Gateway]
-        FF[FaceFusion Service]
-        VC[Video Converter]
-        CACHE[Cache Layer]
+    subgraph "Shared Packages"
+        PKG_FACESWAP[faceswap-core]
+        PKG_VIDEO[video-processor]
+        PKG_API[api-client]
     end
     
-    subgraph "External APIs"
+    subgraph "External Services"
         GIPHY[Giphy API]
+        FACEFUSION[FaceFusion Python]
+        FFmpeg[FFmpeg]
     end
     
     FE --> UI
     UI --> GiphySearch
     UI --> ImageUpload
     UI --> Preview
+    FE --> API
     
-    RE --> RS
-    RS --> RR
+    API --> PKG_FACESWAP
+    API --> PKG_VIDEO
+    
+    PKG_FACESWAP --> FACEFUSION
+    PKG_VIDEO --> FFmpeg
     
     GiphySearch --> GIPHY
-    FE --> API
-    RE --> API
-    
-    API --> FF
-    API --> VC
-    VC --> CACHE
 ```
 
 ### Media Processing Flow
@@ -88,8 +88,8 @@ sequenceDiagram
     participant F as Frontend
     participant G as Giphy API
     participant A as API Backend
-    participant FF as FaceFusion Service
-    participant VC as Video Converter
+    participant V as Video Processor
+    participant FF as FaceFusion
     
     U->>F: Search GIF/Video
     F->>G: Query Giphy
@@ -101,92 +101,21 @@ sequenceDiagram
     F->>A: Send media + Image
     
     rect rgb(200, 220, 250)
-        Note over FF: FaceFusion Processing
+        Note over V,FF: Media Processing
         alt Input is GIF
-            A->>VC: Convert GIF to MP4
-            VC-->>A: MP4 video
-            A->>FF: Process with FaceFusion
-        else Input is MP4
-            A->>FF: Process with FaceFusion
+            A->>V: Convert GIF to MP4
+            V-->>A: MP4 video
         end
         
+        A->>FF: Process with FaceFusion
         FF-->>A: Processed video
         
-        alt Output as GIF
-            A->>VC: Convert MP4 to GIF
-            VC-->>A: Final GIF
-        else Output as MP4
-            A-->>A: Final MP4
-        end
+        A->>V: Convert MP4 to GIF
+        V-->>A: Final GIF
     end
     
     A-->>F: Media URL
     F-->>U: Preview & Download
-```
-
-### Mono Repo Architecture
-
-```mermaid
-graph LR
-    subgraph "Root"
-        ROOT[meme-swap/]
-    end
-    
-    subgraph "Apps"
-        ROOT --> APPS[apps/]
-        APPS --> FRONTEND[frontend/]
-        FRONTEND --> FE_SRC[src/]
-        FE_SRC --> FE_COMP[components/]
-        FE_SRC --> FE_HOOKS[hooks/]
-        FE_SRC --> FE_UTILS[utils/]
-        FRONTEND --> FE_PUB[public/]
-        FRONTEND --> FE_CONF[config/]
-        
-        APPS --> RAYCAST[raycast-extension/]
-        RAYCAST --> RS_SRC[src/]
-        RS_SRC --> RS_CMD[commands/]
-        RS_SRC --> RS_COMP[components/]
-        RAYCAST --> RS_CONF[package.json]
-    end
-    
-    subgraph "Packages"
-        ROOT --> PACKAGES[packages/]
-        PACKAGES --> PKG_API[api-client/]
-        PACKAGES --> PKG_FACESWAP[faceswap-core/]
-        PACKAGES --> PKG_VIDEO[video-processor/]
-    end
-    
-    ROOT --> DOCS[docs/]
-    ROOT --> CONFIGS[configs/]
-```
-
-### Faceswap Process with FaceFusion
-
-```mermaid
-flowchart TD
-    A[Input: GIF or MP4] --> B{Format Check}
-    B -->|GIF| C[Convert to MP4]
-    B -->|MP4| D[Direct Processing]
-    C --> D
-    
-    D --> E[FaceFusion Engine]
-    F[Input: Source Face] --> E
-    
-    E --> G[Face Detection]
-    G --> H[Face Analysis]
-    H --> I[Face Swapping]
-    I --> J[Quality Enhancement]
-    
-    J --> K{Output Format}
-    K -->|GIF| L[Convert to GIF]
-    K -->|MP4| M[Export MP4]
-    
-    L --> N[Output: Final GIF]
-    M --> N
-    
-    style A fill:#e1f5ff
-    style F fill:#e1f5ff
-    style N fill:#c8e6c9
 ```
 
 ---
@@ -196,68 +125,62 @@ flowchart TD
 ```
 meme-swap/
 ├── apps/                     # Application packages
-│   ├── frontend/             # Main React/Vue application
-│   │   ├── src/
-│   │   │   ├── components/   # Reusable UI components
-│   │   │   │   ├── GiphySearch/
-│   │   │   │   ├── ImageUpload/
-│   │   │   │   ├── MediaPreview/
-│   │   │   │   └── FaceswapResult/
-│   │   │   ├── hooks/        # Custom React hooks
-│   │   │   │   ├── useGiphySearch.ts
-│   │   │   │   ├── useFaceswap.ts
-│   │   │   │   └── useVideoProcessor.ts
-│   │   │   ├── services/     # API services
-│   │   │   │   ├── giphy.ts
-│   │   │   │   ├── faceswap.ts
-│   │   │   │   └── videoProcessor.ts
-│   │   │   ├── utils/        # Utilities
-│   │   │   └── types/        # TypeScript definitions
+│   ├── frontend/             # Next.js application
+│   │   ├── app/              # App Router (Next.js 13+)
+│   │   │   ├── api/
+│   │   │   │   └── faceswap/
+│   │   │   │       └── route.ts    # Face swap API endpoint
+│   │   │   ├── page.tsx            # Main page with upload UI
+│   │   │   ├── layout.tsx          # Root layout
+│   │   │   └── globals.css         # Global styles
 │   │   ├── public/
-│   │   ├── package.json
-│   │   └── vite.config.ts
+│   │   │   └── test-images/        # Test images directory
+│   │   ├── next.config.js
+│   │   ├── tsconfig.json
+│   │   └── package.json
 │   │
-│   └── raycast-extension/    # Raycast extension
-│       ├── src/
-│       │   ├── commands/     # Raycast commands
-│       │   │   ├── search-media.ts
-│       │   │   ├── faceswap.ts
-│       │   │   └── trending.ts
-│       │   ├── components/   # Raycast components
-│       │   └── lib/          # Extension utilities
-│       ├── package.json
-│       └── raycast.json
+│   └── raycast-extension/    # Raycast extension (placeholder)
+│       └── .keep
 │
 ├── packages/                 # Shared packages
-│   ├── api-client/           # Shared API client
-│   │   ├── src/
-│   │   │   ├── giphy.ts
-│   │   │   └── index.ts
-│   │   └── package.json
-│   │
 │   ├── faceswap-core/        # Core faceswap logic (FaceFusion wrapper)
 │   │   ├── src/
-│   │   │   ├── processor.ts
-│   │   │   ├── options.ts
-│   │   │   └── index.ts
-│   │   └── package.json
+│   │   │   └── index.ts            # Main exports
+│   │   ├── dist/                   # Compiled output
+│   │   ├── package.json
+│   │   └── tsconfig.json
 │   │
-│   └── video-processor/      # Video/GIF conversion
-│       ├── src/
-│       │   ├── converter.ts
-│       │   ├── encoder.ts
-│       │   └── index.ts
-│       └── package.json
+│   ├── video-processor/      # Video/GIF conversion (FFmpeg wrapper)
+│   │   ├── src/
+│   │   │   └── index.ts            # Main exports
+│   │   ├── dist/                   # Compiled output
+│   │   ├── package.json
+│   │   └── tsconfig.json
+│   │
+│   └── api-client/           # Shared API client (placeholder)
+│       └── .keep
+│
+├── vendor/                   # Third-party dependencies
+│   └── facefusion/           # FaceFusion Python package
+│       ├── venv/             # Python virtual environment
+│       ├── facefusion.py     # Main entry point
+│       └── facefusion/       # FaceFusion module
+│
+├── .process/                 # Working directory (gitignored)
+│   ├── temp/                 # Temporary files during processing
+│   └── results/              # Generated output files
 │
 ├── docs/                     # Documentation
-│   ├── API.md
-│   └── ARCHITECTURE.md
+│   └── .keep
 │
 ├── configs/                  # Shared configurations
-│   ├── tsconfig.base.json
-│   └── eslint.base.js
+│   └── .keep
+│
+├── scripts/                  # Utility scripts
+│   └── setup-facefusion.sh   # FaceFusion installation script
 │
 ├── turbo.json               # Turborepo configuration
+├── pnpm-workspace.yaml      # pnpm workspace config
 ├── package.json             # Root package.json
 └── README.md
 ```
@@ -269,7 +192,7 @@ meme-swap/
 ### Required Tools
 
 - **Node.js** >= 18.x
-- **pnpm** >= 8.x (recommended) or npm
+- **pnpm** >= 8.x (recommended)
 - **Git** >= 2.x
 - **FFmpeg** (for GIF/Video conversion)
   - macOS: `brew install ffmpeg`
@@ -307,40 +230,26 @@ cd meme-swap
 pnpm install
 ```
 
+This will:
+- Install all npm dependencies across the monorepo
+- Run the FaceFusion setup script automatically (via `postinstall`)
+
 ### 3. Setup FaceFusion
 
-```bash
-# Install FaceFusion dependencies
-cd packages/faceswap-core
-pip install -r requirements.txt
-
-# Or install directly from GitHub
-pip install git+https://github.com/facefusion/facefusion.git
-```
-
-### 4. Configure environment variables
+FaceFusion is automatically installed via the postinstall script. To manually set it up:
 
 ```bash
-# Copy the example file
-cp .env.example .env
-
-# Edit the file with your API keys
-nano .env
+# Run the setup script
+pnpm install:facefusion
 ```
 
-```env
-# Giphy API
-GIPHY_API_KEY=your_giphy_key_here
+This will:
+- Clone FaceFusion from GitHub into `vendor/facefusion/`
+- Create a Python virtual environment
+- Install all required Python dependencies
+- Install `onnxruntime-silicon` for Apple Silicon optimization
 
-# FaceFusion configuration
-FACEFUSION_EXECUTABLE=python3
-FACEFUSION_WORKERS=1
-
-# Optional configuration
-GIPHY_API_VERSION=v1
-```
-
-### 5. Build the monorepo
+### 4. Build the monorepo
 
 ```bash
 # Build all packages
@@ -355,44 +264,170 @@ pnpm build
 
 ```bash
 # Start the development server
-pnpm dev
+pnpm frontend:dev
 
 # Open in browser
 open http://localhost:3000
 ```
 
-### Raycast Extension
+#### Using Test Images
 
-```bash
-# Install extension in development mode
-cd apps/raycast-extension
-pnpm link --global
+1. Place your test images in `apps/frontend/public/test-images/`:
+   - `source.jpg` - The face image to transfer
+   - `target.gif` - The target GIF/video
 
-# Or open Raycast > Preferences > Extensions > Develop > Open Development Folder
-```
+2. Upload these files through the web interface at http://localhost:3000
 
 ### Available Commands
 
 ```bash
 # Root commands
-pnpm dev          # Start all services in development
-pnpm build        # Build all packages
-pnpm test         # Run tests
-pnpm lint         # Lint code
-pnpm clean        # Clean builds
+pnpm dev              # Start all services in development
+pnpm build            # Build all packages
+pnpm test             # Run tests
+pnpm lint             # Lint code
+pnpm clean            # Clean builds
+pnpm install:facefusion  # Setup FaceFusion
 
 # Frontend specific
-pnpm frontend:dev     # Start frontend only
-pnpm frontend:build   # Build frontend
+pnpm frontend:dev         # Start frontend only
+pnpm frontend:build       # Build frontend
 
 # Raycast specific
-pnpm raycast:dev      # Develop Raycast extension
-pnpm raycast:build    # Build Raycast extension
+pnpm raycast:dev          # Develop Raycast extension
+pnpm raycast:build        # Build Raycast extension
+
+# Package specific
+pnpm faceswap-core:build  # Build faceswap-core package
+pnpm video-processor:build  # Build video-processor package
+
+# CLI Tools
+pnpm test:faceswap --source=./test-assets/source.jpg --target=./test-assets/target.gif --output=./test-assets/output.mp4
 ```
+
+#### Script CLI de test
+
+Le projet inclut un script CLI pour tester le face swap en ligne de commande :
+
+```bash
+# Utilisation de base
+pnpm test:faceswap --source=<image-source> --target=<media-cible> --output=<sortie>
+
+# Exemple avec GIF
+pnpm test:faceswap \
+  --source=./test-assets/source.jpg \
+  --target=./test-assets/target.gif \
+  --output=./test-assets/output.mp4
+
+# Exemple avec MP4
+pnpm test:faceswap \
+  --source=./test-assets/source.jpg \
+  --target=./test-assets/target.mp4 \
+  --output=./test-assets/output.mp4
+
+# Options avancées
+pnpm test:faceswap \
+  --source=./test-assets/source.jpg \
+  --target=./test-assets/target.gif \
+  --output=./test-assets/output.mp4 \
+  --providers=cpu
+
+# Afficher l'aide
+pnpm test:faceswap --help
+```
+
+**Arguments :**
+- `--source` : Image source contenant le visage à transférer (requis)
+- `--target` : Média cible (GIF ou MP4) (requis)
+- `--output` : Chemin de sortie pour le résultat (requis)
+- `--providers` : Fournisseurs d'exécution (par défaut: coreml,cpu)
+
+**Fichiers de test :**
+
+Des fichiers de test sont disponibles dans le répertoire `test-assets/`. Consultez [test-assets/README.md](./test-assets/README.md) pour plus d'informations sur la préparation des images et des GIFs de test.
 
 ---
 
 ## 🔌 API & Libraries
+
+### Shared Packages
+
+#### `@meme-swap/faceswap-core`
+
+TypeScript wrapper for FaceFusion Python execution.
+
+**Installation:** (included in monorepo)
+
+**Usage:**
+
+```typescript
+import { runFaceSwap, FaceswapOptions } from '@meme-swap/faceswap-core';
+
+const options: FaceswapOptions = {
+  sourcePath: './source.jpg',      // Source face image
+  targetPath: './target.mp4',      // Target video (MP4)
+  outputPath: './output.mp4',      // Output path
+  executionProviders: ['coreml', 'cpu'],  // Apple Silicon optimization
+  faceSelector: 'many',            // Face selector mode
+  threadCount: 4,                  // Number of threads
+  logLevel: 'info',                // Log level
+};
+
+const result = await runFaceSwap(options);
+
+if (result.success) {
+  console.log('Success:', result.outputPath);
+} else {
+  console.error('Error:', result.error);
+}
+```
+
+**Options Interface:**
+
+| Option | Type | Description |
+|--------|------|-------------|
+| `sourcePath` | `string` | Path to source face image (required) |
+| `targetPath` | `string` | Path to target video (required) |
+| `outputPath` | `string` | Output file path (required) |
+| `executionProviders` | `('coreml' \| 'cpu' \| 'cuda')[]` | Execution providers (default: `['coreml', 'cpu']`) |
+| `faceSelector` | `string` | Face selector mode: 'many', 'reference', 'one', 'first' |
+| `faceSwapperModel` | `string` | Face swapper model to use |
+| `threadCount` | `number` | Number of execution threads |
+| `logLevel` | `'debug' \| 'info' \| 'warning' \| 'error'` | Logging level |
+| `keepTemp` | `boolean` | Keep temporary files |
+
+#### `@meme-swap/video-processor`
+
+FFmpeg wrapper for GIF/MP4 conversions.
+
+**Usage:**
+
+```typescript
+import { gifToMp4, mp4ToGif } from '@meme-swap/video-processor';
+
+// Convert GIF to MP4
+const result1 = await gifToMp4({
+  inputPath: './input.gif',
+  outputPath: './output.mp4',
+});
+
+// Convert MP4 to GIF (with options)
+const result2 = await mp4ToGif({
+  inputPath: './input.mp4',
+  outputPath: './output.gif',
+  fps: 10,           // Frames per second (default: 10)
+  maxWidth: 320,     // Maximum width (default: 320)
+});
+```
+
+**Options Interface:**
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `inputPath` | `string` | - | Input file path (required) |
+| `outputPath` | `string` | - | Output file path (required) |
+| `fps` | `number` | `10` | Frames per second for GIF output |
+| `maxWidth` | `number` | `320` | Maximum width for GIF output |
 
 ### External Services
 
@@ -402,7 +437,7 @@ pnpm raycast:build    # Build Raycast extension
 
 ### Core Libraries
 
-| Package | Description |
+| Library | Description |
 |---------|-------------|
 | **FaceFusion** | AI-powered face detection, swapping and enhancement |
 | **FFmpeg** | Video/GIF conversion (MP4 ↔ GIF) |
@@ -420,87 +455,11 @@ FaceFusion provides advanced face processing capabilities:
 - **Multiple Face Support**: Handle multiple faces in a single frame
 - **Expression Retention**: Maintain original facial expressions
 
-### Data Architecture
-
-```mermaid
-classDiagram
-    class MediaInput {
-        +string id
-        +string url
-        +string title
-        +MediaType type
-        +number width
-        +number height
-        +number duration
-    }
-    
-    class FaceReference {
-        +string id
-        +Image sourceImage
-        +FaceEmbedding embedding
-        +detectFace()
-    }
-    
-    class ProcessingJob {
-        +string jobId
-        +MediaInput sourceMedia
-        +FaceReference targetFace
-        +ProcessingStatus status
-        +process()
-        +getResult()
-    }
-    
-    class UserSession {
-        +string sessionId
-        +MediaInput selectedMedia
-        +Image uploadedFace
-        +Date createdAt
-    }
-    
-    class OutputMedia {
-        +string jobId
-        +string outputUrl
-        +MediaType format
-        +number file_size
-        +download()
-    }
-    
-    MediaInput "1" -- "1" ProcessingJob : used in
-    FaceReference "1" -- "1" ProcessingJob : swapped with
-    UserSession "1" -- "1" MediaInput : selects
-    UserSession "1" -- "1" Image : uploads
-    ProcessingJob "1" -- "1" OutputMedia : generates
-```
-
 ---
 
 ## 🗺️ Roadmap
 
 See [ROADMAP.md](./ROADMAP.md) for detailed development steps.
-
-### Main Phases
-
-```mermaid
-gantt
-    title meme-swap Development Timeline
-    dateFormat  YYYY-MM-DD
-    section Phase 1 - Foundation
-    Setup Monorepo       :2024-01-01, 7d
-    Giphy Integration    :2024-01-08, 10d
-    section Phase 2 - Core
-    FaceFusion Setup     :2024-01-15, 14d
-    Video Processor      :2024-01-22, 10d
-    section Phase 3 - Frontend
-    UI Development       :2024-02-01, 14d
-    Integration          :2024-02-10, 7d
-    section Phase 4 - Raycast
-    Extension Setup      :2024-02-15, 5d
-    Commands             :2024-02-18, 10d
-    section Phase 5 - Polish
-    Testing              :2024-02-25, 10d
-    Documentation        :2024-03-01, 7d
-    Release v1.0         :2024-03-08, 3d
-```
 
 ---
 
@@ -516,9 +475,10 @@ Contributions are welcome! Here's how you can help:
 
 ### Guidelines
 
-- Follow the existing code style
+- Follow the existing code style (TypeScript first)
 - Add tests for new features
 - Update documentation as needed
+- See [AGENTS.md](./AGENTS.md) for development rules and guidelines
 
 ---
 
@@ -532,7 +492,6 @@ This project is licensed under the MIT License. See the [LICENSE](LICENSE) file 
 
 - [Giphy](https://www.giphy.com/) for the GIF API
 - [FaceFusion](https://github.com/facefusion/facefusion) for the faceswap engine
-- [FaceFusion Docs](https://docs.facefusion.io) for documentation
 - [FFmpeg](https://ffmpeg.org/) for media conversion
 - [Raycast](https://www.raycast.com/) for the extension platform
 - The open source community

@@ -33,9 +33,9 @@ This document contains rules and guidelines for AI development agents working on
 | Package Manager | pnpm |
 | Monorepo Tool | Turborepo |
 | Language | TypeScript |
-| Frontend | React + Vite |
+| Frontend | Next.js 14+ (App Router) |
 | Styling | TailwindCSS |
-| State Management | Zustand / React Query |
+| State Management | React Hooks / Zustand |
 | Faceswap Engine | FaceFusion (Python) |
 | Video Processing | FFmpeg (GIF ↔ MP4) |
 
@@ -54,13 +54,11 @@ This document contains rules and guidelines for AI development agents working on
 
 ### Frontend Stack
 
+- **Next.js 14+** - React framework with App Router
 - **React 18+** - UI library
-- **Vite** - Build tool
 - **TailwindCSS** - Utility-first CSS
 - **Radix UI / shadcn/ui** - Component library
-- **React Router** - Routing
 - **Zustand** - State management
-- **TanStack Query** - Data fetching
 
 ### Raycast Extension Stack
 
@@ -70,17 +68,83 @@ This document contains rules and guidelines for AI development agents working on
 
 ### Shared Packages
 
-- **api-client** - Giphy API client
-- **faceswap-core** - FaceFusion wrapper and face processing
-- **video-processor** - GIF/MP4 conversion using FFmpeg
+| Package | Description | Location |
+|---------|-------------|----------|
+| **@meme-swap/faceswap-core** | TypeScript wrapper for FaceFusion Python execution | `packages/faceswap-core/` |
+| **@meme-swap/video-processor** | FFmpeg wrapper for GIF/MP4 conversions | `packages/video-processor/` |
+| **api-client** | Giphy API client (placeholder) | `packages/api-client/` |
+
+### Package Exports
+
+#### faceswap-core
+
+```typescript
+// Main exports from packages/faceswap-core/src/index.ts
+export interface FaceswapOptions {
+  sourcePath: string;
+  targetPath: string;
+  outputPath: string;
+  executionProviders?: ('coreml' \| 'cpu' \| 'cuda')[];
+  faceSelector?: string;
+  threadCount?: number;
+  logLevel?: 'debug' \| 'info' \| 'warning' \| 'error';
+}
+
+export interface FaceswapResult {
+  success: boolean;
+  outputPath?: string;
+  error?: string;
+}
+
+export class FaceswapError extends Error {
+  constructor(message: string, public cause?: unknown);
+}
+
+export async function runFaceSwap(options: FaceswapOptions): Promise<FaceswapResult>;
+```
+
+#### video-processor
+
+```typescript
+// Main exports from packages/video-processor/src/index.ts
+export interface ConversionOptions {
+  inputPath: string;
+  outputPath: string;
+  fps?: number;
+  maxWidth?: number;
+}
+
+export interface ConversionResult {
+  success: boolean;
+  outputPath?: string;
+  error?: string;
+}
+
+export class VideoProcessorError extends Error {
+  constructor(message: string, public cause?: unknown);
+}
+
+export async function gifToMp4(options: ConversionOptions): Promise<ConversionResult>;
+export async function mp4ToGif(options: ConversionOptions): Promise<ConversionResult>;
+```
 
 ### Backend/Processing Stack
 
-- **FaceFusion** - AI-powered face swapping engine
-- **FFmpeg** - Media format conversion
-- **ONNX Runtime** - Neural network inference
-- **OpenCV** - Image/video processing
-- **NumPy** - Numerical computations
+| Component | Purpose | Location |
+|-----------|---------|----------|
+| **FaceFusion** | AI-powered face swapping engine | `vendor/facefusion/` |
+| **FFmpeg** | Media format conversion (GIF ↔ MP4) | System installation |
+| **ONNX Runtime** | Neural network inference for FaceFusion | Python package |
+| **OpenCV** | Image/video processing | Python package |
+| **NumPy** | Numerical computations | Python package |
+
+### Working Directories
+
+| Directory | Purpose | Gitignored |
+|-----------|---------|------------|
+| `.process/temp/` | Temporary files during media processing | ✅ Yes |
+| `.process/results/` | Generated output files | ✅ Yes |
+| `apps/frontend/public/test-images/` | Test images for development | ✅ Yes |
 
 ---
 
@@ -348,14 +412,15 @@ const API_KEY = 'abc123';
 // 1. Node built-ins
 import fs from 'node:fs';
 import path from 'node:path';
+import { spawn } from 'node:child_process';
 
 // 2. Third-party
 import React from 'react';
-import { z } from 'zod';
+import { NextRequest, NextResponse } from 'next/server';
 
 // 3. Internal packages
-import { giphy } from '@meme-swap/api-client';
-import { processFace } from '@meme-swap/faceswap-core';
+import { runFaceSwap } from '@meme-swap/faceswap-core';
+import { gifToMp4 } from '@meme-swap/video-processor';
 
 // 4. Relative imports
 import { Button } from './Button';
@@ -363,6 +428,75 @@ import styles from './styles.module.css';
 
 // 5. Assets
 import logo from './assets/logo.png';
+```
+
+### Rule 11: Next.js API Route Pattern
+
+All server-side processing must use Next.js App Router API routes:
+
+```typescript
+// ✅ CORRECT - Next.js API Route (App Router)
+import { NextRequest, NextResponse } from 'next/server';
+import { runFaceSwap } from '@meme-swap/faceswap-core';
+
+export async function POST(request: NextRequest) {
+  try {
+    const formData = await request.formData();
+    // Process files...
+    
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    return NextResponse.json(
+      { error: 'Processing failed' },
+      { status: 500 }
+    );
+  }
+}
+
+// ❌ WRONG - Pages router or direct Node.js scripts
+// pages/api/faceswap.ts (deprecated)
+```
+
+### Rule 12: File Upload Handling
+
+Use FormData for file uploads in API routes:
+
+```typescript
+export async function POST(request: NextRequest) {
+  const formData = await request.formData();
+  
+  const sourceFile = formData.get('source') as File | null;
+  const targetFile = formData.get('target') as File | null;
+  
+  if (!sourceFile || !targetFile) {
+    return NextResponse.json(
+      { error: 'Missing files' },
+      { status: 400 }
+    );
+  }
+  
+  // Convert to buffer and save
+  const buffer = Buffer.from(await sourceFile.arrayBuffer());
+  fs.writeFileSync(path, buffer);
+}
+```
+
+### Rule 13: Working Directory Management
+
+Use `.process/` directory for temporary files:
+
+```typescript
+import path from 'node:path';
+
+const PROCESS_DIR = path.join(process.cwd(), '.process');
+const TEMP_DIR = path.join(PROCESS_DIR, 'temp');
+const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
+
+function ensureDirectories(): void {
+  if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+  }
+}
 ```
 
 ---
@@ -563,52 +697,85 @@ src/
 
 ### FaceFusion Wrapper Pattern
 
+See `packages/faceswap-core/src/index.ts` for the complete implementation.
+
+**Key Points:**
+- Use `spawn()` from `child_process` for non-blocking execution
+- Path to Python: `./vendor/facefusion/venv/bin/python3` (macOS)
+- Script path: `./vendor/facefusion/facefusion.py`
+- Execution providers: `['coreml', 'cpu']` for Apple Silicon
+
 ```typescript
-// ✅ CORRECT - FaceFusion wrapper
-import { execSync } from 'node:child_process';
+// ✅ CORRECT - FaceFusion wrapper pattern
+import { spawn } from 'node:child_process';
+import path from 'node:path';
 
-export interface FaceswapOptions {
-  source: string;
-  target: string;
-  output: string;
-  faceSelector?: string;
-  faceMask?: string[];
-}
+const pythonPath = path.join(process.cwd(), 'vendor', 'facefusion', 'venv', 'bin', 'python3');
+const scriptPath = path.join(process.cwd(), 'vendor', 'facefusion', 'facefusion.py');
 
-export async function processFaceSwap(options: FaceswapOptions): Promise<void> {
-  const command = `
-    python -m facefusion run
-      --source "${options.source}"
-      --target "${options.target}"
-      --output "${options.output}"
-      --face-selector "${options.faceSelector ?? 'many'}"
-  `;
-  
-  try {
-    execSync(command, { stdio: 'inherit' });
-  } catch (error) {
-    throw new FaceswapError('Face swap failed', { cause: error });
-  }
+function runFaceSwap(options: FaceswapOptions): Promise<FaceswapResult> {
+  return new Promise((resolve) => {
+    const args = [
+      scriptPath,
+      'run',
+      '--headless',
+      '--source', options.sourcePath,
+      '--target', options.targetPath,
+      '--output', options.outputPath,
+      '--execution-providers', ...options.executionProviders,
+    ];
+
+    const process = spawn(pythonPath, args);
+    
+    // Handle output and errors...
+  });
 }
 ```
 
 ### FFmpeg Conversion Pattern
 
+See `packages/video-processor/src/index.ts` for the complete implementation.
+
+**Key Points:**
+- GIF → MP4: Single pass with `faststart` optimization
+- MP4 → GIF: Two-pass palette approach for quality
+- Default FPS: 10, Max width: 320px
+
 ```typescript
 // ✅ CORRECT - GIF to MP4 conversion
-export async function gifToMp4(gifPath: string, outputPath: string): Promise<void> {
-  const command = `ffmpeg -i "${gifPath}" -movflags faststart "${outputPath}"`;
-  execSync(command, { stdio: 'inherit' });
+export async function gifToMp4(options: ConversionOptions): Promise<ConversionResult> {
+  const args = [
+    '-i', options.inputPath,
+    '-movflags', 'faststart',
+    '-c:v', 'libx264',
+    '-pix_fmt', 'yuv420p',
+    options.outputPath,
+  ];
+  
+  return new Promise((resolve) => {
+    const process = spawn('ffmpeg', args);
+    // Handle output and errors...
+  });
 }
 
-// ✅ CORRECT - MP4 to GIF conversion
-export async function mp4ToGif(mp4Path: string, outputPath: string): Promise<void> {
-  // Two-pass for optimal palette
-  const pass1 = `ffmpeg -i "${mp4Path}" -vf "fps=10,scale=320:-1:flags=lanczos,palettegen" -y palette.png`;
-  const pass2 = `ffmpeg -i "${mp4Path}" -i palette.png -vf "fps=10,scale=320:-1:flags=lanczos,xstack=inputs=2" -y "${outputPath}"`;
+// ✅ CORRECT - MP4 to GIF (two-pass palette)
+export async function mp4ToGif(options: ConversionOptions): Promise<ConversionResult> {
+  // Pass 1: Generate palette
+  const pass1Args = [
+    '-i', options.inputPath,
+    '-vf', `fps=${options.fps},scale=${options.maxWidth}:-1:flags=lanczos,palettegen`,
+    '-y', tempPalette,
+  ];
   
-  execSync(pass1, { stdio: 'inherit' });
-  execSync(pass2, { stdio: 'inherit' });
+  // Pass 2: Apply palette
+  const pass2Args = [
+    '-i', options.inputPath,
+    '-i', tempPalette,
+    '-vf', `fps=${options.fps},scale=${options.maxWidth}:-1:flags=lanczos,paletteuse`,
+    '-y', options.outputPath,
+  ];
+  
+  // Execute both passes sequentially...
 }
 ```
 
@@ -762,18 +929,60 @@ pnpm format
 ### Project Commands
 
 ```bash
-# Frontend specific
-pnpm frontend:dev
-pnpm frontend:build
+# Frontend specific (Next.js)
+pnpm frontend:dev         # Start Next.js dev server on port 3000
+pnpm frontend:build       # Build for production
 
 # Raycast specific
 pnpm raycast:dev
 pnpm raycast:build
 
 # Package specific
-pnpm api-client:build
-pnpm faceswap-core:build
-pnpm video-processor:build
+pnpm faceswap-core:build  # Build TypeScript wrapper
+pnpm video-processor:build  # Build FFmpeg wrapper
+
+# Full workflow example
+pnpm build                # Build all packages
+pnpm frontend:dev         # Start frontend with hot reload
+```
+
+### Media Processing Workflow
+
+The complete face swap pipeline in the API route:
+
+1. **Upload**: Receive source image and target media via FormData
+2. **Convert GIF→MP4** (if needed): Use `video-processor.gifToMp4()`
+3. **Face Swap**: Execute FaceFusion via `faceswap-core.runFaceSwap()`
+4. **Convert MP4→GIF**: Use `video-processor.mp4ToGif()` for preview
+5. **Serve Results**: Static file serving via `/api/results/:filename`
+
+```typescript
+// Example workflow in apps/frontend/app/api/faceswap/route.ts
+export async function POST(request: NextRequest) {
+  // 1. Parse and save uploaded files
+  const formData = await request.formData();
+  
+  // 2. Convert GIF to MP4 if necessary
+  let targetForFaceswap = targetPath;
+  if (targetFile.name.endsWith('.gif')) {
+    await gifToMp4({ inputPath: targetPath, outputPath: tempMp4Path });
+    targetForFaceswap = tempMp4Path;
+  }
+  
+  // 3. Run FaceFusion
+  const result = await runFaceSwap({
+    sourcePath,
+    targetPath: targetForFaceswap,
+    outputPath: outputMp4Path,
+    executionProviders: ['coreml', 'cpu'],
+  });
+  
+  // 4. Convert back to GIF for preview
+  await mp4ToGif({ inputPath: outputMp4Path, outputPath: outputGifPath });
+  
+  // 5. Return result URL
+  return NextResponse.json({ outputPath: `/api/results/${filename}` });
+}
 ```
 
 ### Python Commands
