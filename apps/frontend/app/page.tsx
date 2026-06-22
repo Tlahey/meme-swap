@@ -72,19 +72,32 @@ function HomeContent() {
 
   useEffect(() => {
     const checkMcpStatus = async () => {
-      try {
-        const res = await fetch('/api/mcp-status');
-        if (res.ok) {
-          const data = await res.json();
-          setIsMcpActive(data.active);
-          if (data.port) {
-            setMcpPort(data.port);
+      const electronAPI = (window as any).electronAPI;
+      if (electronAPI) {
+        try {
+          const status = await electronAPI.getMcpStatus();
+          setIsMcpActive(status.active);
+          if (status.port) {
+            setMcpPort(status.port);
           }
-        } else {
+        } catch (e) {
           setIsMcpActive(false);
         }
-      } catch (e) {
-        setIsMcpActive(false);
+      } else {
+        try {
+          const res = await fetch('/api/mcp-status');
+          if (res.ok) {
+            const data = await res.json();
+            setIsMcpActive(data.active);
+            if (data.port) {
+              setMcpPort(data.port);
+            }
+          } else {
+            setIsMcpActive(false);
+          }
+        } catch (e) {
+          setIsMcpActive(false);
+        }
       }
     };
 
@@ -278,23 +291,50 @@ function HomeContent() {
     }, 100);
 
     try {
-      const formData = new FormData();
-      formData.append('source', sourceImage);
-      formData.append('target', targetGif);
-      formData.append('executionProviders', executionProviders.join(','));
-      formData.append('faceSelectorMode', faceSelectorMode);
-      formData.append('threadCount', threadCount.toString());
-      formData.append('logLevel', logLevel);
-      formData.append('faceMaskBlend', faceMaskBlend.toString());
-      if (faceSwapperModel) formData.append('faceSwapperModel', faceSwapperModel);
-      if (faceEnhancerModel) formData.append('faceEnhancerModel', faceEnhancerModel);
+      let data;
+      const electronAPI = (window as any).electronAPI;
 
-      const response = await fetch('/api/faceswap', {
-        method: 'POST',
-        body: formData,
-      });
+      if (electronAPI) {
+        // En mode desktop Electron, on passe par l'IPC
+        const sourcePath = (sourceImage as any).path;
+        const sourceData = sourcePath ? sourcePath : new Uint8Array(await sourceImage.arrayBuffer());
 
-      const data = await response.json();
+        const targetPath = (targetGif as any).path;
+        const targetData = targetPath ? targetPath : new Uint8Array(await targetGif.arrayBuffer());
+
+        data = await electronAPI.runFaceswap({
+          source: sourceData,
+          sourceName: sourceImage.name,
+          target: targetData,
+          targetName: targetGif.name,
+          executionProviders,
+          faceSelectorMode,
+          threadCount,
+          logLevel,
+          faceMaskBlend,
+          faceSwapperModel,
+          faceEnhancerModel,
+        });
+      } else {
+        // En mode web standard
+        const formData = new FormData();
+        formData.append('source', sourceImage);
+        formData.append('target', targetGif);
+        formData.append('executionProviders', executionProviders.join(','));
+        formData.append('faceSelectorMode', faceSelectorMode);
+        formData.append('threadCount', threadCount.toString());
+        formData.append('logLevel', logLevel);
+        formData.append('faceMaskBlend', faceMaskBlend.toString());
+        if (faceSwapperModel) formData.append('faceSwapperModel', faceSwapperModel);
+        if (faceEnhancerModel) formData.append('faceEnhancerModel', faceEnhancerModel);
+
+        const response = await fetch('/api/faceswap', {
+          method: 'POST',
+          body: formData,
+        });
+
+        data = await response.json();
+      }
 
       if (data.success) {
         stopSimulation(true);

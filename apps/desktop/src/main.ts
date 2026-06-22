@@ -1,12 +1,14 @@
-import { app, BrowserWindow, Tray, Menu, ipcMain } from 'electron';
+import { app, BrowserWindow, Tray, Menu, ipcMain, protocol, net as electronNet } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import http from 'node:http';
 import net from 'node:net';
+import { pathToFileURL } from 'node:url';
 import { spawn, fork, ChildProcess } from 'node:child_process';
 import { runInstallation } from './installer';
-import { getFaceFusionDir } from '@meme-swap/faceswap-core';
+import { getFaceFusionDir, runFaceSwap } from '@meme-swap/faceswap-core';
+import { gifToMp4, mp4ToGif } from '@meme-swap/video-processor';
 
 // ── Verrou d'instance unique ──────────────────────────────────────────────────
 // Empêche l'ouverture de plusieurs instances de l'application.
@@ -17,6 +19,11 @@ if (!gotTheLock) {
   // Une autre instance tourne déjà : on quitte immédiatement celle-ci.
   app.quit();
 }
+
+// Enregistrer le protocole personnalisé 'app' comme privilégié avant le démarrage de l'application
+protocol.registerSchemesAsPrivileged([
+  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } }
+]);
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -282,69 +289,63 @@ async function startServers() {
   // 2. Démarrer le frontend Next.js
   // En mode dev : le `.bin/next` est un script shell — on ne peut pas le passer
   // directement au binaire Node embarqué d'Electron (qui attend du JS).
-  // On utilise donc `shell: true` + `next dev` en dev, et le binaire Node
-  // embarqué + le vrai fichier .js de next en mode packagé.
+  // On utilise donc `shell: true` + `next dev` en dev.
+  // En mode packagé, Next.js est un export statique servi via protocole app://.
   const frontendDir = path.join(root, 'apps', 'frontend');
 
   if (app.isPackaged) {
-    // Mode production : next start via le binaire Node embarqué d'Electron.
-    // Dans le build standalone, on lance directement le server.js généré par Next.js.
-    const standaloneServerJs = path.join(root, 'apps', 'frontend', 'standalone', 'apps', 'frontend', 'server.js');
-
-    writeToLogFile(`Démarrage du frontend Next.js sur le port ${frontendPort} (Next.js standalone, packaged)...\n`);
-    writeToLogFile(`  → Next.js JS path: ${standaloneServerJs}\n`);
-    frontendProcess = fork(standaloneServerJs, [], {
-      cwd: path.join(root, 'apps', 'frontend', 'standalone', 'apps', 'frontend'),
-      env: { ...childEnvBase, PORT: frontendPort, MCP_PORT: mcpPort },
-      silent: true
-    });
+    writeToLogFile("[Next.js] Mode packagé. Chargement direct de l'IHM statique via protocole app://\n");
+    frontendStatus = 'ready';
+    sendServerStatus();
+    if (mainWindow && !mainWindow.isDestroyed()) {
+      mainWindow.loadURL('app://index.html');
+    }
   } else {
     // Mode dev : on utilise le shell système pour exécuter `next dev`
-    // (le script .bin/next est un script bash, pas du JS)
     writeToLogFile(`Démarrage du frontend Next.js sur le port ${frontendPort} (next dev, shell)...\n`);
     frontendProcess = spawn('pnpm', ['--filter', 'frontend', 'dev'], {
       cwd: root,
       shell: true,
       env: { ...process.env, PORT: frontendPort, MCP_PORT: mcpPort }
     });
-  }
 
-  frontendProcess.stdout?.on('data', (data) => {
-    const text = data.toString();
-    writeToLogFile(`[Next.js] ${text}`);
-    if (text.includes('Ready in') || text.includes('ready - started') || text.includes('Local:')) {
-      // Nous gardons aussi la détection par logs en secours
-      if (frontendStatus !== 'ready') {
-        frontendStatus = 'ready';
-        sendServerStatus();
+    frontendProcess.stdout?.on('data', (data) => {
+      const text = data.toString();
+      writeToLogFile(`[Next.js] ${text}`);
+      if (text.includes('Ready in') || text.includes('ready - started') || text.includes('Local:')) {
+        // Nous gardons aussi la détection par logs en secours
+        if (frontendStatus !== 'ready') {
+          frontendStatus = 'ready';
+          sendServerStatus();
+        }
       }
-    }
-  });
+    });
 
-  frontendProcess.stderr?.on('data', (data) => {
-    writeToLogFile(`[Next.js ERROR] ${data.toString()}`);
-  });
+    frontendProcess.stderr?.on('data', (data) => {
+      writeToLogFile(`[Next.js ERROR] ${data.toString()}`);
+    });
 
-  frontendProcess.on('close', (code) => {
-    writeToLogFile(`[Next.js] Processus terminé avec le code ${code}\n`);
-    if (code !== 0 && code !== null) {
-      frontendStatus = 'error';
-    } else {
-      frontendStatus = 'stopped';
-    }
-    sendServerStatus();
-  });
+    frontendProcess.on('close', (code) => {
+      writeToLogFile(`[Next.js] Processus terminé avec le code ${code}\n`);
+      if (code !== 0 && code !== null) {
+        frontendStatus = 'error';
+      } else {
+        frontendStatus = 'stopped';
+      }
+      sendServerStatus();
+    });
 
-  // 3. Surveiller l'ouverture du port Next.js pour charger l'IHM
-  waitForPort(parseInt(frontendPort), () => {
-    writeToLogFile(`[Next.js] Le port ${frontendPort} est actif. Chargement de l'IHM dans Electron.\n`);
-    frontendStatus = 'ready';
-    sendServerStatus();
-    
-    if (mainWindow && !mainWindow.isDestroyed()) {
-      mainWindow.loadURL(`http://localhost:${frontendPort}`);
-    }
-  });
+    // 3. Surveiller l'ouverture du port Next.js pour charger l'IHM
+    waitForPort(parseInt(frontendPort), () => {
+      writeToLogFile(`[Next.js] Le port ${frontendPort} est actif. Chargement de l'IHM dans Electron.\n`);
+      frontendStatus = 'ready';
+      sendServerStatus();
+      
+      if (mainWindow && !mainWindow.isDestroyed()) {
+        mainWindow.loadURL(`http://localhost:${frontendPort}`);
+      }
+    });
+  }
 }
 
 /**
@@ -406,7 +407,11 @@ function updateTrayMenu(state: 'starting' | 'ready') {
       click: () => {
         createMainWindow();
         if (frontendStatus === 'ready') {
-          mainWindow?.loadURL(`http://localhost:${frontendPort}`);
+          if (app.isPackaged) {
+            mainWindow?.loadURL('app://index.html');
+          } else {
+            mainWindow?.loadURL(`http://localhost:${frontendPort}`);
+          }
         } else {
           mainWindow?.loadFile(path.join(__dirname, 'loading.html'));
         }
@@ -467,6 +472,159 @@ ipcMain.on('quit-app', () => {
   app.quit();
 });
 
+// Chemins de traitement pour le FaceSwap en local
+const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
+const TEMP_DIR = path.join(PROCESS_DIR, 'temp');
+const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
+
+function ensureDirectories(): void {
+  if (!fs.existsSync(TEMP_DIR)) {
+    fs.mkdirSync(TEMP_DIR, { recursive: true });
+  }
+  if (!fs.existsSync(RESULTS_DIR)) {
+    fs.mkdirSync(RESULTS_DIR, { recursive: true });
+  }
+}
+
+function cleanupTempDir(): void {
+  if (fs.existsSync(TEMP_DIR)) {
+    try {
+      fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+    } catch (error) {
+      console.error('[IPC] Erreur de nettoyage du dossier temporaire:', error);
+    }
+  }
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
+
+function generateFileName(extension: string): string {
+  const timestamp = Date.now();
+  const random = Math.random().toString(36).substring(2, 8);
+  return `${timestamp}-${random}.${extension}`;
+}
+
+// IPC : Récupérer le statut du serveur MCP
+ipcMain.handle('get-mcp-status', async () => {
+  return {
+    active: mcpStatus === 'ready',
+    port: mcpPort
+  };
+});
+
+// IPC : Lancer l'exécution du FaceSwap
+ipcMain.handle('run-faceswap', async (event, options) => {
+  writeToLogFile("\n=== Lancement du FaceSwap par IPC Electron ===\n");
+  
+  try {
+    ensureDirectories();
+    cleanupTempDir();
+
+    let sourcePath = '';
+    if (typeof options.source === 'string') {
+      sourcePath = options.source;
+    } else if (options.source instanceof Uint8Array) {
+      sourcePath = path.join(TEMP_DIR, options.sourceName || 'source.jpg');
+      fs.writeFileSync(sourcePath, Buffer.from(options.source));
+    } else {
+      throw new Error('Format de fichier source non supporté');
+    }
+
+    let targetPath = '';
+    if (typeof options.target === 'string') {
+      targetPath = options.target;
+    } else if (options.target instanceof Uint8Array) {
+      targetPath = path.join(TEMP_DIR, options.targetName || 'target.gif');
+      fs.writeFileSync(targetPath, Buffer.from(options.target));
+    } else {
+      throw new Error('Format de fichier cible non supporté');
+    }
+
+    writeToLogFile(`  Source: ${sourcePath}\n`);
+    writeToLogFile(`  Target: ${targetPath}\n`);
+
+    // 1. Convertir GIF en MP4 si nécessaire
+    let targetForFaceswap = targetPath;
+    const isTargetGif = (options.targetName && options.targetName.toLowerCase().endsWith('.gif')) || targetPath.toLowerCase().endsWith('.gif');
+
+    if (isTargetGif) {
+      writeToLogFile('[IPC] Conversion GIF → MP4...\n');
+      const tempMp4Path = path.join(TEMP_DIR, generateFileName('mp4'));
+      const gifToMp4Result = await gifToMp4({
+        inputPath: targetPath,
+        outputPath: tempMp4Path,
+      });
+
+      if (!gifToMp4Result.success) {
+        throw new Error(`Conversion GIF→MP4 échouée: ${gifToMp4Result.error}`);
+      }
+
+      targetForFaceswap = tempMp4Path;
+      writeToLogFile('[IPC] Conversion terminée\n');
+    }
+
+    // 2. Exécuter FaceFusion pour le face swap
+    const outputMp4Path = path.join(RESULTS_DIR, generateFileName('mp4'));
+    writeToLogFile('[IPC] Lancement de FaceFusion...\n');
+
+    const faceswapResult = await runFaceSwap({
+      sourcePath,
+      targetPath: targetForFaceswap,
+      outputPath: outputMp4Path,
+      executionProviders: options.executionProviders,
+      faceSelectorMode: options.faceSelectorMode,
+      threadCount: options.threadCount,
+      logLevel: options.logLevel,
+      faceMaskBlend: options.faceMaskBlend,
+      faceSwapperModel: options.faceSwapperModel,
+      faceEnhancerModel: options.faceEnhancerModel,
+    });
+
+    if (!faceswapResult.success) {
+      throw new Error(`Face swap échoué: ${faceswapResult.error}`);
+    }
+
+    writeToLogFile('[IPC] Face swap terminé avec succès\n');
+
+    // 3. Reconvertir MP4 en GIF pour l'affichage si la cible d'origine était un GIF
+    let finalOutputPath = outputMp4Path;
+    if (isTargetGif) {
+      writeToLogFile('[IPC] Conversion MP4 → GIF...\n');
+      const outputGifPath = path.join(RESULTS_DIR, generateFileName('gif'));
+      
+      const mp4ToGifResult = await mp4ToGif({
+        inputPath: outputMp4Path,
+        outputPath: outputGifPath,
+        fps: 10,
+        maxWidth: 320,
+      });
+
+      if (!mp4ToGifResult.success) {
+        throw new Error(`Conversion MP4→GIF échouée: ${mp4ToGifResult.error}`);
+      }
+
+      finalOutputPath = outputGifPath;
+      writeToLogFile('[IPC] Conversion terminée\n');
+    }
+
+    const resultFileName = path.basename(finalOutputPath);
+    const resultUrl = `/api/results/${resultFileName}`;
+
+    return {
+      success: true,
+      outputPath: resultUrl,
+      message: 'Face swap réussi',
+    };
+
+  } catch (error: any) {
+    const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
+    writeToLogFile(`❌ Erreur pendant le FaceSwap par IPC : ${errorMsg}\n`);
+    return {
+      success: false,
+      error: errorMsg,
+    };
+  }
+});
+
 // Ramener la fenêtre existante au premier plan si une seconde instance est lancée
 app.on('second-instance', () => {
   if (mainWindow) {
@@ -488,6 +646,30 @@ app.whenReady().then(() => {
     const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
     fs.writeFileSync(placeholderPath, Buffer.from(base64Png, 'base64'));
   }
+
+  // ── Enregistrement du protocole custom 'app' ────────────────────────────────
+  protocol.handle('app', (request) => {
+    const url = new URL(request.url);
+    let pathname = url.pathname;
+
+    // 1. Servir les fichiers de résultat locaux
+    if (pathname.startsWith('/api/results/')) {
+      const fileName = pathname.replace('/api/results/', '');
+      const resultsDir = path.join(os.homedir(), '.meme-swap', 'process', 'results');
+      const filePath = path.join(resultsDir, fileName);
+      return electronNet.fetch(pathToFileURL(filePath).toString());
+    }
+
+    // 2. Servir l'application statique Next.js
+    if (pathname === '/' || pathname === '') {
+      pathname = '/index.html';
+    }
+    
+    // Le dossier out est copié dans les extraResources sous apps/frontend/out
+    const staticDir = path.join(root, 'apps', 'frontend', 'out');
+    const filePath = path.join(staticDir, pathname);
+    return electronNet.fetch(pathToFileURL(filePath).toString());
+  });
 
   createMainWindow();
   initTray();

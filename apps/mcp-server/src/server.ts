@@ -151,6 +151,12 @@ export class Server {
   private setupRoutes() {
     this.app.use(express.json());
 
+    // Request logging middleware
+    this.app.use((req, res, next) => {
+      console.log(`[MCP Server Request] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)} - Body: ${JSON.stringify(req.body)}`);
+      next();
+    });
+
     // CORS middleware to support all cross-origin requests from external clients (e.g. Osaurus)
     this.app.use((req, res, next) => {
       res.setHeader('Access-Control-Allow-Origin', '*');
@@ -187,6 +193,68 @@ export class Server {
         } catch (error) {
           // ignore or log
         }
+      });
+    });
+
+    // POST endpoint for stateless HTTP JSON-RPC MCP
+    this.app.post('/mcp', async (req: Request, res: Response) => {
+      const jsonRpcRequest = req.body;
+      if (!jsonRpcRequest || typeof jsonRpcRequest !== 'object') {
+        res.status(400).json({ error: 'Invalid JSON-RPC request' });
+        return;
+      }
+
+      // Check if it is a notification (no ID)
+      const isNotification = !('id' in jsonRpcRequest);
+
+      const mcpServer = this.createMCPServer();
+
+      return new Promise<void>((resolve) => {
+        let resolved = false;
+
+        const transport: any = {
+          onclose: undefined,
+          onerror: (err: Error) => {
+            if (!resolved) {
+              resolved = true;
+              res.status(500).json({ error: err.message });
+              resolve();
+            }
+          },
+          onmessage: undefined,
+          start: async () => {},
+          send: async (message: any) => {
+            if (!resolved) {
+              resolved = true;
+              res.json(message);
+              resolve();
+            }
+          },
+          close: async () => {},
+        };
+
+        mcpServer.connect(transport).then(() => {
+          if (transport.onmessage) {
+            transport.onmessage(jsonRpcRequest);
+            if (isNotification) {
+              resolved = true;
+              res.status(204).end();
+              resolve();
+            }
+          } else {
+            if (!resolved) {
+              resolved = true;
+              res.status(500).json({ error: 'Transport onmessage handler not registered' });
+              resolve();
+            }
+          }
+        }).catch((err) => {
+          if (!resolved) {
+            resolved = true;
+            res.status(500).json({ error: err.message });
+            resolve();
+          }
+        });
       });
     });
 

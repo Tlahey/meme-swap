@@ -40,18 +40,8 @@
     ],
     "extraResources": [
       {
-        "from": "../../apps/frontend/.next/standalone",
-        "to": "apps/frontend/standalone",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "../../apps/frontend/.next/static",
-        "to": "apps/frontend/standalone/apps/frontend/.next/static",
-        "filter": ["**/*"]
-      },
-      {
-        "from": "../../apps/frontend/public",
-        "to": "apps/frontend/standalone/apps/frontend/public",
+        "from": "../../apps/frontend/out",
+        "to": "apps/frontend/out",
         "filter": ["**/*"]
       },
       {

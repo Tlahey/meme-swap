@@ -22,5 +22,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onServerStatus: (callback: (event: any, status: { mcp: string; frontend: string }) => void) => {
     ipcRenderer.on('server-status', callback);
   },
-  quitApp: () => ipcRenderer.send('quit-app')
+  quitApp: () => ipcRenderer.send('quit-app'),
+
+  // Faceswap & MCP APIs
+  runFaceswap: (options: any) => ipcRenderer.invoke('run-faceswap', options),
+  getMcpStatus: () => ipcRenderer.invoke('get-mcp-status')
 });
