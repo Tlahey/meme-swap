@@ -68,6 +68,7 @@ function HomeContent() {
   // Tabs and MCP state
   const [activeTab, setActiveTab] = useState<'generation' | 'mcp'>('generation');
   const [isMcpActive, setIsMcpActive] = useState<boolean | null>(null);
+  const [mcpPort, setMcpPort] = useState<string>('3001');
 
   useEffect(() => {
     const checkMcpStatus = async () => {
@@ -76,6 +77,9 @@ function HomeContent() {
         if (res.ok) {
           const data = await res.json();
           setIsMcpActive(data.active);
+          if (data.port) {
+            setMcpPort(data.port);
+          }
         } else {
           setIsMcpActive(false);
         }
@@ -545,7 +549,7 @@ function HomeContent() {
                 setFaceEnhancerModel={setFaceEnhancerModel}
               />
             ) : (
-              <McpSettings isMcpActive={isMcpActive} />
+              <McpSettings isMcpActive={isMcpActive} mcpPort={mcpPort} />
             )}
 
             {/* Action Trigger Button */}

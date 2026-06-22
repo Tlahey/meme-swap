@@ -69,7 +69,7 @@ export const fr = {
     title: "Serveur MCP local",
     subtitle: "Model Context Protocol (Faceswap API)",
     checking: "Vérification...",
-    active: "Actif (Port 3001)",
+    active: "Actif (Port {port})",
     inactive: "Inactif",
     desc1: "Le protocole MCP permet à votre assistant IA (comme Claude Desktop) de se connecter directement à l'application Meme Swap sur votre Mac.",
     desc2: "L'assistant IA pourra exécuter l'outil run_faceswap pour modifier des GIFs/Vidéos de manière autonome avec accélération CoreML locale.",

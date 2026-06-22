@@ -13,9 +13,10 @@ import { useTranslation } from '@meme-swap/i18n';
 
 interface McpSettingsProps {
   isMcpActive: boolean | null;
+  mcpPort: string;
 }
 
-export function McpSettings({ isMcpActive }: McpSettingsProps) {
+export function McpSettings({ isMcpActive, mcpPort }: McpSettingsProps) {
   const [copiedPath, setCopiedPath] = useState(false);
   const [copiedConfig, setCopiedConfig] = useState(false);
   const { t } = useTranslation();
@@ -25,7 +26,7 @@ export function McpSettings({ isMcpActive }: McpSettingsProps) {
   const mcpConfig = JSON.stringify({
     mcpServers: {
       "meme-swap": {
-        "url": "http://127.0.0.1:3001/mcp"
+        "url": `http://127.0.0.1:${mcpPort}/mcp`
       }
     }
   }, null, 2);
@@ -78,7 +79,7 @@ export function McpSettings({ isMcpActive }: McpSettingsProps) {
           ) : isMcpActive ? (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-[var(--emerald-bg)] text-[var(--emerald-text)] border border-[var(--emerald-border)] shadow-[0_0_8px_rgba(16,185,129,0.15)] animate-pulse">
               <span className="w-1.5 h-1.5 rounded-full bg-[var(--emerald-main)]"></span>
-              {t('mcp.active')}
+              {t('mcp.active', { port: mcpPort })}
             </span>
           ) : (
             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[10px] font-bold bg-rose-50 dark:bg-rose-950/20 text-rose-600 dark:text-rose-400 border border-rose-100 dark:border-rose-900/50">
