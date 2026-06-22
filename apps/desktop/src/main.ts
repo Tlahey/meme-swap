@@ -1,6 +1,7 @@
 import { app, BrowserWindow, Tray, Menu, ipcMain } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import http from 'node:http';
 import { spawn, ChildProcess } from 'node:child_process';
 import { runInstallation } from './installer';
@@ -16,8 +17,6 @@ const frontendPort = process.env.MEME_SWAP_PORT || process.env.PORT || '3010';
 const mcpPort = process.env.MCP_PORT || '3001';
 
 const root = getWorkspaceRoot();
-const logsDir = path.join(root, 'apps', 'desktop', 'logs');
-const logFilePath = path.join(logsDir, 'desktop.log');
 
 let isQuitting = false;
 
@@ -25,7 +24,10 @@ let isQuitting = false;
 let mcpStatus: 'stopped' | 'starting' | 'ready' | 'error' = 'stopped';
 let frontendStatus: 'stopped' | 'starting' | 'ready' | 'error' = 'stopped';
 
-// Assurer l'existence du dossier de logs
+// Stockage des logs dans ~/.meme-swap/logs/ (cohérent avec les autres données de l'app)
+const logsDir = path.join(os.homedir(), '.meme-swap', 'logs');
+const logFilePath = path.join(logsDir, 'desktop.log');
+
 if (!fs.existsSync(logsDir)) {
   fs.mkdirSync(logsDir, { recursive: true });
 }
