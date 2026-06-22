@@ -1,0 +1,54 @@
+# Dependencies
+node_modules/
+.pnpm-store/
+
+# Build outputs
+.next/
+dist/
+build/
+.turbo/
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Process directory (temporary files and results)
+.process/
+
+# Test assets (images and videos)
+test-assets/
+
+# Logs
+logs/
+*.log
+npm-debug.log*
+
+# Coverage
+coverage/
+
+# Temporary files
+*.tmp
+*.temp
+.cache/
+
+# FaceFusion
+vendor/
+.jobs/
+
+# Package lock files (pnpm only)
+package-lock.json
+yarn.lock
+pnpm-debug.log*
+yarn-debug.log*
+yarn-error.log*
