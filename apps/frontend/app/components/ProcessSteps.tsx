@@ -3,6 +3,7 @@
 import React from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { CheckIcon as Check, CpuIcon as Cpu } from '@phosphor-icons/react';
+import { useTranslation } from '@meme-swap/i18n';
 
 export interface Step {
   id: number;
@@ -23,6 +24,7 @@ interface ProcessStepsProps {
 
 export function ProcessSteps({ steps, currentStepIndex }: ProcessStepsProps) {
   const shouldReduceMotion = useReducedMotion();
+  const { t } = useTranslation();
 
   const progressPercent = Math.min(
     Math.round((currentStepIndex / steps.length) * 100),
@@ -36,10 +38,10 @@ export function ProcessSteps({ steps, currentStepIndex }: ProcessStepsProps) {
         <div className="flex items-center justify-between">
           <div>
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-              Pipeline de traitement
+              {t('process.title')}
             </h3>
             <p className="text-xs text-[var(--text-muted)] mt-1">
-              Suivi en temps réel
+              {t('process.subtitle')}
             </p>
           </div>
           <span className="text-xs px-3 py-1 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-color)] rounded-full font-mono font-medium tabular-nums">
@@ -167,10 +169,9 @@ export function ProcessSteps({ steps, currentStepIndex }: ProcessStepsProps) {
                 />
                 <span>
                   <span className="text-[var(--text-primary)] font-semibold">
-                    Note :
+                    {t('process.note')}
                   </span>{' '}
-                  L'inférence AI tourne localement via CoreML. Comptez 20s à
-                  1min selon la taille du média.
+                  {t('process.noteDesc')}
                 </span>
               </div>
             </motion.div>

@@ -1,9 +1,10 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 
 // Configuration des chemins
-const PROCESS_DIR = path.join(process.cwd(), '.process');
+const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
 const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
 
 /**

@@ -14,6 +14,7 @@ import {
   DropIcon as Drop,
   WaveformIcon as Waveform,
 } from '@phosphor-icons/react';
+import { useTranslation } from '@meme-swap/i18n';
 
 export type ExecutionProvider = 'coreml' | 'cpu' | 'cuda';
 export type FaceSelectorMode = 'reference' | 'many' | 'one';
@@ -34,8 +35,6 @@ interface ModelSettingsProps {
   setFaceSwapperModel: (val: string | undefined) => void;
   faceEnhancerModel: string | undefined;
   setFaceEnhancerModel: (val: string | undefined) => void;
-  lipSyncerModel: string | undefined;
-  setLipSyncerModel: (val: string | undefined) => void;
 }
 
 interface SectionProps {
@@ -118,10 +117,10 @@ export function ModelSettings({
   setFaceSwapperModel,
   faceEnhancerModel,
   setFaceEnhancerModel,
-  lipSyncerModel,
-  setLipSyncerModel,
 }: ModelSettingsProps) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
+  const { t, locale } = useTranslation();
+  
   // Track which sub-sections are open
   const [openSections, setOpenSections] = useState<Record<string, boolean>>({
     modules: true,
@@ -147,11 +146,11 @@ export function ModelSettings({
   const getProviderLabel = (provider: ExecutionProvider) => {
     switch (provider) {
       case 'coreml':
-        return 'Apple Neural Engine (CoreML)';
+        return t('model.providers.coreml');
       case 'cpu':
-        return 'Processeur (CPU)';
+        return t('model.providers.cpu');
       case 'cuda':
-        return 'NVIDIA GPU (CUDA)';
+        return t('model.providers.cuda');
       default:
         return provider;
     }
@@ -160,17 +159,22 @@ export function ModelSettings({
   const getProviderBadge = (provider: ExecutionProvider) => {
     switch (provider) {
       case 'coreml':
-        return 'Recommandé';
+        return t('common.recommended');
       case 'cpu':
-        return 'Lent';
+        return t('common.slow');
       default:
         return '';
     }
   };
 
   // Summary badges shown in the collapsed panel header
-  const activeProviders = executionProviders.join(', ');
-  const activeModulesCount = [faceSwapperModel, faceEnhancerModel, lipSyncerModel].filter(Boolean).length;
+  const activeProviders = executionProviders.map(p => {
+    if (p === 'coreml') return 'CoreML';
+    if (p === 'cpu') return 'CPU';
+    return 'CUDA';
+  }).join(', ');
+  
+  const activeModulesCount = [faceSwapperModel, faceEnhancerModel].filter(Boolean).length;
 
   return (
     <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl overflow-hidden transition-all shadow-sm">
@@ -185,17 +189,21 @@ export function ModelSettings({
           </div>
           <div>
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-              Paramètres du modèle
+              {t('model.title')}
             </h3>
             {!isPanelOpen ? (
               <p className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-2">
-                <span>{activeModulesCount} module{activeModulesCount !== 1 ? 's' : ''} actif{activeModulesCount !== 1 ? 's' : ''}</span>
+                <span>
+                  {locale === 'en'
+                    ? `${activeModulesCount} active module${activeModulesCount !== 1 ? 's' : ''}`
+                    : `${activeModulesCount} module${activeModulesCount !== 1 ? 's' : ''} actif${activeModulesCount !== 1 ? 's' : ''}`}
+                </span>
                 <span className="w-1 h-1 rounded-full bg-[var(--border-color)] inline-block" />
                 <span>{activeProviders}</span>
               </p>
             ) : (
               <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                Configuration FaceFusion, accélération et options
+                {t('model.subtitle')}
               </p>
             )}
           </div>
@@ -224,8 +232,12 @@ export function ModelSettings({
               {/* ── Section 1: Modules ── */}
               <SettingsSection
                 id="modules"
-                title="Moteurs FaceFusion"
-                subtitle={`${activeModulesCount} module${activeModulesCount !== 1 ? 's' : ''} actif${activeModulesCount !== 1 ? 's' : ''}`}
+                title={t('model.engines')}
+                subtitle={
+                  locale === 'en'
+                    ? `${activeModulesCount} active module${activeModulesCount !== 1 ? 's' : ''}`
+                    : `${activeModulesCount} module${activeModulesCount !== 1 ? 's' : ''} actif${activeModulesCount !== 1 ? 's' : ''}`
+                }
                 icon={<Sparkle size={16} />}
                 isOpen={openSections['modules'] ?? false}
                 onToggle={() => toggleSection('modules')}
@@ -236,8 +248,8 @@ export function ModelSettings({
                     <div className="flex gap-3">
                       <User size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
                       <div>
-                        <h4 className="text-xs font-semibold text-[var(--text-primary)]">Face Swapper</h4>
-                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Moteur principal d'échange de visage.</p>
+                        <h4 className="text-xs font-semibold text-[var(--text-primary)]">{t('model.faceSwapper')}</h4>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t('model.faceSwapperDesc')}</p>
                         <div className="mt-1.5 text-[9px] font-mono text-[var(--text-secondary)] bg-[var(--bg-tertiary)] inline-block px-1.5 py-0.5 rounded">
                           inswapper_128_fp16
                         </div>
@@ -259,8 +271,8 @@ export function ModelSettings({
                     <div className="flex gap-3">
                       <Sparkle size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
                       <div>
-                        <h4 className="text-xs font-semibold text-[var(--text-primary)]">Amélioration du Visage</h4>
-                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Restaure les détails et affine la netteté.</p>
+                        <h4 className="text-xs font-semibold text-[var(--text-primary)]">{t('model.faceEnhancer')}</h4>
+                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t('model.faceEnhancerDesc')}</p>
                         <div className="mt-1.5 text-[9px] font-mono text-[var(--text-secondary)] bg-[var(--bg-tertiary)] inline-block px-1.5 py-0.5 rounded">
                           codeformer
                         </div>
@@ -277,35 +289,12 @@ export function ModelSettings({
                     </label>
                   </div>
 
-                  {/* Lip Syncer */}
-                  <div className="flex items-start justify-between p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
-                    <div className="flex gap-3">
-                      <Waveform size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
-                      <div>
-                        <h4 className="text-xs font-semibold text-[var(--text-primary)]">Synchronisation Labiale</h4>
-                        <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Synchronise le mouvement des lèvres.</p>
-                        <div className="mt-1.5 text-[9px] font-mono text-[var(--text-secondary)] bg-[var(--bg-tertiary)] inline-block px-1.5 py-0.5 rounded">
-                          wav2lip_gan_96
-                        </div>
-                      </div>
-                    </div>
-                    <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
-                      <input
-                        type="checkbox"
-                        className="sr-only peer"
-                        checked={lipSyncerModel !== undefined}
-                        onChange={(e) => setLipSyncerModel(e.target.checked ? 'wav2lip_gan_96' : undefined)}
-                      />
-                      <div className="w-9 h-5 bg-[var(--border-color)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--emerald-main)]"></div>
-                    </label>
-                  </div>
-
-                  {/* Mask Blend slider — kept inside modules as it's a module-level setting */}
+                  {/* Mask Blend slider */}
                   <div className="pt-2 space-y-3">
                     <div className="flex justify-between items-center">
                       <span className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
                         <Drop size={12} className="text-[var(--emerald-main)]" />
-                        Face Mask Blend
+                        {t('model.faceMaskBlend')}
                       </span>
                       <span className="text-[var(--emerald-main)] font-mono text-xs">{faceMaskBlend}%</span>
                     </div>
@@ -318,7 +307,7 @@ export function ModelSettings({
                       className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-lg appearance-none cursor-pointer accent-[var(--emerald-main)]"
                     />
                     <p className="text-[10px] text-[var(--text-muted)]">
-                      Lissage des bords du masque sur le visage cible. (Défaut: 80)
+                      {t('model.faceMaskBlendDesc')}
                     </p>
                   </div>
                 </div>
@@ -327,8 +316,8 @@ export function ModelSettings({
               {/* ── Section 2: Hardware ── */}
               <SettingsSection
                 id="hardware"
-                title="Accélération Matérielle"
-                subtitle={`${executionProviders.join(' + ')}`}
+                title={t('model.acceleration')}
+                subtitle={`${executionProviders.map(p => p.toUpperCase()).join(' + ')}`}
                 icon={<Cpu size={16} />}
                 isOpen={openSections['hardware'] ?? false}
                 onToggle={() => toggleSection('hardware')}
@@ -377,7 +366,7 @@ export function ModelSettings({
               {/* ── Section 3: Face Selector ── */}
               <SettingsSection
                 id="face"
-                title="Mode du Sélecteur de Visage"
+                title={t('model.selectorMode')}
                 subtitle={faceSelectorMode}
                 icon={<User size={16} />}
                 isOpen={openSections['face'] ?? false}
@@ -408,9 +397,9 @@ export function ModelSettings({
                   <div className="bg-[var(--bg-primary)] rounded-xl p-3 border border-[var(--border-color)] flex items-start gap-2">
                     <Info size={14} className="text-[var(--text-muted)] shrink-0 mt-0.5" />
                     <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">
-                      {faceSelectorMode === 'reference' && 'Remplace le visage le plus similaire au visage source.'}
-                      {faceSelectorMode === 'many' && 'Remplace tous les visages détectés dans le média cible.'}
-                      {faceSelectorMode === 'one' && 'Remplace uniquement le premier visage détecté.'}
+                      {faceSelectorMode === 'reference' && t('model.selectorModes.reference')}
+                      {faceSelectorMode === 'many' && t('model.selectorModes.many')}
+                      {faceSelectorMode === 'one' && t('model.selectorModes.one')}
                     </p>
                   </div>
                 </div>
@@ -419,7 +408,7 @@ export function ModelSettings({
               {/* ── Section 4: Performance ── */}
               <SettingsSection
                 id="perf"
-                title="Performances"
+                title={t('model.performance')}
                 subtitle={`${threadCount} thread${threadCount > 1 ? 's' : ''} · log ${logLevel}`}
                 icon={<Terminal size={16} />}
                 isOpen={openSections['perf'] ?? false}
@@ -430,9 +419,11 @@ export function ModelSettings({
                   <div className="space-y-2">
                     <div className="flex justify-between items-center">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                        Threads CPU
+                        {t('model.threadsCpu')}
                       </span>
-                      <span className="text-[var(--emerald-main)] font-mono text-xs">{threadCount} cœurs</span>
+                      <span className="text-[var(--emerald-main)] font-mono text-xs">
+                        {threadCount} {locale === 'en' ? 'cores' : 'cœurs'}
+                      </span>
                     </div>
                     <input
                       type="range"
@@ -444,7 +435,7 @@ export function ModelSettings({
                     />
                     <div className="flex justify-between text-[9px] text-[var(--text-muted)] font-mono">
                       <span>1</span>
-                      <span>4 (Rec.)</span>
+                      <span>4 ({t('model.rec')})</span>
                       <span>8</span>
                     </div>
                   </div>
@@ -452,7 +443,7 @@ export function ModelSettings({
                   {/* Log Level */}
                   <div className="space-y-2">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                      Niveau de log
+                      {t('model.logLevel')}
                     </span>
                     <div className="grid grid-cols-4 gap-1.5">
                       {(['debug', 'info', 'warning', 'error'] as LogLevel[]).map((level) => (

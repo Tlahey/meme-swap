@@ -9,6 +9,7 @@ import {
   SquareIcon as Square,
   ArrowsLeftRightIcon as ArrowsLeftRight,
 } from '@phosphor-icons/react';
+import { useTranslation } from '@meme-swap/i18n';
 
 interface ResultDisplayProps {
   originalUrl: string | null;
@@ -21,6 +22,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
   const [layoutMode, setLayoutMode] = useState<'split-slider' | 'side-by-side' | 'single-swapped'>('split-slider');
   const [activeTab, setActiveTab] = useState<'original' | 'result'>('result');
   const shouldReduceMotion = useReducedMotion();
+  const { t } = useTranslation();
 
   // Split-slider state
   const containerRef = useRef<HTMLDivElement>(null);
@@ -91,6 +93,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
       );
     }
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}
@@ -118,6 +121,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
       );
     }
     return (
+      // eslint-disable-next-line @next/next/no-img-element
       <img
         src={src}
         alt={alt}
@@ -132,7 +136,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
       {/* Header and Controls */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-          Résultat final
+          {t('result.title')}
         </h3>
 
         {/* Layout Mode selector */}
@@ -147,7 +151,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
             }`}
           >
             <ArrowsLeftRight size={13} />
-            Glissant
+            {t('result.layout.slider')}
           </button>
           <button
             onClick={() => setLayoutMode('side-by-side')}
@@ -159,7 +163,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
             }`}
           >
             <Columns size={13} />
-            Côte à côte
+            {t('result.layout.sideBySide')}
           </button>
           <button
             onClick={() => setLayoutMode('single-swapped')}
@@ -171,7 +175,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
             }`}
           >
             <Square size={13} />
-            Focus
+            {t('result.layout.focus')}
           </button>
         </div>
       </div>
@@ -196,10 +200,10 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
             >
               {/* Bottom Layer: Original Media — full-container, dimmed */}
               {originalUrl ? (
-                renderMediaFill(originalUrl, 'Original', true)
+                renderMediaFill(originalUrl, t('result.mediaOriginal'), true)
               ) : (
                 <span className="absolute inset-0 flex items-center justify-center text-xs text-[var(--text-muted)]">
-                  Non disponible
+                  {t('result.notAvailable')}
                 </span>
               )}
 
@@ -210,7 +214,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
                   clipPath: `inset(0 ${100 - sliderPosition}% 0 0)`,
                 }}
               >
-                {renderMediaFill(resultUrl, 'Face Swapped')}
+                {renderMediaFill(resultUrl, t('result.resultSwapped'))}
               </div>
 
               {/* Slider Handle */}
@@ -225,16 +229,16 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
 
               {/* Top-left label - Swapped */}
               <div className="absolute top-3 left-3 px-2 py-0.5 bg-[var(--emerald-bg)] border border-[var(--emerald-border)] rounded-full text-[var(--emerald-text)] text-[10px] font-semibold tracking-wider uppercase pointer-events-none backdrop-blur-sm">
-                Swapped
+                {t('result.swapped')}
               </div>
 
               {/* Top-right label - Original */}
               <div className="absolute top-3 right-3 px-2 py-0.5 bg-[var(--bg-tertiary)]/80 border border-[var(--border-color)] rounded-full text-[var(--text-secondary)] text-[10px] font-semibold tracking-wider uppercase pointer-events-none backdrop-blur-sm">
-                Original
+                {t('result.original')}
               </div>
             </div>
             <p className="text-[10px] text-[var(--text-muted)] text-center">
-              Faites glisser le curseur pour comparer l'original et le résultat.
+              {t('result.sliderTip')}
             </p>
           </div>
         ) : layoutMode === 'side-by-side' ? (
@@ -242,13 +246,13 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
             {/* Original */}
             <div className="space-y-1.5">
               <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--text-muted)]">
-                Original
+                {t('result.original')}
               </span>
               <div className="relative aspect-video bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg overflow-hidden flex items-center justify-center">
                 {originalUrl ? (
-                  renderMedia(originalUrl, 'Média original')
+                  renderMedia(originalUrl, t('result.mediaOriginal'))
                 ) : (
-                  <span className="text-xs text-[var(--text-muted)]">Non disponible</span>
+                  <span className="text-xs text-[var(--text-muted)]">{t('result.notAvailable')}</span>
                 )}
               </div>
             </div>
@@ -256,10 +260,10 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
             {/* Result */}
             <div className="space-y-1.5">
               <span className="text-[11px] font-medium uppercase tracking-wide text-[var(--emerald-text)]">
-                Face Swapped
+                {t('result.swapped')}
               </span>
               <div className="relative aspect-video bg-[var(--bg-primary)] border border-[var(--emerald-border)] rounded-lg overflow-hidden flex items-center justify-center shadow-[0_0_24px_var(--emerald-bg)]">
-                {renderMedia(resultUrl, 'Résultat face-swappé')}
+                {renderMedia(resultUrl, t('result.resultSwapped'))}
               </div>
             </div>
           </div>
@@ -276,7 +280,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
                     : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
-                Original
+                {t('result.tabOriginal')}
               </button>
               <button
                 onClick={() => setActiveTab('result')}
@@ -287,16 +291,16 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
                     : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
                 }`}
               >
-                Résultat
+                {t('result.tabResult')}
               </button>
             </div>
 
             {/* Single Display */}
             <div className="relative bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg overflow-hidden flex items-center justify-center max-h-[380px] aspect-video">
               {activeTab === 'original' && originalUrl ? (
-                renderMedia(originalUrl, 'Média original')
+                renderMedia(originalUrl, t('result.mediaOriginal'))
               ) : (
-                renderMedia(resultUrl, 'Résultat face-swappé')
+                renderMedia(resultUrl, t('result.resultSwapped'))
               )}
             </div>
           </div>
@@ -311,7 +315,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
           className="px-4 py-2 rounded-lg text-xs font-medium bg-[var(--bg-primary)] hover:bg-[var(--bg-secondary)] text-[var(--text-secondary)] hover:text-[var(--text-primary)] border border-[var(--border-color)] transition-all flex items-center gap-2 cursor-pointer active:scale-[0.97]"
         >
           <ArrowCounterClockwise size={14} />
-          Nouveau swap
+          {t('result.newSwap')}
         </button>
 
         <button
@@ -320,7 +324,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
           className="px-5 py-2 rounded-lg text-xs font-semibold bg-[var(--emerald-main)] hover:bg-emerald-600 text-white transition-all shadow-lg shadow-[var(--emerald-bg)] flex items-center gap-2 cursor-pointer active:scale-[0.97]"
         >
           <DownloadSimple size={14} weight="bold" />
-          Télécharger
+          {t('result.download')}
         </button>
       </div>
     </div>

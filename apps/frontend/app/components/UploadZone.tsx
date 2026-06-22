@@ -4,11 +4,12 @@ import React, { useState, useRef } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import {
   UploadSimpleIcon as UploadSimple,
-  ImageIcon as Image,
+  ImageIcon as ImageIconComponent,
   VideoCameraIcon as VideoCamera,
   TrashIcon as Trash,
   FileIcon,
 } from '@phosphor-icons/react';
+import { useTranslation } from '@meme-swap/i18n';
 
 interface UploadZoneProps {
   id: string;
@@ -38,6 +39,7 @@ export function UploadZone({
   const [isDragActive, setIsDragActive] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const shouldReduceMotion = useReducedMotion();
+  const { t } = useTranslation();
 
   const handleDrag = (e: React.DragEvent) => {
     e.preventDefault();
@@ -61,11 +63,11 @@ export function UploadZone({
       // Validate basic format before assigning
       const fileType = droppedFile.type;
       if (type === 'image' && !fileType.startsWith('image/')) {
-        alert('Veuillez déposer une image valide (JPG, PNG, etc.)');
+        alert(t('upload.invalidImage'));
         return;
       }
       if (type === 'video' && !fileType.includes('gif') && !fileType.includes('mp4')) {
-        alert('Veuillez déposer un fichier GIF ou MP4 valide');
+        alert(t('upload.invalidVideo'));
         return;
       }
       onChange(droppedFile);
@@ -149,16 +151,16 @@ export function UploadZone({
             >
               <div className="p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] text-[var(--text-muted)] group-hover:text-[var(--emerald-text)] group-hover:border-[var(--emerald-main)]/30 group-hover:shadow-[0_0_15px_var(--emerald-bg)] transition-all duration-300">
                 {type === 'image' ? (
-                  <Image size={24} weight="regular" />
+                  <ImageIconComponent size={24} weight="regular" />
                 ) : (
                   <VideoCamera size={24} weight="regular" />
                 )}
               </div>
               <div className="text-center">
                 <p className="text-sm text-[var(--text-secondary)]">
-                  Glissez-déposez ou{' '}
+                  {t('upload.dragDrop')}{' '}
                   <span className="text-[var(--emerald-text)] font-medium underline underline-offset-4 decoration-[var(--emerald-main)]/40 group-hover:decoration-[var(--emerald-main)]">
-                    parcourez
+                    {t('upload.browse')}
                   </span>
                 </p>
                 <p className="text-xs text-[var(--text-muted)] mt-1 max-w-[220px]">
@@ -179,9 +181,10 @@ export function UploadZone({
               <div className="relative w-full rounded-lg overflow-hidden flex items-center justify-center bg-[var(--bg-tertiary)]/30 border border-[var(--border-color)] aspect-video max-h-52">
                 {previewUrl ? (
                   type === 'image' ? (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={previewUrl}
-                      alt={`Aperçu : ${file.name}`}
+                      alt={`${t('upload.preview')} : ${file.name}`}
                       className="max-h-full max-w-full object-contain"
                     />
                   ) : file.name.endsWith('.mp4') ? (
@@ -194,9 +197,10 @@ export function UploadZone({
                       playsInline
                     />
                   ) : (
+                    // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={previewUrl}
-                      alt={`Aperçu : ${file.name}`}
+                      alt={`${t('upload.preview')} : ${file.name}`}
                       className="max-h-full max-w-full object-contain"
                     />
                   )
@@ -223,7 +227,7 @@ export function UploadZone({
                       }}
                     />
                     <div className="absolute top-2 left-2 flex items-center gap-1.5 px-2 py-0.5 bg-emerald-500/20 border border-emerald-500/40 rounded-full text-emerald-400 text-[9px] font-semibold uppercase tracking-wider animate-pulse">
-                      Analyse Faciale...
+                      {t('upload.analyzing')}
                     </div>
                   </div>
                 )}
@@ -237,7 +241,7 @@ export function UploadZone({
                     }}
                     id={`${id}-delete-btn`}
                     className="absolute top-2 right-2 p-1.5 bg-[var(--bg-primary)] hover:bg-red-500 text-[var(--text-secondary)] hover:text-white rounded-lg border border-[var(--border-color)] hover:border-red-500/50 transition-all backdrop-blur-sm cursor-pointer active:scale-90"
-                    title="Supprimer le fichier"
+                    title={t('upload.deleteFile')}
                   >
                     <Trash size={14} />
                   </button>

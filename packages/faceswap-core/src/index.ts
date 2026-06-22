@@ -1,6 +1,7 @@
 import { spawn, SpawnOptions } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 
 /**
  * Options pour exécuter FaceFusion
@@ -56,47 +57,59 @@ export class FaceswapError extends Error {
 }
 
 /**
- * Trouve le répertoire racine du projet (workspace) contenant le dossier vendor/facefusion
+ * Trouve le répertoire racine du projet (workspace) contenant pnpm-workspace.yaml
  */
-function getWorkspaceRoot(): string {
-  let currentDir = process.cwd();
-  // Remonter les dossiers parents pour trouver vendor/facefusion
+export function getWorkspaceRoot(): string {
+  let currentDir = __dirname;
   while (currentDir !== path.parse(currentDir).root) {
-    if (fs.existsSync(path.join(currentDir, 'vendor', 'facefusion'))) {
+    if (fs.existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
       return currentDir;
     }
     currentDir = path.dirname(currentDir);
   }
-  return process.cwd(); // Fallback
+  
+  // Fallback alternatif
+  let fallbackDir = process.cwd();
+  while (fallbackDir !== path.parse(fallbackDir).root) {
+    if (fs.existsSync(path.join(fallbackDir, 'pnpm-workspace.yaml'))) {
+      return fallbackDir;
+    }
+    fallbackDir = path.dirname(fallbackDir);
+  }
+  return process.cwd();
+}
+
+/**
+ * Trouve le répertoire d'installation de FaceFusion.
+ * Utilise toujours le dossier global utilisateur (~/.meme-swap/facefusion).
+ */
+export function getFaceFusionDir(): string {
+  return path.join(/*turbopackIgnore: true*/ os.homedir(), '.meme-swap', 'facefusion');
 }
 
 /**
  * Chemin vers le binaire Python de l'environnement virtuel FaceFusion
  */
 function getPythonPath(): string {
-  const root = getWorkspaceRoot();
+  const ffDir = getFaceFusionDir();
   // Utiliser python3.11 si disponible (plus stable pour FaceFusion)
-  const python311Path = path.join(
-    root,
-    'vendor',
-    'facefusion',
-    'venv',
-    'bin',
-    'python3.11',
-  );
+  const python311Path = path.join(ffDir, 'venv', 'bin', 'python3.11');
   if (fs.existsSync(python311Path)) {
     return python311Path;
   }
-  // Fallback vers python3
-  return path.join(root, 'vendor', 'facefusion', 'venv', 'bin', 'python3');
+  const python3Path = path.join(ffDir, 'venv', 'bin', 'python3');
+  if (fs.existsSync(python3Path)) {
+    return python3Path;
+  }
+  return path.join(ffDir, 'venv', 'bin', 'python');
 }
 
 /**
  * Chemin vers le script principal de FaceFusion
  */
 function getScriptPath(): string {
-  const root = getWorkspaceRoot();
-  return path.join(root, 'vendor', 'facefusion', 'facefusion.py');
+  const ffDir = getFaceFusionDir();
+  return path.join(ffDir, 'facefusion.py');
 }
 
 /**
@@ -106,7 +119,12 @@ function buildArgs(options: FaceswapOptions): string[] {
   const args: string[] = ['headless-run'];
 
   // Chemins obligatoires
-  args.push('-s', path.resolve(options.sourcePath));
+  if (options.lipSyncerModel) {
+    // Le lip syncer requiert une source audio. On passe la cible en tant que source audio.
+    args.push('-s', path.resolve(options.sourcePath), path.resolve(options.targetPath));
+  } else {
+    args.push('-s', path.resolve(options.sourcePath));
+  }
   args.push('-t', path.resolve(options.targetPath));
   args.push('-o', path.resolve(options.outputPath));
 
@@ -155,14 +173,21 @@ function buildArgs(options: FaceswapOptions): string[] {
     args.push('--lip-syncer-model', options.lipSyncerModel);
   }
 
-  // Face Mask Blend
+  // Face Mask Blend (maps to --face-mask-blur in FaceFusion)
   if (options.faceMaskBlend !== undefined) {
-    args.push('--face-mask-blend', options.faceMaskBlend.toString());
+    args.push('--face-mask-blur', (options.faceMaskBlend / 100).toString());
   }
 
   if (processors.length > 0) {
     args.push('--processors', ...processors);
   }
+
+  // Temp path pointing to ~/.meme-swap/process/temp/facefusion-temp
+  const facefusionTemp = path.join(os.homedir(), '.meme-swap', 'process', 'temp', 'facefusion-temp');
+  if (!fs.existsSync(facefusionTemp)) {
+    fs.mkdirSync(facefusionTemp, { recursive: true });
+  }
+  args.push('--temp-path', facefusionTemp);
 
   return args;
 }
@@ -211,31 +236,36 @@ export async function runFaceSwap(
     );
   }
 
+  const binDir = path.join(os.homedir(), '.meme-swap', 'bin');
   return new Promise((resolve) => {
-    const process = spawn(pythonPath, [scriptPath, ...args], {
+    const childProcess = spawn(pythonPath, [scriptPath, ...args], {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: path.dirname(scriptPath),
+      env: {
+        ...process.env,
+        PATH: `${binDir}:${process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin'}`
+      }
     });
 
     let stdout = '';
     let stderr = '';
 
     // Collecte des logs stdout
-    process.stdout?.on('data', (data: Buffer) => {
+    childProcess.stdout?.on('data', (data: Buffer) => {
       const output = data.toString();
       stdout += output;
       console.log('[FaceFusion]', output.trim());
     });
 
     // Collecte des erreurs stderr
-    process.stderr?.on('data', (data: Buffer) => {
+    childProcess.stderr?.on('data', (data: Buffer) => {
       const error = data.toString();
       stderr += error;
       console.error('[FaceFusion Error]', error.trim());
     });
 
     // Gestion de la fin du processus
-    process.on('close', (code) => {
+    childProcess.on('close', (code: number | null) => {
       if (code === 0) {
         resolve({
           success: true,
@@ -250,7 +280,7 @@ export async function runFaceSwap(
     });
 
     // Gestion des erreurs de spawn
-    process.on('error', (err) => {
+    childProcess.on('error', (err: Error) => {
       resolve({
         success: false,
         error: `Erreur lors du lancement de FaceFusion: ${err.message}`,

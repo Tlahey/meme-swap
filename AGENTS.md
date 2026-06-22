@@ -132,7 +132,7 @@ export async function mp4ToGif(options: ConversionOptions): Promise<ConversionRe
 
 | Component | Purpose | Location |
 |-----------|---------|----------|
-| **FaceFusion** | AI-powered face swapping engine | `vendor/facefusion/` |
+| **FaceFusion** | AI-powered face swapping engine | `vendor/facefusion/` (dev) / `~/.meme-swap/facefusion/` (user global) |
 | **FFmpeg** | Media format conversion (GIF ↔ MP4) | System installation |
 | **ONNX Runtime** | Neural network inference for FaceFusion | Python package |
 | **OpenCV** | Image/video processing | Python package |
@@ -701,8 +701,8 @@ See `packages/faceswap-core/src/index.ts` for the complete implementation.
 
 **Key Points:**
 - Use `spawn()` from `child_process` for non-blocking execution
-- Path to Python: `./vendor/facefusion/venv/bin/python3` (macOS)
-- Script path: `./vendor/facefusion/facefusion.py`
+- Path to Python: resolved via `getFaceFusionDir()` + `venv/bin/python3` (macOS)
+- Script path: resolved via `getFaceFusionDir()` + `facefusion.py`
 - Execution providers: `['coreml', 'cpu']` for Apple Silicon
 
 ```typescript
@@ -930,7 +930,7 @@ pnpm format
 
 ```bash
 # Frontend specific (Next.js)
-pnpm frontend:dev         # Start Next.js dev server on port 3000
+pnpm frontend:dev         # Start Next.js dev server on port 3010
 pnpm frontend:build       # Build for production
 
 # Raycast specific

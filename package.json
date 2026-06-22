@@ -14,9 +14,10 @@
     "frontend:build": "turbo run build --filter=frontend",
     "raycast:dev": "turbo run dev --filter=raycast-extension",
     "raycast:build": "turbo run build --filter=raycast-extension",
-    "install:facefusion": "chmod +x scripts/setup-facefusion.sh && ./scripts/setup-facefusion.sh",
-    "postinstall": "pnpm run install:facefusion",
-    "test:faceswap": "node scripts/test-faceswap.js"
+    "desktop:dev": "turbo run dev --filter=desktop",
+    "desktop:build": "turbo run build --filter=desktop",
+    "desktop:package": "turbo run build --filter=desktop && turbo run package --filter=desktop",
+    "install:facefusion": "chmod +x scripts/setup-facefusion.sh && ./scripts/setup-facefusion.sh"
   },
   "devDependencies": {
     "turbo": "^2.0.0"

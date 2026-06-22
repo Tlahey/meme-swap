@@ -1,6 +1,7 @@
 import { spawn } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 
 /**
  * Options pour la conversion de fichiers média
@@ -43,8 +44,10 @@ export class VideoProcessorError extends Error {
  * Vérifie si ffmpeg est disponible sur le système
  */
 function getFfmpegPath(): string {
-  // Sur macOS avec Homebrew, ffmpeg peut être installé via brew
-  // On utilise simplement 'ffmpeg' qui devrait être dans le PATH
+  const userHomeFfmpeg = path.join(/*turbopackIgnore: true*/ os.homedir(), '.meme-swap', 'bin', 'ffmpeg');
+  if (fs.existsSync(userHomeFfmpeg)) {
+    return userHomeFfmpeg;
+  }
   return 'ffmpeg';
 }
 

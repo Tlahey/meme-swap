@@ -99,7 +99,7 @@ FaceFusion supports multiple execution providers for hardware acceleration:
 
 - **Node.js** >= 18.x
 - **Python** >= 3.9 with FaceFusion installed
-- FaceFusion must be available at `./vendor/facefusion/` relative to project root
+- FaceFusion is resolved in the user's home folder at `~/.meme-swap/facefusion` (global environment) for all executions.
 
 ## Project Structure
 

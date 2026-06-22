@@ -18,6 +18,8 @@ import { UploadZone } from './components/UploadZone';
 import { ProcessSteps, Step } from './components/ProcessSteps';
 import { ResultDisplay } from './components/ResultDisplay';
 import { ModelSettings, ExecutionProvider, FaceSelectorMode, LogLevel } from './components/ModelSettings';
+import { McpSettings } from './components/McpSettings';
+import { I18nProvider, useTranslation } from '@meme-swap/i18n';
 
 interface FaceswapResult {
   success: boolean;
@@ -26,6 +28,15 @@ interface FaceswapResult {
 }
 
 export default function Home() {
+  return (
+    <I18nProvider>
+      <HomeContent />
+    </I18nProvider>
+  );
+}
+
+function HomeContent() {
+  const { t, locale, setLocale } = useTranslation();
   const [sourceImage, setSourceImage] = useState<File | null>(null);
   const [targetGif, setTargetGif] = useState<File | null>(null);
   const [sourcePreviewUrl, setSourcePreviewUrl] = useState<string | null>(null);
@@ -44,7 +55,6 @@ export default function Home() {
   const [faceMaskBlend, setFaceMaskBlend] = useState<number>(80);
   const [faceSwapperModel, setFaceSwapperModel] = useState<string | undefined>('inswapper_128_fp16');
   const [faceEnhancerModel, setFaceEnhancerModel] = useState<string | undefined>('codeformer');
-  const [lipSyncerModel, setLipSyncerModel] = useState<string | undefined>('wav2lip_gan_96');
 
   // Stepper state
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -54,6 +64,30 @@ export default function Home() {
 
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
+
+  // Tabs and MCP state
+  const [activeTab, setActiveTab] = useState<'generation' | 'mcp'>('generation');
+  const [isMcpActive, setIsMcpActive] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    const checkMcpStatus = async () => {
+      try {
+        const res = await fetch('/api/mcp-status');
+        if (res.ok) {
+          const data = await res.json();
+          setIsMcpActive(data.active);
+        } else {
+          setIsMcpActive(false);
+        }
+      } catch (e) {
+        setIsMcpActive(false);
+      }
+    };
+
+    checkMcpStatus();
+    const interval = setInterval(checkMcpStatus, 5000);
+    return () => clearInterval(interval);
+  }, []);
 
   // Refs for scrolling
   const processStepsRef = useRef<HTMLDivElement>(null);
@@ -129,29 +163,29 @@ export default function Home() {
   const steps: Step[] = [
     {
       id: 1,
-      label: 'Téléversement & Validation',
-      description: 'Transfert et vérification de la conformité des fichiers.',
+      label: t('process.steps.upload.label'),
+      description: t('process.steps.upload.desc'),
       status: stepStatuses[0] ?? 'idle',
       icon: UploadSimple,
     },
     {
       id: 2,
-      label: 'Pré-traitement média',
-      description: 'Conversion en flux vidéo MP4 optimisé.',
+      label: t('process.steps.pre.label'),
+      description: t('process.steps.pre.desc'),
       status: stepStatuses[1] ?? 'idle',
       icon: FileVideo,
     },
     {
       id: 3,
-      label: 'Inférence FaceFusion',
-      description: 'Détection des repères faciaux et échange de visage.',
+      label: t('process.steps.inference.label'),
+      description: t('process.steps.inference.desc'),
       status: stepStatuses[2] ?? 'idle',
       icon: Cpu,
     },
     {
       id: 4,
-      label: 'Génération finale',
-      description: 'Exportation et encodage au format cible.',
+      label: t('process.steps.final.label'),
+      description: t('process.steps.final.desc'),
       status: stepStatuses[3] ?? 'idle',
       icon: Sparkle,
     },
@@ -250,7 +284,6 @@ export default function Home() {
       formData.append('faceMaskBlend', faceMaskBlend.toString());
       if (faceSwapperModel) formData.append('faceSwapperModel', faceSwapperModel);
       if (faceEnhancerModel) formData.append('faceEnhancerModel', faceEnhancerModel);
-      if (lipSyncerModel) formData.append('lipSyncerModel', lipSyncerModel);
 
       const response = await fetch('/api/faceswap', {
         method: 'POST',
@@ -339,15 +372,43 @@ export default function Home() {
             <div className="p-1.5 bg-[var(--emerald-main)] rounded-md text-white shadow-sm">
               <Lightning size={16} weight="fill" />
             </div>
-            <span className="font-bold tracking-tight text-lg">Meme Swap</span>
+            <span className="font-bold tracking-tight text-lg">{t('common.memeSwap')}</span>
           </div>
-          <button
-            onClick={toggleTheme}
-            className="p-2 rounded-full hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-secondary)]"
-            aria-label="Toggle Theme"
-          >
-            {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
-          </button>
+
+          <div className="flex items-center gap-4">
+            {/* Language Switcher */}
+            <div className="flex bg-[var(--bg-tertiary)] p-0.5 rounded-lg border border-[var(--border-color)] text-[10px] font-mono select-none">
+              <button
+                onClick={() => setLocale('en')}
+                className={`px-2 py-1 rounded-md transition-all cursor-pointer font-bold ${
+                  locale === 'en'
+                    ? 'bg-[var(--bg-primary)] text-[var(--emerald-text)] border border-[var(--border-color)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                }`}
+              >
+                EN
+              </button>
+              <button
+                onClick={() => setLocale('fr')}
+                className={`px-2 py-1 rounded-md transition-all cursor-pointer font-bold ${
+                  locale === 'fr'
+                    ? 'bg-[var(--bg-primary)] text-[var(--emerald-text)] border border-[var(--border-color)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                }`}
+              >
+                FR
+              </button>
+            </div>
+
+            {/* Theme Toggle */}
+            <button
+              onClick={toggleTheme}
+              className="p-2 rounded-full hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-secondary)]"
+              aria-label="Toggle Theme"
+            >
+              {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+          </div>
         </div>
       </div>
 
@@ -361,9 +422,9 @@ export default function Home() {
             transition={{ duration: shouldReduceMotion ? 0 : 0.5, ease: [0.16, 1, 0.3, 1] }}
             className="text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--text-primary)]"
           >
-            Le FaceSwap {' '}
+            {t('page.titlePrefix')} {' '}
             <span className="text-[var(--emerald-main)]">
-              Haute Performance
+              {t('page.titleSuffix')}
             </span>
           </motion.h1>
           <motion.p
@@ -372,7 +433,7 @@ export default function Home() {
             transition={{ duration: shouldReduceMotion ? 0 : 0.5, delay: shouldReduceMotion ? 0 : 0.1 }}
             className="text-base text-[var(--text-secondary)]"
           >
-            Remplacez des visages dans des médias animés grâce à un pipeline IA local et sécurisé via FaceFusion.
+            {t('page.subtitle')}
           </motion.p>
         </div>
 
@@ -420,10 +481,10 @@ export default function Home() {
                   </div>
                   <div className="space-y-2 flex-1">
                     <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                      Conseils pour un meilleur rendu
+                      {t('page.tipsTitle')}
                     </h3>
                     <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      Assurez-vous que le visage source soit bien éclairé, sans obstruction (ni lunettes, ni cheveux devant les yeux). Pour le média cible, privilégiez un fichier de courte durée.
+                      {t('page.tipsDesc')}
                     </p>
                     <button
                       onClick={handleLoadTestData}
@@ -431,7 +492,7 @@ export default function Home() {
                       className="mt-2 px-3 py-1.5 bg-[var(--emerald-bg)] hover:bg-[var(--emerald-border)] text-[var(--emerald-text)] rounded-lg text-xs font-semibold transition-colors flex items-center gap-2"
                     >
                       {isTestLoading ? <Sparkle size={14} className="animate-spin" /> : <Sparkle size={14} />}
-                      {isTestLoading ? 'Chargement…' : 'Essayer avec les images de test'}
+                      {isTestLoading ? `${t('common.loading')}` : t('page.tryTestData')}
                     </button>
                   </div>
                 </div>
@@ -441,38 +502,67 @@ export default function Home() {
 
           {/* Right Column: Model Settings & Actions */}
           <div className="space-y-6">
-            <ModelSettings
-              executionProviders={executionProviders}
-              setExecutionProviders={setExecutionProviders}
-              faceSelectorMode={faceSelectorMode}
-              setFaceSelectorMode={setFaceSelectorMode}
-              threadCount={threadCount}
-              setThreadCount={setThreadCount}
-              logLevel={logLevel}
-              setLogLevel={setLogLevel}
-              faceMaskBlend={faceMaskBlend}
-              setFaceMaskBlend={setFaceMaskBlend}
-              faceSwapperModel={faceSwapperModel}
-              setFaceSwapperModel={setFaceSwapperModel}
-              faceEnhancerModel={faceEnhancerModel}
-              setFaceEnhancerModel={setFaceEnhancerModel}
-              lipSyncerModel={lipSyncerModel}
-              setLipSyncerModel={setLipSyncerModel}
-            />
+            {/* Tabs Header */}
+            <div className="flex p-1 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl">
+              <button
+                onClick={() => setActiveTab('generation')}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+                  activeTab === 'generation'
+                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                }`}
+              >
+                {t('page.genSettings')}
+              </button>
+              <button
+                onClick={() => setActiveTab('mcp')}
+                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+                  activeTab === 'mcp'
+                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                }`}
+              >
+                <span className={`w-1.5 h-1.5 rounded-full ${isMcpActive ? 'bg-[var(--emerald-main)] animate-pulse' : 'bg-rose-500'}`} />
+                {t('page.mcpServer')}
+              </button>
+            </div>
+
+            {activeTab === 'generation' ? (
+              <ModelSettings
+                executionProviders={executionProviders}
+                setExecutionProviders={setExecutionProviders}
+                faceSelectorMode={faceSelectorMode}
+                setFaceSelectorMode={setFaceSelectorMode}
+                threadCount={threadCount}
+                setThreadCount={setThreadCount}
+                logLevel={logLevel}
+                setLogLevel={setLogLevel}
+                faceMaskBlend={faceMaskBlend}
+                setFaceMaskBlend={setFaceMaskBlend}
+                faceSwapperModel={faceSwapperModel}
+                setFaceSwapperModel={setFaceSwapperModel}
+                faceEnhancerModel={faceEnhancerModel}
+                setFaceEnhancerModel={setFaceEnhancerModel}
+              />
+            ) : (
+              <McpSettings isMcpActive={isMcpActive} />
+            )}
 
             {/* Action Trigger Button */}
-            <button
-              onClick={handleSubmit}
-              disabled={!sourceImage || !targetGif || isProcessing || !!result}
-              className={`w-full py-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                !sourceImage || !targetGif || isProcessing || !!result
-                  ? 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed'
-                  : 'bg-[var(--emerald-main)] hover:bg-emerald-600 text-white shadow-md active:scale-[0.98]'
-              }`}
-            >
-              <ArrowsLeftRight size={18} weight="bold" />
-              {isProcessing ? 'Génération en cours…' : 'Lancer le FaceSwap'}
-            </button>
+            {activeTab === 'generation' && (
+              <button
+                onClick={handleSubmit}
+                disabled={!sourceImage || !targetGif || isProcessing || !!result}
+                className={`w-full py-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                  !sourceImage || !targetGif || isProcessing || !!result
+                    ? 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed'
+                    : 'bg-[var(--emerald-main)] hover:bg-emerald-600 text-white shadow-md active:scale-[0.98]'
+                }`}
+              >
+                <ArrowsLeftRight size={18} weight="bold" />
+                {isProcessing ? `${t('page.processing')}` : t('page.startSwap')}
+              </button>
+            )}
           </div>
         </div>
 
@@ -499,16 +589,16 @@ export default function Home() {
                   <div className="flex gap-3 items-start text-[var(--danger-text)]">
                     <Warning size={20} className="shrink-0 mt-0.5" weight="fill" />
                     <div>
-                      <h3 className="text-sm font-bold">Une erreur s'est produite</h3>
+                      <h3 className="text-sm font-bold">{t('page.errorOccurred')}</h3>
                       <p className="text-xs mt-1 leading-relaxed opacity-90">
-                        Vérifiez vos paramètres ou les médias fournis.
+                        {t('page.checkSettings')}
                       </p>
                     </div>
                   </div>
                   {result.error && (
                     <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-xl p-4">
                       <span className="text-[10px] font-bold uppercase tracking-wider text-[var(--text-muted)]">
-                        Détails Techniques
+                        {t('page.technicalDetails')}
                       </span>
                       <pre className="text-xs text-[var(--text-secondary)] mt-2 font-mono whitespace-pre-wrap overflow-x-auto">
                         {result.error}
@@ -520,7 +610,7 @@ export default function Home() {
                       onClick={handleReset}
                       className="px-5 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-lg text-xs font-semibold transition-all active:scale-[0.98]"
                     >
-                      Réinitialiser
+                      {t('common.reset')}
                     </button>
                   </div>
                 </div>
@@ -543,9 +633,10 @@ export default function Home() {
         </AnimatePresence>
 
         <footer className="text-center text-[var(--text-muted)] text-[10px] font-medium tracking-widest pt-10 pb-4">
-          FACEFUSION ENGINE · DESIGN TOKENS UI
+          {t('page.footerText')}
         </footer>
       </div>
     </main>
   );
 }
+

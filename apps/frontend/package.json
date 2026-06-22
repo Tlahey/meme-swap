@@ -4,7 +4,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "next dev",
+    "dev": "next dev -p ${PORT:-3010}",
     "build": "next build",
     "start": "next start",
     "lint": "eslint ."
@@ -12,6 +12,7 @@
   "dependencies": {
     "@meme-swap/faceswap-core": "workspace:*",
     "@meme-swap/video-processor": "workspace:*",
+    "@meme-swap/i18n": "workspace:*",
     "@phosphor-icons/react": "^2.1.10",
     "motion": "^12.40.0",
     "next": "16.2.9",

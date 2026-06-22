@@ -1,0 +1,41 @@
+{
+  "name": "desktop",
+  "version": "0.0.1",
+  "private": true,
+  "description": "Meme Swap desktop tray runner and automated installer for macOS",
+  "main": "build/main.js",
+  "scripts": {
+    "dev": "tsc && electron .",
+    "build": "tsc && copyfiles -u 1 src/**/*.html src/**/*.png build/",
+    "package": "electron-builder"
+  },
+  "dependencies": {
+    "@meme-swap/faceswap-core": "workspace:*",
+    "@meme-swap/video-processor": "workspace:*"
+  },
+  "devDependencies": {
+    "electron": "^30.0.1",
+    "electron-builder": "^24.13.3",
+    "typescript": "^5.3.0",
+    "copyfiles": "^2.4.1",
+    "@types/node": "^20.10.0"
+  },
+  "build": {
+    "appId": "com.memeswap.desktop",
+    "productName": "Meme Swap",
+    "mac": {
+      "category": "public.app-category.video",
+      "target": ["dmg"],
+      "icon": "assets/icon.icns",
+      "gatekeeperAssess": false,
+      "hardenedRuntime": true
+    },
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "build/**/*",
+      "package.json"
+    ]
+  }
+}

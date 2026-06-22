@@ -7,6 +7,7 @@ import {
 } from '@meme-swap/video-processor';
 import fs from 'node:fs';
 import path from 'node:path';
+import os from 'node:os';
 
 const FaceswapToolSchema = z.object({
   sourceImagePath: z
@@ -24,12 +25,36 @@ const FaceswapToolSchema = z.object({
     .number()
     .default(4)
     .describe('Number of threads for processing'),
+  faceSelectorMode: z
+    .string()
+    .optional()
+    .describe('Face selector mode (reference, many, one)'),
+  faceMaskBlend: z
+    .number()
+    .optional()
+    .describe('Blend ratio for the face mask (0-100)'),
+  faceSwapperModel: z
+    .string()
+    .optional()
+    .describe('Face swapper model to use (e.g. inswapper_128_fp16)'),
+  faceEnhancerModel: z
+    .string()
+    .optional()
+    .describe('Face enhancer model to use (e.g. codeformer)'),
+  lipSyncerModel: z
+    .string()
+    .optional()
+    .describe('Lip syncer model to use'),
+  logLevel: z
+    .enum(['debug', 'info', 'warning', 'error'])
+    .default('info')
+    .describe('Log level (debug, info, warning, error)'),
 });
 
 type FaceswapToolArgs = z.infer<typeof FaceswapToolSchema>;
 
 // Working directory for temporary files
-const PROCESS_DIR = path.join(process.cwd(), '.process');
+const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
 const TEMP_DIR = path.join(PROCESS_DIR, 'temp');
 
 function ensureDirectories(): void {
@@ -39,6 +64,18 @@ function ensureDirectories(): void {
   if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
   }
+}
+
+function cleanupTempDir(): void {
+  if (fs.existsSync(TEMP_DIR)) {
+    try {
+      fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+      console.log('MCP: Temp directory cleared');
+    } catch (error) {
+      console.error('MCP: Failed to clear temp directory:', error);
+    }
+  }
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
 
 function cleanupTempFiles(pattern?: string): void {
@@ -51,7 +88,7 @@ function cleanupTempFiles(pattern?: string): void {
     if (!pattern || file.includes(pattern)) {
       const filePath = path.join(TEMP_DIR, file);
       try {
-        fs.unlinkSync(filePath);
+        fs.rmSync(filePath, { recursive: true, force: true });
         console.log(`Cleaned up temp file: ${filePath}`);
       } catch (error) {
         console.error(`Failed to clean up ${filePath}:`, error);
@@ -97,6 +134,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
 
     // Ensure directories exist
     ensureDirectories();
+    cleanupTempDir();
 
     const {
       sourceImagePath,
@@ -104,6 +142,12 @@ export async function runFaceswapTool(args: unknown): Promise<{
       outputPath,
       executionProviders,
       threadCount,
+      faceSelectorMode,
+      faceMaskBlend,
+      faceSwapperModel,
+      faceEnhancerModel,
+      lipSyncerModel,
+      logLevel,
     } = validatedArgs;
 
     console.log('Starting face swap operation...');
@@ -147,6 +191,12 @@ export async function runFaceswapTool(args: unknown): Promise<{
       outputPath: tempOutputMp4Path,
       executionProviders: executionProviders as ('coreml' | 'cpu' | 'cuda')[],
       threadCount,
+      faceSelectorMode,
+      faceMaskBlend,
+      faceSwapperModel,
+      faceEnhancerModel,
+      lipSyncerModel,
+      logLevel,
     };
 
     console.log('Running FaceFusion...');
@@ -190,7 +240,13 @@ export async function runFaceswapTool(args: unknown): Promise<{
             `Target: ${targetMediaPath}\n` +
             `Output: ${finalOutputPath}\n\n` +
             `Execution providers: ${executionProviders.join(', ')}\n` +
-            `Threads: ${threadCount}`,
+            `Threads: ${threadCount}\n` +
+            `Face Selector Mode: ${faceSelectorMode || 'N/A'}\n` +
+            `Face Mask Blend: ${faceMaskBlend !== undefined ? faceMaskBlend : 'N/A'}\n` +
+            `Face Swapper Model: ${faceSwapperModel || 'N/A'}\n` +
+            `Face Enhancer Model: ${faceEnhancerModel || 'N/A'}\n` +
+            `Lip Syncer Model: ${lipSyncerModel || 'N/A'}\n` +
+            `Log Level: ${logLevel}`,
         },
       ],
     };

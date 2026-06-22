@@ -1,11 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import path from 'node:path';
 import fs from 'node:fs';
+import os from 'node:os';
 import { runFaceSwap, FaceswapOptions } from '@meme-swap/faceswap-core';
 import { gifToMp4, mp4ToGif } from '@meme-swap/video-processor';
 
 // Configuration des chemins
-const PROCESS_DIR = path.join(process.cwd(), '.process');
+const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
 const TEMP_DIR = path.join(PROCESS_DIR, 'temp');
 const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
 
@@ -19,6 +20,21 @@ function ensureDirectories(): void {
   if (!fs.existsSync(RESULTS_DIR)) {
     fs.mkdirSync(RESULTS_DIR, { recursive: true });
   }
+}
+
+/**
+ * Supprime les fichiers temporaires au début de chaque run
+ */
+function cleanupTempDir(): void {
+  if (fs.existsSync(TEMP_DIR)) {
+    try {
+      fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+      console.log('[API] Dossier temporaire nettoyé');
+    } catch (error) {
+      console.error('[API] Erreur de nettoyage du dossier temporaire:', error);
+    }
+  }
+  fs.mkdirSync(TEMP_DIR, { recursive: true });
 }
 
 /**
@@ -56,6 +72,7 @@ export async function POST(request: NextRequest) {
 
   try {
     ensureDirectories();
+    cleanupTempDir();
 
     // Récupérer les fichiers du formulaire
     const formData = await request.formData();
