@@ -1,5 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  output: 'standalone',
   serverExternalPackages: ['@meme-swap/video-processor', '@meme-swap/faceswap-core'],
   experimental: { serverActions: { bodySizeLimit: '50mb' } },
   async rewrites() {

@@ -3,9 +3,20 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 import http from 'node:http';
-import { spawn, ChildProcess } from 'node:child_process';
+import net from 'node:net';
+import { spawn, fork, ChildProcess } from 'node:child_process';
 import { runInstallation } from './installer';
-import { getFaceFusionDir, getWorkspaceRoot } from '@meme-swap/faceswap-core';
+import { getFaceFusionDir } from '@meme-swap/faceswap-core';
+
+// ── Verrou d'instance unique ──────────────────────────────────────────────────
+// Empêche l'ouverture de plusieurs instances de l'application.
+// Si une seconde instance est lancée, on ramène la fenêtre existante au premier plan.
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // Une autre instance tourne déjà : on quitte immédiatement celle-ci.
+  app.quit();
+}
 
 let mainWindow: BrowserWindow | null = null;
 let tray: Tray | null = null;
@@ -13,10 +24,64 @@ let tray: Tray | null = null;
 let mcpProcess: ChildProcess | null = null;
 let frontendProcess: ChildProcess | null = null;
 
-const frontendPort = process.env.MEME_SWAP_PORT || process.env.PORT || '3010';
-const mcpPort = process.env.MCP_PORT || '3001';
+// Ces ports sont résolus dynamiquement au démarrage (voir findFreePort)
+let frontendPort: string = process.env.MEME_SWAP_PORT || process.env.PORT || '3010';
+let mcpPort: string = process.env.MCP_PORT || '10001';
 
-const root = getWorkspaceRoot();
+/**
+ * Teste si un port TCP est libre sur 127.0.0.1.
+ * Résout avec `true` si le port est disponible, `false` s'il est occupé.
+ */
+function isPortFree(port: number): Promise<boolean> {
+  return new Promise((resolve) => {
+    const server = net.createServer();
+    server.unref();
+    server.on('error', () => resolve(false));
+    server.listen({ host: '127.0.0.1', port }, () => {
+      server.close(() => resolve(true));
+    });
+  });
+}
+
+/**
+ * Retourne le premier port libre à partir de `preferred`.
+ * Essaie jusqu'à `preferred + maxTries - 1`.
+ */
+async function findFreePort(preferred: number, maxTries = 20): Promise<number> {
+  for (let i = 0; i < maxTries; i++) {
+    const port = preferred + i;
+    if (await isPortFree(port)) {
+      return port;
+    }
+    // writeToLogFile n'est pas encore disponible ici (défini plus bas),
+    // on utilise console.log comme fallback de log bas niveau.
+    console.log(`[findFreePort] Port ${port} occupé, essai du port ${port + 1}...`);
+  }
+  throw new Error(`Aucun port libre trouvé entre ${preferred} et ${preferred + maxTries - 1}`);
+}
+
+/**
+ * Résout le répertoire racine du projet selon le contexte d'exécution :
+ * - En mode packagé (app .dmg), les resources sont dans `process.resourcesPath`
+ * - En mode développement, on remonte depuis __dirname pour trouver pnpm-workspace.yaml
+ */
+function resolveRoot(): string {
+  // En mode packagé, Electron expose process.resourcesPath
+  if (app.isPackaged) {
+    return process.resourcesPath;
+  }
+  // En mode dev, remonter jusqu'au workspace pnpm
+  let currentDir = __dirname;
+  while (currentDir !== path.parse(currentDir).root) {
+    if (fs.existsSync(path.join(currentDir, 'pnpm-workspace.yaml'))) {
+      return currentDir;
+    }
+    currentDir = path.dirname(currentDir);
+  }
+  return process.cwd();
+}
+
+const root = resolveRoot();
 
 let isQuitting = false;
 
@@ -68,14 +133,18 @@ function sendServerStatus() {
  * Attend que le port spécifié soit actif avant d'exécuter le callback
  */
 function waitForPort(port: number, callback: () => void) {
+  let called = false;
   const interval = setInterval(() => {
     const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
+      if (called) return;
+      called = true;
       clearInterval(interval);
       callback();
     });
     req.on('error', () => {
       // Port non ouvert, on réessaie au prochain tick
     });
+    req.end();
   }, 500);
 }
 
@@ -130,19 +199,62 @@ function createMainWindow() {
 /**
  * Démarre les processus d'arrière-plan (Next.js & MCP) et attend que le port soit prêt
  */
-function startServers() {
+async function startServers() {
   writeToLogFile("\n=== Lancement des serveurs d'arrière-plan ===\n");
   mcpStatus = 'starting';
   frontendStatus = 'starting';
   sendServerStatus();
 
+  // Résolution dynamique des ports pour éviter EADDRINUSE
+  try {
+    const resolvedMcp = await findFreePort(parseInt(mcpPort));
+    if (resolvedMcp !== parseInt(mcpPort)) {
+      writeToLogFile(`⚠️  Port MCP ${mcpPort} occupé → utilisation du port ${resolvedMcp}\n`);
+    }
+    mcpPort = resolvedMcp.toString();
+
+    const resolvedFrontend = await findFreePort(parseInt(frontendPort));
+    if (resolvedFrontend !== parseInt(frontendPort)) {
+      writeToLogFile(`⚠️  Port Frontend ${frontendPort} occupé → utilisation du port ${resolvedFrontend}\n`);
+    }
+    frontendPort = resolvedFrontend.toString();
+  } catch (err) {
+    writeToLogFile(`❌ Impossible de trouver des ports libres : ${err}\n`);
+    mcpStatus = 'error';
+    frontendStatus = 'error';
+    sendServerStatus();
+    return;
+  }
+
+  writeToLogFile(`✅ Ports résolus → MCP: ${mcpPort}, Frontend: ${frontendPort}\n`);
+
+  // En mode packagé ou développement, process.execPath pointe vers le binaire Electron lui-même.
+  // Pour l'utiliser comme runtime Node.js (sans lancer l'UI Electron),
+  // on injecte ELECTRON_RUN_AS_NODE=1 dans l'environnement des processus enfants.
+  const nodeBin = process.execPath;
+  const childEnvBase: Record<string, string> = {
+    ...process.env as Record<string, string>,
+    ELECTRON_RUN_AS_NODE: '1',
+  };
+
   // 1. Démarrer le serveur MCP
   writeToLogFile(`Démarrage du serveur MCP sur le port ${mcpPort}...\n`);
-  const mcpPath = path.join(root, 'apps', 'mcp-server', 'build', 'index.js');
-  mcpProcess = spawn('node', [mcpPath], {
-    cwd: path.join(root, 'apps', 'mcp-server'),
-    env: { ...process.env, PORT: mcpPort }
-  });
+  const mcpPath = app.isPackaged
+    ? path.join(root, 'apps', 'mcp-server', 'bundle', 'index.js')
+    : path.join(root, 'apps', 'mcp-server', 'build', 'index.js');
+  
+  if (app.isPackaged) {
+    mcpProcess = fork(mcpPath, [], {
+      cwd: path.join(root, 'apps', 'mcp-server', 'bundle'),
+      env: { ...childEnvBase, PORT: mcpPort },
+      silent: true
+    });
+  } else {
+    mcpProcess = spawn(nodeBin, [mcpPath], {
+      cwd: path.join(root, 'apps', 'mcp-server'),
+      env: { ...childEnvBase, PORT: mcpPort }
+    });
+  }
 
   mcpProcess.stdout?.on('data', (data) => {
     const text = data.toString();
@@ -167,13 +279,35 @@ function startServers() {
     sendServerStatus();
   });
 
-  // 2. Démarrer le frontend Next.js (sans passer de paramètres conflictuels en CLI)
-  writeToLogFile(`Démarrage du frontend Next.js sur le port ${frontendPort} (pnpm --filter frontend dev)...\n`);
-  frontendProcess = spawn('pnpm', ['--filter', 'frontend', 'dev'], {
-    cwd: root,
-    shell: true,
-    env: { ...process.env, PORT: frontendPort, MCP_PORT: mcpPort }
-  });
+  // 2. Démarrer le frontend Next.js
+  // En mode dev : le `.bin/next` est un script shell — on ne peut pas le passer
+  // directement au binaire Node embarqué d'Electron (qui attend du JS).
+  // On utilise donc `shell: true` + `next dev` en dev, et le binaire Node
+  // embarqué + le vrai fichier .js de next en mode packagé.
+  const frontendDir = path.join(root, 'apps', 'frontend');
+
+  if (app.isPackaged) {
+    // Mode production : next start via le binaire Node embarqué d'Electron.
+    // Dans le build standalone, on lance directement le server.js généré par Next.js.
+    const standaloneServerJs = path.join(root, 'apps', 'frontend', 'standalone', 'apps', 'frontend', 'server.js');
+
+    writeToLogFile(`Démarrage du frontend Next.js sur le port ${frontendPort} (Next.js standalone, packaged)...\n`);
+    writeToLogFile(`  → Next.js JS path: ${standaloneServerJs}\n`);
+    frontendProcess = fork(standaloneServerJs, [], {
+      cwd: path.join(root, 'apps', 'frontend', 'standalone', 'apps', 'frontend'),
+      env: { ...childEnvBase, PORT: frontendPort, MCP_PORT: mcpPort },
+      silent: true
+    });
+  } else {
+    // Mode dev : on utilise le shell système pour exécuter `next dev`
+    // (le script .bin/next est un script bash, pas du JS)
+    writeToLogFile(`Démarrage du frontend Next.js sur le port ${frontendPort} (next dev, shell)...\n`);
+    frontendProcess = spawn('pnpm', ['--filter', 'frontend', 'dev'], {
+      cwd: root,
+      shell: true,
+      env: { ...process.env, PORT: frontendPort, MCP_PORT: mcpPort }
+    });
+  }
 
   frontendProcess.stdout?.on('data', (data) => {
     const text = data.toString();
@@ -257,12 +391,12 @@ function updateTrayMenu(state: 'starting' | 'ready') {
   let statusIndicator = '🟠';
 
   if (state === 'ready') {
-    statusLabel = `Meme Swap : Prêt (Port ${frontendPort})`;
+    statusLabel = `Meme Swap : Prêt (MCP :${mcpPort})`;
     statusIndicator = '🟢';
-    tray.setTitle('Meme Swap');
-  } else {
-    tray.setTitle('Meme Swap...');
   }
+
+  // Ne pas afficher de texte à côté de l'icône dans la barre de menu macOS
+  tray.setTitle('');
 
   const contextMenu = Menu.buildFromTemplate([
     { label: `${statusIndicator} ${statusLabel}`, enabled: false },
@@ -333,8 +467,21 @@ ipcMain.on('quit-app', () => {
   app.quit();
 });
 
+// Ramener la fenêtre existante au premier plan si une seconde instance est lancée
+app.on('second-instance', () => {
+  if (mainWindow) {
+    if (mainWindow.isMinimized()) mainWindow.restore();
+    mainWindow.show();
+    mainWindow.focus();
+  }
+});
+
 // Cycle de vie de l'application Electron
 app.whenReady().then(() => {
+  // Si nous n'avons pas obtenu le verrou, quit() a déjà été appelé plus haut.
+  // On garde un guard ici par sécurité.
+  if (!gotTheLock) return;
+
   // Créer un fichier icône vide temporaire pour éviter une erreur de chargement
   const placeholderPath = path.join(__dirname, 'icon_placeholder.png');
   if (!fs.existsSync(placeholderPath) || fs.statSync(placeholderPath).size === 0) {

@@ -23,6 +23,7 @@
   "build": {
     "appId": "com.memeswap.desktop",
     "productName": "Meme Swap",
+    "asar": true,
     "mac": {
       "category": "public.app-category.video",
       "target": ["dmg"],
@@ -36,6 +37,39 @@
     "files": [
       "build/**/*",
       "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "../../apps/frontend/.next/standalone",
+        "to": "apps/frontend/standalone",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../apps/frontend/.next/static",
+        "to": "apps/frontend/standalone/apps/frontend/.next/static",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../apps/frontend/public",
+        "to": "apps/frontend/standalone/apps/frontend/public",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../apps/mcp-server/bundle",
+        "to": "apps/mcp-server/bundle",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../packages/faceswap-core/dist",
+        "to": "packages/faceswap-core/dist",
+        "filter": ["**/*"]
+      },
+      {
+        "from": "../../packages/video-processor/dist",
+        "to": "packages/video-processor/dist",
+        "filter": ["**/*"]
+      }
     ]
   }
 }
+
