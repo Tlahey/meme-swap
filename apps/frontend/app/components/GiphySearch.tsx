@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { MagnifyingGlassIcon as SearchIcon, SparkleIcon as Sparkle, InfoIcon as Info, GearIcon as Settings } from '@phosphor-icons/react';
+import { MagnifyingGlassIcon as SearchIcon, SparkleIcon as Sparkle, InfoIcon as Info, GearIcon as Settings, CaretLeftIcon as CaretLeft, CaretRightIcon as CaretRight } from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
 import { giphy, GiphyGif } from '@meme-swap/api-client';
 
@@ -29,6 +29,12 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
   const [gifs, setGifs] = useState<GiphyGif[]>([]);
   const [loading, setLoading] = useState(false);
   const [isFallbackMode, setIsFallbackMode] = useState(false);
+  const [offset, setOffset] = useState(0);
+  const [totalCount, setTotalCount] = useState(0);
+
+  const showPagination = totalCount > 12;
+  const currentPage = Math.floor(offset / 12) + 1;
+  const totalPages = Math.ceil(totalCount / 12);
 
   // Check Giphy key configuration status on mount/update
   const checkConfig = async () => {
@@ -67,11 +73,13 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
     }
   };
 
-  const fetchTrending = async () => {
+  const fetchTrending = async (newOffset = 0) => {
     setLoading(true);
     try {
-      const res = await giphy.trending({ limit: 12 });
+      const res = await giphy.trending({ limit: 12, offset: newOffset });
       setGifs(res.data || []);
+      setTotalCount(res.pagination?.total_count || 0);
+      setOffset(newOffset);
     } catch (e) {
       console.error('Error fetching trending GIFs:', e);
     } finally {
@@ -81,19 +89,21 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
 
   useEffect(() => {
     checkConfig();
-    fetchTrending();
+    fetchTrending(0);
   }, []);
 
-  const handleSearch = async (searchQuery: string) => {
+  const handleSearch = async (searchQuery: string, newOffset = 0) => {
     const q = searchQuery.trim();
     if (!q) {
-      fetchTrending();
+      fetchTrending(newOffset);
       return;
     }
     setLoading(true);
     try {
-      const res = await giphy.search({ query: q, limit: 12 });
+      const res = await giphy.search({ query: q, limit: 12, offset: newOffset });
       setGifs(res.data || []);
+      setTotalCount(res.pagination?.total_count || 0);
+      setOffset(newOffset);
     } catch (e) {
       console.error('Error searching GIFs:', e);
     } finally {
@@ -103,12 +113,24 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    handleSearch(query);
+    handleSearch(query, 0);
   };
 
   const handlePillClick = (pillQuery: string) => {
     setQuery(pillQuery);
-    handleSearch(pillQuery);
+    handleSearch(pillQuery, 0);
+  };
+
+  const handlePrevPage = () => {
+    const nextOffset = Math.max(0, offset - 12);
+    handleSearch(query, nextOffset);
+  };
+
+  const handleNextPage = () => {
+    const nextOffset = offset + 12;
+    if (nextOffset < totalCount) {
+      handleSearch(query, nextOffset);
+    }
   };
 
   const handleDragStart = (e: React.DragEvent, gif: GiphyGif) => {
@@ -199,44 +221,74 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
             <p>{t('giphySearch.noResults')}</p>
           </div>
         ) : (
-          <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4">
-            {gifs.map((gif) => {
-              const isSelected = selectedGifId === gif.id;
-              return (
-                <div
-                  key={gif.id}
-                  draggable
-                  onDragStart={(e) => handleDragStart(e, gif)}
-                  onClick={() => onSelect(gif)}
-                  className={`break-inside-avoid mb-3 group relative rounded-xl overflow-hidden cursor-pointer border transition-all duration-300 ${
-                    isSelected
-                      ? 'border-[var(--emerald-main)] shadow-[0_0_12px_var(--emerald-bg)] scale-[0.98]'
-                      : 'border-[var(--border-color)] hover:border-[var(--emerald-main)]/50 bg-[var(--bg-secondary)] hover:shadow-md hover:scale-[1.01]'
-                  }`}
-                >
-                  {/* eslint-disable-next-line @next/next/no-img-element */}
-                  <img
-                    src={gif.images.fixed_height.url}
-                    alt={gif.title}
-                    className="w-full h-auto select-none pointer-events-none group-hover:scale-105 transition-transform duration-500"
-                    loading="lazy"
-                  />
-                  <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2 pointer-events-none">
-                    <span className="text-[9px] text-white font-medium truncate w-full">
-                      {gif.title.length > 20 ? `${gif.title.substring(0, 18)}...` : gif.title}
-                    </span>
-                  </div>
-                  {isSelected && (
-                    <div className="absolute inset-0 bg-[var(--emerald-bg)]/20 flex items-center justify-center pointer-events-none">
-                      <div className="px-2 py-0.5 bg-[var(--emerald-main)] text-white text-[9px] font-bold rounded-md shadow-sm">
-                        Sélectionné
-                      </div>
+          <>
+            <div className="columns-2 sm:columns-3 md:columns-4 lg:columns-5 gap-4">
+              {gifs.map((gif) => {
+                const isSelected = selectedGifId === gif.id;
+                return (
+                  <div
+                    key={gif.id}
+                    draggable
+                    onDragStart={(e) => handleDragStart(e, gif)}
+                    onClick={() => onSelect(gif)}
+                    className={`break-inside-avoid mb-3 group relative rounded-xl overflow-hidden cursor-pointer border transition-all duration-300 ${
+                      isSelected
+                        ? 'border-[var(--emerald-main)] shadow-[0_0_12px_var(--emerald-bg)] scale-[0.98]'
+                        : 'border-[var(--border-color)] hover:border-[var(--emerald-main)]/50 bg-[var(--bg-secondary)] hover:shadow-md hover:scale-[1.01]'
+                    }`}
+                  >
+                    {/* eslint-disable-next-line @next/next/no-img-element */}
+                    <img
+                      src={gif.images.fixed_height.url}
+                      alt={gif.title}
+                      className="w-full h-auto select-none pointer-events-none group-hover:scale-105 transition-transform duration-500"
+                      loading="lazy"
+                    />
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity flex items-end p-2 pointer-events-none">
+                      <span className="text-[9px] text-white font-medium truncate w-full">
+                        {gif.title.length > 20 ? `${gif.title.substring(0, 18)}...` : gif.title}
+                      </span>
                     </div>
-                  )}
-                </div>
-              );
-            })}
-          </div>
+                    {isSelected && (
+                      <div className="absolute inset-0 bg-[var(--emerald-bg)]/20 flex items-center justify-center pointer-events-none">
+                        <div className="px-2 py-0.5 bg-[var(--emerald-main)] text-white text-[9px] font-bold rounded-md shadow-sm">
+                          Sélectionné
+                        </div>
+                      </div>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+
+            {showPagination && (
+              <div className="flex items-center justify-center gap-4 mt-6 text-xs text-[var(--text-secondary)]">
+                <button
+                  type="button"
+                  onClick={handlePrevPage}
+                  disabled={offset === 0 || loading}
+                  className="p-2 bg-[var(--bg-tertiary)] hover:bg-[var(--emerald-main)] text-[var(--text-primary)] hover:text-white disabled:opacity-50 disabled:pointer-events-none rounded-xl font-semibold shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center border border-[var(--border-color)] hover:border-[var(--emerald-main)]"
+                  aria-label={t('giphySearch.prevPage')}
+                >
+                  <CaretLeft size={16} />
+                </button>
+
+                <span className="font-medium text-[var(--text-muted)] select-none">
+                  Page <strong className="text-[var(--text-primary)] font-bold">{currentPage}</strong> / <strong className="text-[var(--text-primary)] font-bold">{totalPages}</strong>
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleNextPage}
+                  disabled={offset + 12 >= totalCount || loading}
+                  className="p-2 bg-[var(--bg-tertiary)] hover:bg-[var(--emerald-main)] text-[var(--text-primary)] hover:text-white disabled:opacity-50 disabled:pointer-events-none rounded-xl font-semibold shadow-xs hover:shadow transition-all duration-200 cursor-pointer active:scale-95 flex items-center justify-center border border-[var(--border-color)] hover:border-[var(--emerald-main)]"
+                  aria-label={t('giphySearch.nextPage')}
+                >
+                  <CaretRight size={16} />
+                </button>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

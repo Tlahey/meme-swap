@@ -171,5 +171,7 @@ export const en = {
     loadingGif: "Downloading selected GIF...",
     fetchingError: "Failed to download Giphy GIF. Please check your internet connection.",
     selectedBadge: "Target Media",
+    prevPage: "Previous",
+    nextPage: "Next",
   },
 };
