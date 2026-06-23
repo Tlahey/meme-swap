@@ -20,14 +20,16 @@ export interface Step {
 interface ProcessStepsProps {
   steps: Step[];
   currentStepIndex: number;
+  faceswapProgress?: { step: string; percent: number } | null;
 }
 
-export function ProcessSteps({ steps, currentStepIndex }: ProcessStepsProps) {
+export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: ProcessStepsProps) {
   const shouldReduceMotion = useReducedMotion();
   const { t } = useTranslation();
 
+  const inferencePercent = (currentStepIndex === 2 && faceswapProgress) ? faceswapProgress.percent : 0;
   const progressPercent = Math.min(
-    Math.round((currentStepIndex / steps.length) * 100),
+    Math.round(((currentStepIndex + (inferencePercent / 100)) / steps.length) * 100),
     100,
   );
 
@@ -140,8 +142,26 @@ export function ProcessSteps({ steps, currentStepIndex }: ProcessStepsProps) {
                             : 'text-[var(--text-muted)]'
                     }`}
                   >
-                    {step.description}
+                    {idx === 2 && faceswapProgress && isRunning ? (
+                      <span className="font-semibold text-[var(--emerald-main)]">
+                        {t(`process.progress.${faceswapProgress.step}`)} : {faceswapProgress.percent}%
+                      </span>
+                    ) : (
+                      step.description
+                    )}
                   </p>
+                  {idx === 2 && faceswapProgress && isRunning && (
+                    <div className="mt-2 w-full max-w-md">
+                      <div className="w-full h-1.5 bg-[var(--bg-tertiary)] border border-[var(--border-color)] rounded-full overflow-hidden">
+                        <motion.div
+                          className="h-full bg-[var(--emerald-main)]"
+                          initial={{ width: 0 }}
+                          animate={{ width: `${faceswapProgress.percent}%` }}
+                          transition={{ duration: 0.1 }}
+                        />
+                      </div>
+                    </div>
+                  )}
                 </div>
               </div>
             );

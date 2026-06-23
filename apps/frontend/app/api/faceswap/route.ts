@@ -23,9 +23,9 @@ function ensureDirectories(): void {
 }
 
 /**
- * Supprime les fichiers temporaires au début de chaque run
+ * Supprime les fichiers temporaires et les résultats précédents au début de chaque run
  */
-function cleanupTempDir(): void {
+function cleanupProcessDirs(): void {
   if (fs.existsSync(TEMP_DIR)) {
     try {
       fs.rmSync(TEMP_DIR, { recursive: true, force: true });
@@ -35,6 +35,16 @@ function cleanupTempDir(): void {
     }
   }
   fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+  if (fs.existsSync(RESULTS_DIR)) {
+    try {
+      fs.rmSync(RESULTS_DIR, { recursive: true, force: true });
+      console.log('[API] Dossier de résultats nettoyé');
+    } catch (error) {
+      console.error('[API] Erreur de nettoyage du dossier de résultats:', error);
+    }
+  }
+  fs.mkdirSync(RESULTS_DIR, { recursive: true });
 }
 
 /**
@@ -72,14 +82,14 @@ export async function POST(request: NextRequest) {
 
   try {
     ensureDirectories();
-    cleanupTempDir();
+    cleanupProcessDirs();
 
     // Récupérer les fichiers du formulaire
     const formData = await request.formData();
-    const sourceFile = formData.get('source') as File | null;
+    const sourceEntry = formData.get('source');
     const targetFile = formData.get('target') as File | null;
 
-    if (!sourceFile || !targetFile) {
+    if (!sourceEntry || !targetFile) {
       return NextResponse.json(
         { success: false, error: 'Fichiers manquants dans la requête' },
         { status: 400 },
@@ -100,9 +110,26 @@ export async function POST(request: NextRequest) {
     const outputMp4Path = path.join(RESULTS_DIR, outputMp4Name);
     const outputGifPath = path.join(RESULTS_DIR, outputGifName);
 
-    // Sauvegarder les fichiers uploadés
-    const sourceBuffer = await sourceFile.arrayBuffer();
-    fs.writeFileSync(sourcePath, Buffer.from(sourceBuffer));
+    // Sauvegarder le fichier source ou le recuperer de l'historique
+    if (typeof sourceEntry === 'string' && sourceEntry.startsWith('history:')) {
+      const historyFilename = sourceEntry.replace('history:', '');
+      const historyFilePath = path.join(os.homedir(), '.meme-swap', 'source-history', historyFilename);
+      if (!fs.existsSync(historyFilePath)) {
+        return NextResponse.json(
+          { success: false, error: `Le visage de l'historique ${historyFilename} n'existe pas` },
+          { status: 400 },
+        );
+      }
+      fs.copyFileSync(historyFilePath, sourcePath);
+    } else if (sourceEntry instanceof File) {
+      const sourceBuffer = await sourceEntry.arrayBuffer();
+      fs.writeFileSync(sourcePath, Buffer.from(sourceBuffer));
+    } else {
+      return NextResponse.json(
+        { success: false, error: 'Format du visage source invalide' },
+        { status: 400 },
+      );
+    }
 
     const targetBuffer = await targetFile.arrayBuffer();
     fs.writeFileSync(targetPath, Buffer.from(targetBuffer));
@@ -178,6 +205,15 @@ export async function POST(request: NextRequest) {
       (formData.get('faceSwapperModel') as string | null) || undefined;
     const faceEnhancerModel =
       (formData.get('faceEnhancerModel') as string | null) || undefined;
+    
+    const rawFaceEnhancerBlend = formData.get('faceEnhancerBlend') as string | null;
+    const faceEnhancerBlend = rawFaceEnhancerBlend
+      ? parseInt(rawFaceEnhancerBlend, 10)
+      : undefined;
+
+    const frameEnhancerModel =
+      (formData.get('frameEnhancerModel') as string | null) || undefined;
+
     const lipSyncerModel =
       (formData.get('lipSyncerModel') as string | null) || undefined;
 
@@ -195,6 +231,8 @@ export async function POST(request: NextRequest) {
       faceMaskBlend,
       faceSwapperModel,
       faceEnhancerModel,
+      faceEnhancerBlend,
+      frameEnhancerModel,
       lipSyncerModel,
     };
 

@@ -37,6 +37,7 @@ export function UploadZone({
   isProcessing = false,
 }: UploadZoneProps) {
   const [isDragActive, setIsDragActive] = useState(false);
+  const [isDownloading, setIsDownloading] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const shouldReduceMotion = useReducedMotion();
   const { t } = useTranslation();
@@ -51,13 +52,54 @@ export function UploadZone({
     }
   };
 
-  const handleDrop = (e: React.DragEvent) => {
+  const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     e.stopPropagation();
     setIsDragActive(false);
 
-    if (isProcessing) return; // Block drops during processing
+    if (isProcessing || isDownloading) return; // Block drops during processing/downloading
 
+    // 1. Check if dropped from GiphySearch (JSON payload)
+    const jsonData = e.dataTransfer.getData('application/json');
+    if (jsonData && type === 'video') {
+      try {
+        const { gifUrl, title } = JSON.parse(jsonData);
+        if (gifUrl) {
+          setIsDownloading(true);
+          const response = await fetch(gifUrl);
+          if (!response.ok) throw new Error('Fetch failed');
+          const blob = await response.blob();
+          const cleanTitle = title ? title.replace(/[^a-zA-Z0-9]/g, '_') : 'giphy';
+          const file = new File([blob], `${cleanTitle}.gif`, { type: 'image/gif' });
+          onChange(file);
+          return;
+        }
+      } catch (err) {
+        console.error('Failed to resolve dropped Giphy GIF JSON:', err);
+      } finally {
+        setIsDownloading(false);
+      }
+    }
+
+    // 2. Check if dropped a direct URL
+    const textUrl = e.dataTransfer.getData('text/plain');
+    if (textUrl && textUrl.startsWith('http') && type === 'video') {
+      try {
+        setIsDownloading(true);
+        const response = await fetch(textUrl);
+        if (!response.ok) throw new Error('Fetch failed');
+        const blob = await response.blob();
+        const file = new File([blob], 'dropped_giphy.gif', { type: 'image/gif' });
+        onChange(file);
+        return;
+      } catch (err) {
+        console.error('Failed to resolve dropped Giphy GIF URL:', err);
+      } finally {
+        setIsDownloading(false);
+      }
+    }
+
+    // 3. Normal local file drop
     const droppedFile = e.dataTransfer.files?.[0];
     if (droppedFile) {
       // Validate basic format before assigning
@@ -82,7 +124,7 @@ export function UploadZone({
   };
 
   const onButtonClick = () => {
-    if (isProcessing) return;
+    if (isProcessing || isDownloading) return;
     inputRef.current?.click();
   };
 
@@ -134,7 +176,7 @@ export function UploadZone({
         className={`relative flex flex-col items-center justify-center border border-dashed rounded-xl overflow-hidden transition-colors ${
           file
             ? 'cursor-default p-3'
-            : isProcessing
+            : (isProcessing || isDownloading)
             ? 'cursor-not-allowed opacity-50 p-5 min-h-[160px]'
             : 'hover:border-[var(--emerald-main)]/50 hover:bg-[var(--bg-tertiary)]/30 group cursor-pointer p-5 min-h-[160px]'
         } shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]`}
@@ -149,24 +191,35 @@ export function UploadZone({
               transition={{ duration: shouldReduceMotion ? 0 : 0.3, ease: [0.16, 1, 0.3, 1] }}
               className="flex flex-col items-center gap-2.5"
             >
-              <div className="p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] text-[var(--text-muted)] group-hover:text-[var(--emerald-text)] group-hover:border-[var(--emerald-main)]/30 group-hover:shadow-[0_0_15px_var(--emerald-bg)] transition-all duration-300">
-                {type === 'image' ? (
-                  <ImageIconComponent size={24} weight="regular" />
-                ) : (
-                  <VideoCamera size={24} weight="regular" />
-                )}
-              </div>
-              <div className="text-center">
-                <p className="text-sm text-[var(--text-secondary)]">
-                  {t('upload.dragDrop')}{' '}
-                  <span className="text-[var(--emerald-text)] font-medium underline underline-offset-4 decoration-[var(--emerald-main)]/40 group-hover:decoration-[var(--emerald-main)]">
-                    {t('upload.browse')}
-                  </span>
-                </p>
-                <p className="text-xs text-[var(--text-muted)] mt-1 max-w-[220px]">
-                  {description}
-                </p>
-              </div>
+              {isDownloading ? (
+                <div className="flex flex-col items-center gap-2 text-[var(--emerald-text)] animate-pulse">
+                  <div className="p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--emerald-main)]/30 text-[var(--emerald-main)] shadow-[0_0_15px_var(--emerald-bg)]">
+                    <VideoCamera size={24} className="animate-bounce" />
+                  </div>
+                  <p className="text-xs font-semibold">{t('giphySearch.loadingGif') || 'Téléchargement...'}</p>
+                </div>
+              ) : (
+                <>
+                  <div className="p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--border-color)] text-[var(--text-muted)] group-hover:text-[var(--emerald-text)] group-hover:border-[var(--emerald-main)]/30 group-hover:shadow-[0_0_15px_var(--emerald-bg)] transition-all duration-300">
+                    {type === 'image' ? (
+                      <ImageIconComponent size={24} weight="regular" />
+                    ) : (
+                      <VideoCamera size={24} weight="regular" />
+                    )}
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-[var(--text-secondary)]">
+                      {t('upload.dragDrop')}{' '}
+                      <span className="text-[var(--emerald-text)] font-medium underline underline-offset-4 decoration-[var(--emerald-main)]/40 group-hover:decoration-[var(--emerald-main)]">
+                        {t('upload.browse')}
+                      </span>
+                    </p>
+                    <p className="text-xs text-[var(--text-muted)] mt-1 max-w-[220px]">
+                      {description}
+                    </p>
+                  </div>
+                </>
+              )}
             </motion.div>
           ) : (
             <motion.div

@@ -13,12 +13,15 @@ import {
   ArrowsLeftRightIcon as ArrowsLeftRight,
   MoonIcon as Moon,
   SunIcon as Sun,
+  GearIcon as Gear,
 } from '@phosphor-icons/react';
 import { UploadZone } from './components/UploadZone';
 import { ProcessSteps, Step } from './components/ProcessSteps';
 import { ResultDisplay } from './components/ResultDisplay';
 import { ModelSettings, ExecutionProvider, FaceSelectorMode, LogLevel } from './components/ModelSettings';
 import { McpSettings } from './components/McpSettings';
+import { SettingsModal } from './components/SettingsModal';
+import { GiphySearch } from './components/GiphySearch';
 import { I18nProvider, useTranslation } from '@meme-swap/i18n';
 
 interface FaceswapResult {
@@ -44,6 +47,105 @@ function HomeContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<FaceswapResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+  const [faceswapProgress, setFaceswapProgress] = useState<{ step: string; percent: number } | null>(null);
+
+  // States for source face history
+  const [historyList, setHistoryList] = useState<{ filename: string; url: string; timestamp: number }[]>([]);
+  const [selectedHistoryFilename, setSelectedHistoryFilename] = useState<string | null>(null);
+  const [isSavingHistory, setIsSavingHistory] = useState<boolean>(false);
+
+  const loadHistory = async () => {
+    if (typeof window === 'undefined') return;
+
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI && typeof electronAPI.getSourceHistory === 'function') {
+      try {
+        const res = await electronAPI.getSourceHistory();
+        if (res.success && res.history) {
+          setHistoryList(res.history);
+        }
+      } catch (e) {
+        console.error('Failed to load history from Electron', e);
+      }
+      return;
+    }
+
+    try {
+      const res = await fetch('/api/source-history');
+      if (res.ok) {
+        const data = await res.json();
+        if (data.success && data.history) {
+          setHistoryList(data.history);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to load history from Web API', e);
+    }
+  };
+
+  // Giphy states
+  const [isGiphyConfigured, setIsGiphyConfigured] = useState<boolean>(false);
+  const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
+  const [giphySearchTab, setGiphySearchTab] = useState<'search' | 'upload'>('search');
+  const [isGiphyLoading, setIsGiphyLoading] = useState<boolean>(false);
+
+  const checkGiphyConfiguration = async () => {
+    if (typeof window === 'undefined') return;
+
+    // Check localStorage
+    const localKey = window.localStorage.getItem('giphy_api_key');
+    if (localKey && localKey.trim().length > 0) {
+      setIsGiphyConfigured(true);
+      return;
+    }
+
+    // Check Electron IPC
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI && typeof electronAPI.isGiphyConfigured === 'function') {
+      try {
+        const configured = await electronAPI.isGiphyConfigured();
+        setIsGiphyConfigured(configured);
+        return;
+      } catch (e) {
+        setIsGiphyConfigured(false);
+      }
+    }
+
+    // Check Web API route
+    try {
+      const res = await fetch('/api/giphy/config');
+      if (res.ok) {
+        const data = await res.json();
+        setIsGiphyConfigured(data.configured);
+      } else {
+        setIsGiphyConfigured(false);
+      }
+    } catch (e) {
+      setIsGiphyConfigured(false);
+    }
+  };
+
+  useEffect(() => {
+    checkGiphyConfiguration();
+    loadHistory();
+  }, []);
+
+  const handleSelectGiphy = async (gif: any) => {
+    const gifUrl = gif.images.original.url;
+    setIsGiphyLoading(true);
+    try {
+      const response = await fetch(gifUrl);
+      if (!response.ok) throw new Error('Fetch failed');
+      const blob = await response.blob();
+      const cleanTitle = gif.title ? gif.title.replace(/[^a-zA-Z0-9]/g, '_') : 'giphy';
+      const file = new File([blob], `${cleanTitle}.gif`, { type: 'image/gif' });
+      handleTargetChange(file);
+    } catch (e) {
+      alert(t('giphySearch.fetchingError') || 'Failed to download selected GIF.');
+    } finally {
+      setIsGiphyLoading(false);
+    }
+  };
 
   // Model parameters state
   const [executionProviders, setExecutionProviders] = useState<ExecutionProvider[]>(['coreml', 'cpu']);
@@ -52,9 +154,12 @@ function HomeContent() {
   const [logLevel, setLogLevel] = useState<LogLevel>('info');
 
   // Strict FaceFusion options
+  const [preset, setPreset] = useState<'low' | 'medium' | 'high' | 'custom'>('medium');
   const [faceMaskBlend, setFaceMaskBlend] = useState<number>(80);
   const [faceSwapperModel, setFaceSwapperModel] = useState<string | undefined>('inswapper_128_fp16');
   const [faceEnhancerModel, setFaceEnhancerModel] = useState<string | undefined>('codeformer');
+  const [faceEnhancerBlend, setFaceEnhancerBlend] = useState<number>(80);
+  const [frameEnhancerModel, setFrameEnhancerModel] = useState<string | undefined>(undefined);
 
   // Stepper state
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -106,6 +211,35 @@ function HomeContent() {
     return () => clearInterval(interval);
   }, []);
 
+  // Listen for progress from Electron IPC
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const electronAPI = (window as any).electronAPI;
+    if (electronAPI && typeof electronAPI.onFaceswapProgress === 'function') {
+      const unsubscribe = electronAPI.onFaceswapProgress((event: any, progress: { step: string; percent: number }) => {
+        // Clear simulation interval since we are getting real progress
+        if (simulationIntervalRef.current) {
+          clearTimeout(simulationIntervalRef.current);
+          simulationIntervalRef.current = null;
+        }
+
+        // Set stepper to step 2 (inference)
+        setCurrentStepIndex(2);
+        setStepStatuses((prev) => {
+          const next = [...prev];
+          next[0] = 'completed';
+          next[1] = 'completed';
+          next[2] = 'running';
+          next[3] = 'idle';
+          return next;
+        });
+
+        setFaceswapProgress(progress);
+      });
+      return unsubscribe;
+    }
+  }, []);
+
   // Refs for scrolling
   const processStepsRef = useRef<HTMLDivElement>(null);
   const resultDisplayRef = useRef<HTMLDivElement>(null);
@@ -123,11 +257,78 @@ function HomeContent() {
     setIsDarkMode((prev) => !prev);
   };
 
-  const handleSourceChange = (file: File) => {
-    setSourceImage(file);
+  const handleSourceChange = async (file: File) => {
     setResult(null);
-    if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl);
-    setSourcePreviewUrl(URL.createObjectURL(file));
+    setIsSavingHistory(true);
+    
+    // Show local preview immediately using blob URL
+    const tempBlobUrl = URL.createObjectURL(file);
+    setSourcePreviewUrl(tempBlobUrl);
+
+    try {
+      const electronAPI = (window as any).electronAPI;
+      if (electronAPI && typeof electronAPI.saveSourceFace === 'function') {
+        const path = (file as any).path;
+        let saveResult;
+        if (path) {
+          saveResult = await electronAPI.saveSourceFace({ path, name: file.name });
+        } else {
+          const buffer = new Uint8Array(await file.arrayBuffer());
+          saveResult = await electronAPI.saveSourceFace({ data: buffer, name: file.name });
+        }
+
+        if (saveResult.success) {
+          setHistoryList(saveResult.history);
+          setSelectedHistoryFilename(saveResult.savedFilename);
+          setSourceImage(null);
+          // Revoke temporary blob URL and use persistent history URL
+          URL.revokeObjectURL(tempBlobUrl);
+          setSourcePreviewUrl(`/api/source-history/${saveResult.savedFilename}`);
+        } else {
+          setSourceImage(file);
+          setSelectedHistoryFilename(null);
+        }
+      } else {
+        const formData = new FormData();
+        formData.append('file', file);
+        const res = await fetch('/api/source-history', {
+          method: 'POST',
+          body: formData
+        });
+        if (res.ok) {
+          const data = await res.json();
+          if (data.success) {
+            setHistoryList(data.history);
+            setSelectedHistoryFilename(data.savedFilename);
+            setSourceImage(null);
+            URL.revokeObjectURL(tempBlobUrl);
+            setSourcePreviewUrl(`/api/source-history/${data.savedFilename}`);
+          } else {
+            setSourceImage(file);
+            setSelectedHistoryFilename(null);
+          }
+        } else {
+          setSourceImage(file);
+          setSelectedHistoryFilename(null);
+        }
+      }
+    } catch (e) {
+      console.error('Failed to save source image to history:', e);
+      setSourceImage(file);
+      setSelectedHistoryFilename(null);
+    } finally {
+      setIsSavingHistory(false);
+    }
+  };
+
+  const handleSelectFromHistory = (filename: string) => {
+    setSelectedHistoryFilename(filename);
+    setSourceImage(null);
+    setResult(null);
+    if (sourcePreviewUrl && sourcePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(sourcePreviewUrl);
+    }
+    setSourcePreviewUrl(`/api/source-history/${filename}`);
   };
 
   const handleTargetChange = (file: File) => {
@@ -164,8 +365,13 @@ function HomeContent() {
 
   const handleSourceRemove = () => {
     setSourceImage(null);
+    setSelectedHistoryFilename(null);
     setResult(null);
-    if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl);
+    if (sourcePreviewUrl) {
+      if (sourcePreviewUrl.startsWith('blob:')) {
+        URL.revokeObjectURL(sourcePreviewUrl);
+      }
+    }
     setSourcePreviewUrl(null);
   };
 
@@ -279,10 +485,11 @@ function HomeContent() {
   };
 
   const handleSubmit = async () => {
-    if (!sourceImage || !targetGif) return;
+    if ((!sourceImage && !selectedHistoryFilename) || !targetGif) return;
 
     setIsProcessing(true);
     setResult(null);
+    setFaceswapProgress(null);
     startSimulation();
 
     // Scroll to progress
@@ -294,17 +501,25 @@ function HomeContent() {
       let data;
       const electronAPI = (window as any).electronAPI;
 
+      let sourceData: any;
+      let sourceName = '';
+      if (selectedHistoryFilename) {
+        sourceData = `history:${selectedHistoryFilename}`;
+        sourceName = selectedHistoryFilename;
+      } else if (sourceImage) {
+        const sourcePath = (sourceImage as any).path;
+        sourceData = sourcePath ? sourcePath : new Uint8Array(await sourceImage.arrayBuffer());
+        sourceName = sourceImage.name;
+      }
+
       if (electronAPI) {
         // En mode desktop Electron, on passe par l'IPC
-        const sourcePath = (sourceImage as any).path;
-        const sourceData = sourcePath ? sourcePath : new Uint8Array(await sourceImage.arrayBuffer());
-
         const targetPath = (targetGif as any).path;
         const targetData = targetPath ? targetPath : new Uint8Array(await targetGif.arrayBuffer());
 
         data = await electronAPI.runFaceswap({
           source: sourceData,
-          sourceName: sourceImage.name,
+          sourceName,
           target: targetData,
           targetName: targetGif.name,
           executionProviders,
@@ -314,11 +529,17 @@ function HomeContent() {
           faceMaskBlend,
           faceSwapperModel,
           faceEnhancerModel,
+          faceEnhancerBlend,
+          frameEnhancerModel,
         });
       } else {
         // En mode web standard
         const formData = new FormData();
-        formData.append('source', sourceImage);
+        if (selectedHistoryFilename) {
+          formData.append('source', `history:${selectedHistoryFilename}`);
+        } else if (sourceImage) {
+          formData.append('source', sourceImage);
+        }
         formData.append('target', targetGif);
         formData.append('executionProviders', executionProviders.join(','));
         formData.append('faceSelectorMode', faceSelectorMode);
@@ -327,6 +548,8 @@ function HomeContent() {
         formData.append('faceMaskBlend', faceMaskBlend.toString());
         if (faceSwapperModel) formData.append('faceSwapperModel', faceSwapperModel);
         if (faceEnhancerModel) formData.append('faceEnhancerModel', faceEnhancerModel);
+        if (faceEnhancerBlend !== undefined) formData.append('faceEnhancerBlend', faceEnhancerBlend.toString());
+        if (frameEnhancerModel) formData.append('frameEnhancerModel', frameEnhancerModel);
 
         const response = await fetch('/api/faceswap', {
           method: 'POST',
@@ -370,15 +593,26 @@ function HomeContent() {
 
   const handleReset = () => {
     setSourceImage(null);
+    setSelectedHistoryFilename(null);
     setTargetGif(null);
     setResult(null);
     setPreviewUrl(null);
-    if (sourcePreviewUrl) URL.revokeObjectURL(sourcePreviewUrl);
+    setFaceswapProgress(null);
+    if (sourcePreviewUrl && sourcePreviewUrl.startsWith('blob:')) {
+      URL.revokeObjectURL(sourcePreviewUrl);
+    }
     if (targetPreviewUrl) URL.revokeObjectURL(targetPreviewUrl);
     setSourcePreviewUrl(null);
     setTargetPreviewUrl(null);
     setCurrentStepIndex(0);
     setStepStatuses(['idle', 'idle', 'idle', 'idle']);
+    // Reset quality parameters
+    setPreset('medium');
+    setFaceSwapperModel('inswapper_128_fp16');
+    setFaceEnhancerModel('codeformer');
+    setFaceMaskBlend(80);
+    setFaceEnhancerBlend(80);
+    setFrameEnhancerModel(undefined);
     // Scroll back top
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
@@ -411,7 +645,7 @@ function HomeContent() {
       
       {/* Header Bar */}
       <div className="w-full h-16 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-50">
-        <div className="max-w-5xl w-full h-full mx-auto px-4 md:px-8 flex items-center justify-between">
+        <div className="max-w-[1150px] w-full h-full mx-auto px-4 md:px-8 flex items-center justify-between">
           <div className="flex items-center gap-2">
             <div className="p-1.5 bg-[var(--emerald-main)] rounded-md text-white shadow-sm">
               <Lightning size={16} weight="fill" />
@@ -447,16 +681,25 @@ function HomeContent() {
             {/* Theme Toggle */}
             <button
               onClick={toggleTheme}
-              className="p-2 rounded-full hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-secondary)]"
+              className="p-2 rounded-full hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-secondary)] cursor-pointer"
               aria-label="Toggle Theme"
             >
               {isDarkMode ? <Sun size={20} /> : <Moon size={20} />}
+            </button>
+
+            {/* Gear Icon Settings Button */}
+            <button
+              onClick={() => setIsSettingsOpen(true)}
+              className="p-2 rounded-full hover:bg-[var(--bg-tertiary)] transition-colors text-[var(--text-secondary)] cursor-pointer"
+              aria-label="Open Settings"
+            >
+              <Gear size={20} />
             </button>
           </div>
         </div>
       </div>
 
-      <div className="max-w-5xl w-full mx-auto flex-1 flex flex-col gap-10 px-4 md:px-8 py-10">
+      <div className="max-w-[1150px] w-full mx-auto flex-1 flex flex-col gap-8 px-4 md:px-8 py-10">
         
         {/* Title Area */}
         <div className="text-center space-y-4 max-w-2xl mx-auto">
@@ -481,134 +724,401 @@ function HomeContent() {
           </motion.p>
         </div>
 
-        {/* Workspace Layout */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 items-start">
-          
-          {/* Left Column: Uploaders */}
-          <div className="space-y-6">
-            <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl p-6 space-y-6 shadow-sm">
-              <UploadZone
-                id="source-upload"
-                label="Visage source"
-                accept="image/*"
-                file={sourceImage}
-                previewUrl={sourcePreviewUrl}
-                onChange={handleSourceChange}
-                onRemove={handleSourceRemove}
-                description="Image claire, de face (JPG, PNG)"
-                type="image"
-                isProcessing={isProcessing}
-              />
+        {/* Tab Header (Generator vs MCP) */}
+        <div className="flex p-1 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl max-w-xs mx-auto w-full shadow-sm">
+          <button
+            onClick={() => setActiveTab('generation')}
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
+              activeTab === 'generation'
+                ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+            }`}
+          >
+            {t('page.genSettings') || 'Générateur'}
+          </button>
+          <button
+            onClick={() => setActiveTab('mcp')}
+            className={`flex-1 py-1.5 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
+              activeTab === 'mcp'
+                ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+            }`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${isMcpActive ? 'bg-[var(--emerald-main)] animate-pulse' : 'bg-rose-500'}`} />
+            {t('page.mcpServer') || 'Serveur MCP'}
+          </button>
+        </div>
 
-              <div className="border-t border-[var(--border-subtle)]" />
+        {activeTab === 'mcp' ? (
+          <div className="w-full">
+            <McpSettings isMcpActive={isMcpActive} mcpPort={mcpPort} />
+          </div>
+        ) : (
+          <div className="flex flex-col gap-8 w-full">
+            {/* 1. TOP SECTION (Full Width): Target GIF Selector or selected banner */}
+            <div className="w-full bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm">
+              {targetGif ? (
+                /* Compact Selected Preview Banner */
+                <div className="bg-[var(--bg-secondary)]/50 border border-[var(--border-color)] rounded-xl p-4 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <div className="flex flex-col sm:flex-row items-center gap-4 w-full sm:w-auto">
+                    <div className="relative h-[200px] w-auto rounded-xl overflow-hidden border border-[var(--border-color)] bg-[var(--bg-secondary)] shrink-0 shadow-inner flex items-center justify-center">
+                      {targetPreviewUrl && (
+                        targetGif.name.toLowerCase().endsWith('.mp4') ? (
+                          <video
+                            src={targetPreviewUrl}
+                            className="h-full w-auto object-contain"
+                            muted
+                            loop
+                            autoPlay
+                            playsInline
+                          />
+                        ) : (
+                          /* eslint-disable-next-line @next/next/no-img-element */
+                          <img
+                            src={targetPreviewUrl}
+                            alt="Target preview"
+                            className="h-full w-auto object-contain"
+                          />
+                        )
+                      )}
+                    </div>
+                    <div className="min-w-0 flex-1 text-center sm:text-left">
+                      <span className="text-[9px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider bg-[var(--emerald-bg)] border border-[var(--emerald-border)] text-[var(--emerald-text)] shadow-sm inline-block">
+                        {t('giphySearch.selectedBadge') || 'Média cible'}
+                      </span>
+                      <h4 className="text-xs font-semibold text-[var(--text-primary)] mt-1 truncate">
+                        {targetGif.name}
+                      </h4>
+                      <p className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                        {(targetGif.size / (1024 * 1024)).toFixed(2)} MB
+                      </p>
+                    </div>
+                  </div>
+                  <button
+                    onClick={handleTargetRemove}
+                    className="w-full sm:w-auto px-4 py-2 bg-[var(--danger-bg)] border border-[var(--danger-border)] hover:bg-[var(--danger-border)]/20 text-[var(--danger-text)] rounded-xl text-xs font-bold transition-all cursor-pointer flex items-center justify-center gap-2 active:scale-95 shrink-0"
+                  >
+                    {t('common.change') || 'Changer de GIF'}
+                  </button>
+                </div>
+              ) : (
+                /* GIF library selector / upload zone */
+                <div className="space-y-4">
+                  <div className="flex items-center justify-between">
+                    <h3 className="text-sm font-bold text-[var(--text-primary)]">
+                      {t('upload.targetLabel')}
+                    </h3>
+                  </div>
 
-              <UploadZone
-                id="target-upload"
-                label="Média cible"
-                accept=".gif,.mp4"
-                file={targetGif}
-                previewUrl={targetPreviewUrl}
-                onChange={handleTargetChange}
-                onRemove={handleTargetRemove}
-                description="GIF ou vidéo MP4 à modifier"
-                type="video"
-                isProcessing={isProcessing}
-              />
+                  {isGiphyConfigured ? (
+                    <>
+                      {/* Tabs Header for Giphy vs Custom Upload */}
+                      <div className="flex p-0.5 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-lg max-w-xs">
+                        <button
+                          onClick={() => setGiphySearchTab('search')}
+                          className={`flex-1 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                            giphySearchTab === 'search'
+                              ? 'bg-[var(--bg-primary)] text-[var(--emerald-text)] border border-[var(--border-color)] shadow-sm'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                          }`}
+                        >
+                          {t('giphySearch.tabLibrary')}
+                        </button>
+                        <button
+                          onClick={() => setGiphySearchTab('upload')}
+                          className={`flex-1 py-1 text-xs font-semibold rounded-md transition-all cursor-pointer ${
+                            giphySearchTab === 'upload'
+                              ? 'bg-[var(--bg-primary)] text-[var(--emerald-text)] border border-[var(--border-color)] shadow-sm'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                          }`}
+                        >
+                          {t('giphySearch.tabUpload')}
+                        </button>
+                      </div>
+
+                      {giphySearchTab === 'search' ? (
+                        isGiphyLoading ? (
+                          <div className="flex flex-col items-center justify-center p-6 border border-dashed border-[var(--border-color)] rounded-xl min-h-[160px] bg-[var(--bg-secondary)]">
+                            <Sparkle size={24} className="animate-spin text-[var(--emerald-main)]" />
+                            <p className="text-xs text-[var(--text-muted)] mt-2 font-medium">
+                              {t('giphySearch.loadingGif') || 'Téléchargement...'}
+                            </p>
+                          </div>
+                        ) : (
+                          <GiphySearch
+                            onSelect={handleSelectGiphy}
+                            onOpenSettings={() => setIsSettingsOpen(true)}
+                            selectedGifId={null}
+                          />
+                        )
+                      ) : (
+                        <UploadZone
+                          id="target-upload"
+                          label="Média cible"
+                          accept=".gif,.mp4"
+                          file={targetGif}
+                          previewUrl={targetPreviewUrl}
+                          onChange={handleTargetChange}
+                          onRemove={handleTargetRemove}
+                          description="GIF ou vidéo MP4 à modifier"
+                          type="video"
+                          isProcessing={isProcessing}
+                        />
+                      )}
+                    </>
+                  ) : (
+                    <UploadZone
+                      id="target-upload"
+                      label="Média cible"
+                      accept=".gif,.mp4"
+                      file={targetGif}
+                      previewUrl={targetPreviewUrl}
+                      onChange={handleTargetChange}
+                      onRemove={handleTargetRemove}
+                      description="GIF ou vidéo MP4 à modifier"
+                      type="video"
+                      isProcessing={isProcessing}
+                    />
+                  )}
+                </div>
+              )}
             </div>
 
-            {/* Welcome Placeholder / Tips */}
-            {!isProcessing && !result && (
-              <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-2xl p-6 space-y-4">
-                <div className="flex gap-4 items-start">
-                  <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg text-[var(--text-secondary)] mt-0.5">
-                    <Sparkle size={18} />
-                  </div>
-                  <div className="space-y-2 flex-1">
-                    <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-                      {t('page.tipsTitle')}
-                    </h3>
-                    <p className="text-xs text-[var(--text-muted)] leading-relaxed">
-                      {t('page.tipsDesc')}
-                    </p>
-                    <button
-                      onClick={handleLoadTestData}
-                      disabled={isTestLoading}
-                      className="mt-2 px-3 py-1.5 bg-[var(--emerald-bg)] hover:bg-[var(--emerald-border)] text-[var(--emerald-text)] rounded-lg text-xs font-semibold transition-colors flex items-center gap-2"
-                    >
-                      {isTestLoading ? <Sparkle size={14} className="animate-spin" /> : <Sparkle size={14} />}
-                      {isTestLoading ? `${t('common.loading')}` : t('page.tryTestData')}
-                    </button>
+            {/* 2. DYNAMIC WORKSPACE: Centered column or split columns depending on "custom" preset */}
+            <div className={preset === 'custom' ? 'grid grid-cols-1 lg:grid-cols-3 gap-8 items-start' : 'w-full'}>
+              
+              {/* Left Column (or main column) */}
+              <div className={preset === 'custom' ? 'lg:col-span-2 space-y-6' : 'space-y-6 w-full'}>
+                
+                {/* Visage source UploadZone */}
+                <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm space-y-5">
+                  <UploadZone
+                    id="source-upload"
+                    label={t('upload.sourceLabel')}
+                    accept="image/*"
+                    file={null} // Garde toujours la zone de drag-and-drop active
+                    previewUrl={null}
+                    onChange={handleSourceChange}
+                    onRemove={handleSourceRemove}
+                    description={t('upload.sourceDesc')}
+                    type="image"
+                    isProcessing={isProcessing || isSavingHistory}
+                  />
+
+                  {/* Aperçu et grille d'historique */}
+                  <div className="border-t border-[var(--border-subtle)] pt-4 space-y-3">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[11px] font-medium uppercase tracking-wider text-[var(--text-muted)]">
+                        {t('upload.recentFaces') || "Visages récents"}
+                      </span>
+                      {(sourcePreviewUrl || selectedHistoryFilename) && (
+                        <button
+                          onClick={handleSourceRemove}
+                          className="text-[10px] text-rose-500 hover:text-rose-400 font-medium transition-colors cursor-pointer flex items-center gap-1 active:scale-95 bg-transparent border-0"
+                        >
+                          {t('common.reset') || "Désélectionner"}
+                        </button>
+                      )}
+                    </div>
+
+                    <div className="grid grid-cols-5 sm:grid-cols-6 gap-3 items-center">
+                      {/* Affichage du visage sélectionné (s'il n'est pas déjà dans la liste de l'historique) */}
+                      {sourcePreviewUrl && !historyList.some(item => `/api/source-history/${item.filename}` === sourcePreviewUrl || item.filename === selectedHistoryFilename) && (
+                        <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-[var(--emerald-main)] shadow-[0_0_10px_var(--emerald-bg)] group bg-[var(--bg-secondary)] flex items-center justify-center shrink-0">
+                          {/* eslint-disable-next-line @next/next/no-img-element */}
+                          <img
+                            src={sourcePreviewUrl}
+                            alt="Selected face"
+                            className="w-full h-full object-cover"
+                          />
+                          <div className="absolute top-1 right-1 w-4 h-4 bg-[var(--emerald-main)] rounded-full border border-white flex items-center justify-center text-[10px] text-white font-bold">
+                            ✓
+                          </div>
+                        </div>
+                      )}
+
+                      {historyList.length === 0 ? (
+                        <div className="col-span-full py-4 text-center text-xs text-[var(--text-muted)] bg-[var(--bg-secondary)]/30 rounded-xl border border-dashed border-[var(--border-subtle)]">
+                          {t('upload.noHistory') || "Aucun visage récent."}
+                        </div>
+                      ) : (
+                        historyList.map((item) => {
+                          const isSelected = selectedHistoryFilename === item.filename || sourcePreviewUrl === `/api/source-history/${item.filename}`;
+                          return (
+                            <button
+                              key={item.filename}
+                              onClick={() => handleSelectFromHistory(item.filename)}
+                              type="button"
+                              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 group bg-[var(--bg-secondary)] flex items-center justify-center cursor-pointer hover:scale-[1.03] ${
+                                isSelected
+                                  ? 'border-[var(--emerald-main)] shadow-[0_0_12px_var(--emerald-bg)]'
+                                  : 'border-[var(--border-color)] hover:border-[var(--text-muted)]'
+                              }`}
+                            >
+                              {/* eslint-disable-next-line @next/next/no-img-element */}
+                              <img
+                                src={item.url}
+                                alt={`Face ${item.filename}`}
+                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                onError={(e) => {
+                                  e.currentTarget.style.display = 'none';
+                                }}
+                              />
+                              {isSelected && (
+                                <div className="absolute top-1 right-1 w-4 h-4 bg-[var(--emerald-main)] rounded-full border border-[var(--bg-primary)] flex items-center justify-center text-[9px] text-white font-bold shadow-sm">
+                                  ✓
+                                </div>
+                              )}
+                            </button>
+                          );
+                        })
+                      )}
+                    </div>
                   </div>
                 </div>
+
+                {/* Preset Quality Selector */}
+                <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm space-y-4">
+                  <div>
+                    <h4 className="text-xs font-semibold text-[var(--text-primary)]">
+                      {t('model.presets.title')}
+                    </h4>
+                    <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
+                      {t('model.presets.subtitle')}
+                    </p>
+                  </div>
+                  
+                  <div className="grid grid-cols-4 gap-2 p-1 bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-xl">
+                    {(['low', 'medium', 'high', 'custom'] as const).map((p) => {
+                      const isActive = preset === p;
+                      return (
+                        <button
+                          key={p}
+                          onClick={() => {
+                            setPreset(p);
+                            if (p === 'low') {
+                              setFaceSwapperModel('inswapper_128_fp16');
+                              setFaceEnhancerModel(undefined);
+                              setFaceMaskBlend(80);
+                              setFaceEnhancerBlend(80);
+                              setFrameEnhancerModel(undefined);
+                            } else if (p === 'medium') {
+                              setFaceSwapperModel('inswapper_128_fp16');
+                              setFaceEnhancerModel('codeformer');
+                              setFaceMaskBlend(80);
+                              setFaceEnhancerBlend(80);
+                              setFrameEnhancerModel(undefined);
+                            } else if (p === 'high') {
+                              setFaceSwapperModel('inswapper_128');
+                              setFaceEnhancerModel('codeformer');
+                              setFaceMaskBlend(70);
+                              setFaceEnhancerBlend(90);
+                              setFrameEnhancerModel('real_esrgan_x2');
+                            }
+                          }}
+                          type="button"
+                          className={`py-2.5 text-xs font-bold rounded-lg transition-all cursor-pointer capitalize text-center ${
+                            isActive
+                              ? 'bg-[var(--bg-primary)] text-[var(--emerald-text)] border border-[var(--border-color)] shadow-sm'
+                              : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)] hover:bg-[var(--bg-primary)]/40'
+                          }`}
+                        >
+                          {p === 'low' && t('model.presets.low').split(' ')[0]}
+                          {p === 'medium' && t('model.presets.medium').split(' ')[0]}
+                          {p === 'high' && t('model.presets.high').split(' ')[0]}
+                          {p === 'custom' && t('model.presets.custom').split(' ')[0]}
+                        </button>
+                      );
+                    })}
+                  </div>
+                </div>
+
+                {/* Generate Button */}
+                <button
+                  onClick={handleSubmit}
+                  disabled={(!sourceImage && !selectedHistoryFilename) || !targetGif || isProcessing}
+                  className={`w-full py-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
+                    (!sourceImage && !selectedHistoryFilename) || !targetGif || isProcessing
+                      ? 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed'
+                      : 'bg-[var(--emerald-main)] hover:bg-emerald-600 text-white shadow-md active:scale-[0.98]'
+                  }`}
+                >
+                  <ArrowsLeftRight size={18} weight="bold" />
+                  {isProcessing ? `${t('page.processing')}` : t('page.startSwap')}
+                </button>
+
+                {/* Tips & Welcome Container */}
+                {!isProcessing && !result && (
+                  <div className="bg-[var(--bg-secondary)] border border-[var(--border-subtle)] rounded-2xl p-6 space-y-4">
+                    <div className="flex gap-4 items-start">
+                      <div className="p-2 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg text-[var(--text-secondary)] mt-0.5">
+                        <Sparkle size={18} />
+                      </div>
+                      <div className="space-y-2 flex-1">
+                        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
+                          {t('page.tipsTitle')}
+                        </h3>
+                        <p className="text-xs text-[var(--text-muted)] leading-relaxed">
+                          {t('page.tipsDesc')}
+                        </p>
+                        <button
+                          onClick={handleLoadTestData}
+                          disabled={isTestLoading}
+                          className="mt-2 px-3 py-1.5 bg-[var(--emerald-bg)] hover:bg-[var(--emerald-border)] text-[var(--emerald-text)] rounded-lg text-xs font-semibold transition-colors flex items-center gap-2"
+                        >
+                          {isTestLoading ? <Sparkle size={14} className="animate-spin" /> : <Sparkle size={14} />}
+                          {isTestLoading ? `${t('common.loading')}` : t('page.tryTestData')}
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                )}
               </div>
-            )}
-          </div>
 
-          {/* Right Column: Model Settings & Actions */}
-          <div className="space-y-6">
-            {/* Tabs Header */}
-            <div className="flex p-1 bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl">
-              <button
-                onClick={() => setActiveTab('generation')}
-                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer ${
-                  activeTab === 'generation'
-                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                }`}
-              >
-                {t('page.genSettings')}
-              </button>
-              <button
-                onClick={() => setActiveTab('mcp')}
-                className={`flex-1 py-2 text-xs font-semibold rounded-lg transition-all cursor-pointer flex items-center justify-center gap-1.5 ${
-                  activeTab === 'mcp'
-                    ? 'bg-[var(--bg-primary)] text-[var(--text-primary)] shadow-sm'
-                    : 'text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                }`}
-              >
-                <span className={`w-1.5 h-1.5 rounded-full ${isMcpActive ? 'bg-[var(--emerald-main)] animate-pulse' : 'bg-rose-500'}`} />
-                {t('page.mcpServer')}
-              </button>
+              {/* Right Column: Custom settings details panel */}
+              {preset === 'custom' && (
+                <div className="lg:col-span-1 bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl p-5 shadow-sm space-y-4">
+                  <div className="flex items-center gap-2 pb-3 border-b border-[var(--border-subtle)]">
+                    <div className="p-1.5 bg-[var(--emerald-bg)] text-[var(--emerald-text)] rounded-lg">
+                      <Gear size={16} />
+                    </div>
+                    <div>
+                      <h3 className="text-xs font-bold text-[var(--text-primary)] uppercase tracking-wider">
+                        {t('model.title')}
+                      </h3>
+                      <p className="text-[9px] text-[var(--text-muted)] mt-0.5">
+                        {t('model.subtitle')}
+                      </p>
+                    </div>
+                  </div>
+                  <ModelSettings
+                    flatMode={true}
+                    executionProviders={executionProviders}
+                    setExecutionProviders={setExecutionProviders}
+                    faceSelectorMode={faceSelectorMode}
+                    setFaceSelectorMode={setFaceSelectorMode}
+                    threadCount={threadCount}
+                    setThreadCount={setThreadCount}
+                    logLevel={logLevel}
+                    setLogLevel={setLogLevel}
+                    faceMaskBlend={faceMaskBlend}
+                    setFaceMaskBlend={setFaceMaskBlend}
+                    faceSwapperModel={faceSwapperModel}
+                    setFaceSwapperModel={setFaceSwapperModel}
+                    faceEnhancerModel={faceEnhancerModel}
+                    setFaceEnhancerModel={setFaceEnhancerModel}
+                    preset={preset}
+                    setPreset={setPreset}
+                    faceEnhancerBlend={faceEnhancerBlend}
+                    setFaceEnhancerBlend={setFaceEnhancerBlend}
+                    frameEnhancerModel={frameEnhancerModel}
+                    setFrameEnhancerModel={setFrameEnhancerModel}
+                  />
+                </div>
+              )}
             </div>
-
-            {activeTab === 'generation' ? (
-              <ModelSettings
-                executionProviders={executionProviders}
-                setExecutionProviders={setExecutionProviders}
-                faceSelectorMode={faceSelectorMode}
-                setFaceSelectorMode={setFaceSelectorMode}
-                threadCount={threadCount}
-                setThreadCount={setThreadCount}
-                logLevel={logLevel}
-                setLogLevel={setLogLevel}
-                faceMaskBlend={faceMaskBlend}
-                setFaceMaskBlend={setFaceMaskBlend}
-                faceSwapperModel={faceSwapperModel}
-                setFaceSwapperModel={setFaceSwapperModel}
-                faceEnhancerModel={faceEnhancerModel}
-                setFaceEnhancerModel={setFaceEnhancerModel}
-              />
-            ) : (
-              <McpSettings isMcpActive={isMcpActive} mcpPort={mcpPort} />
-            )}
-
-            {/* Action Trigger Button */}
-            {activeTab === 'generation' && (
-              <button
-                onClick={handleSubmit}
-                disabled={!sourceImage || !targetGif || isProcessing || !!result}
-                className={`w-full py-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                  !sourceImage || !targetGif || isProcessing || !!result
-                    ? 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed'
-                    : 'bg-[var(--emerald-main)] hover:bg-emerald-600 text-white shadow-md active:scale-[0.98]'
-                }`}
-              >
-                <ArrowsLeftRight size={18} weight="bold" />
-                {isProcessing ? `${t('page.processing')}` : t('page.startSwap')}
-              </button>
-            )}
           </div>
-        </div>
+        )}
 
         {/* Dynamic Status / Process Section */}
         <AnimatePresence mode="wait">
@@ -619,12 +1129,13 @@ function HomeContent() {
               animate={{ opacity: 1, y: 0 }}
               exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
-              className="w-full max-w-3xl mx-auto space-y-6 pt-6 border-t border-[var(--border-subtle)]"
+              className="w-full space-y-6 pt-6 border-t border-[var(--border-subtle)]"
             >
+              
               
               {/* Stepper Component */}
               <div ref={processStepsRef} className="scroll-mt-24">
-                <ProcessSteps steps={steps} currentStepIndex={currentStepIndex} />
+                <ProcessSteps steps={steps} currentStepIndex={currentStepIndex} faceswapProgress={faceswapProgress} />
               </div>
 
               {/* Error Alert */}
@@ -680,6 +1191,14 @@ function HomeContent() {
           {t('page.footerText')}
         </footer>
       </div>
+
+      <SettingsModal
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        onSave={() => {
+          checkGiphyConfiguration();
+        }}
+      />
     </main>
   );
 }

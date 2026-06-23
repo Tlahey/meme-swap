@@ -39,6 +39,9 @@ importers:
 
   apps/frontend:
     dependencies:
+      '@meme-swap/api-client':
+        specifier: workspace:*
+        version: link:../../packages/api-client
       '@meme-swap/faceswap-core':
         specifier: workspace:*
         version: link:../../packages/faceswap-core
@@ -125,6 +128,15 @@ importers:
       ts-node:
         specifier: ^10.9.2
         version: 10.9.2(@types/node@20.19.39)(typescript@5.9.3)
+      typescript:
+        specifier: ^5.3.0
+        version: 5.9.3
+
+  packages/api-client:
+    devDependencies:
+      '@types/node':
+        specifier: ^20.19.39
+        version: 20.19.39
       typescript:
         specifier: ^5.3.0
         version: 5.9.3
