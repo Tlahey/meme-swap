@@ -75,11 +75,12 @@ export class Server {
               sourceImagePath: {
                 type: 'string',
                 description:
-                  'Path to the source image containing the face to swap',
+                  'Path to the source image containing the face to swap (the source / face / visage)',
               },
               targetMediaPath: {
                 type: 'string',
-                description: 'Path to the target image or video (GIF/MP4)',
+                description:
+                  'Path to the target image or video (GIF/MP4) (the target / target media / target GIF)',
               },
               outputPath: {
                 type: 'string',

@@ -12,10 +12,14 @@ import os from 'node:os';
 const FaceswapToolSchema = z.object({
   sourceImagePath: z
     .string()
-    .describe('Path to the source image containing the face to swap'),
+    .describe(
+      'Path to the source image containing the face to swap (the source / face / visage)',
+    ),
   targetMediaPath: z
     .string()
-    .describe('Path to the target image or video (GIF/MP4)'),
+    .describe(
+      'Path to the target image or video (GIF/MP4) (the target / target media / target GIF)',
+    ),
   outputPath: z.string().describe('Path where the output file should be saved'),
   executionProviders: z
     .array(z.string())
@@ -41,6 +45,14 @@ const FaceswapToolSchema = z.object({
     .string()
     .optional()
     .describe('Face enhancer model to use (e.g. codeformer)'),
+  faceEnhancerBlend: z
+    .number()
+    .optional()
+    .describe('Blend ratio for the face enhancer (0-100)'),
+  frameEnhancerModel: z
+    .string()
+    .optional()
+    .describe('Frame enhancer model to use (e.g. real_esrgan_x2)'),
   lipSyncerModel: z
     .string()
     .optional()
@@ -146,6 +158,8 @@ export async function runFaceswapTool(args: unknown): Promise<{
       faceMaskBlend,
       faceSwapperModel,
       faceEnhancerModel,
+      faceEnhancerBlend,
+      frameEnhancerModel,
       lipSyncerModel,
       logLevel,
     } = validatedArgs;
@@ -195,6 +209,8 @@ export async function runFaceswapTool(args: unknown): Promise<{
       faceMaskBlend,
       faceSwapperModel,
       faceEnhancerModel,
+      faceEnhancerBlend,
+      frameEnhancerModel,
       lipSyncerModel,
       logLevel,
     };
@@ -245,6 +261,8 @@ export async function runFaceswapTool(args: unknown): Promise<{
             `Face Mask Blend: ${faceMaskBlend !== undefined ? faceMaskBlend : 'N/A'}\n` +
             `Face Swapper Model: ${faceSwapperModel || 'N/A'}\n` +
             `Face Enhancer Model: ${faceEnhancerModel || 'N/A'}\n` +
+            `Face Enhancer Blend: ${faceEnhancerBlend !== undefined ? faceEnhancerBlend : 'N/A'}\n` +
+            `Frame Enhancer Model: ${frameEnhancerModel || 'N/A'}\n` +
             `Lip Syncer Model: ${lipSyncerModel || 'N/A'}\n` +
             `Log Level: ${logLevel}`,
         },
