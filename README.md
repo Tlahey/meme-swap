@@ -29,7 +29,7 @@
 | Surface | Description |
 |---|---|
 | **Web Frontend** | Next.js 14 app — drag & drop face swap in the browser |
-| **Desktop App** | Electron app — native macOS experience with system tray |
+| **Desktop App** | Electron app — native macOS experience |
 | **MCP Server** | Model Context Protocol server — lets AI assistants (Cursor, Claude) trigger face swaps |
 | **Raycast Extension** | macOS Raycast command palette integration *(planned)* |
 

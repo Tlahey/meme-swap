@@ -2,7 +2,7 @@
   "name": "desktop",
   "version": "0.1.0",
   "private": true,
-  "description": "Meme Swap desktop tray runner and automated installer for macOS",
+  "description": "Meme Swap desktop application and automated installer for macOS",
   "main": "build/main.js",
   "scripts": {
     "dev": "tsc && electron .",

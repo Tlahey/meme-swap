@@ -1,4 +1,4 @@
-import { app, BrowserWindow, Tray, Menu, ipcMain, protocol, net as electronNet } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol, net as electronNet } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -26,7 +26,6 @@ protocol.registerSchemesAsPrivileged([
 ]);
 
 let mainWindow: BrowserWindow | null = null;
-let tray: Tray | null = null;
 
 let mcpProcess: ChildProcess | null = null;
 let frontendProcess: ChildProcess | null = null;
@@ -90,8 +89,6 @@ function resolveRoot(): string {
 
 const root = resolveRoot();
 
-let isQuitting = false;
-
 // Server statuses
 let mcpStatus: 'stopped' | 'starting' | 'ready' | 'error' = 'stopped';
 let frontendStatus: 'stopped' | 'starting' | 'ready' | 'error' = 'stopped';
@@ -131,9 +128,6 @@ function sendServerStatus() {
       frontend: frontendStatus
     });
   }
-  
-  const overallState = (mcpStatus === 'ready' && frontendStatus === 'ready') ? 'ready' : 'starting';
-  updateTrayMenu(overallState);
 }
 
 /**
@@ -187,15 +181,6 @@ function createMainWindow() {
       contextIsolation: true,
     },
     frame: true,
-  });
-
-  mainWindow.on('close', (event) => {
-    // Si on ne quitte pas explicitement l'application, on masque la fenêtre
-    // pour garder les serveurs actifs en arrière-plan.
-    if (!isQuitting) {
-      event.preventDefault();
-      mainWindow?.hide();
-    }
   });
 
   mainWindow.on('closed', () => {
@@ -376,61 +361,7 @@ function stopServers() {
   frontendStatus = 'stopped';
 }
 
-/**
- * Configure et met à jour le menu de la barre des tâches (Tray)
- */
-function initTray() {
-  const iconName = process.platform === 'darwin' ? 'assets/tray_iconTemplate.png' : 'icon_placeholder.png';
-  tray = new Tray(path.join(__dirname, iconName));
-  updateTrayMenu('starting');
-}
 
-function updateTrayMenu(state: 'starting' | 'ready') {
-  if (!tray) return;
-
-  let statusLabel = 'Meme Swap : Démarrage...';
-  let statusIndicator = '🟠';
-
-  if (state === 'ready') {
-    statusLabel = `Meme Swap : Prêt (MCP :${mcpPort})`;
-    statusIndicator = '🟢';
-  }
-
-  // Ne pas afficher de texte à côté de l'icône dans la barre de menu macOS
-  tray.setTitle('');
-
-  const contextMenu = Menu.buildFromTemplate([
-    { label: `${statusIndicator} ${statusLabel}`, enabled: false },
-    { type: 'separator' },
-    {
-      label: "Ouvrir l'application",
-      click: () => {
-        createMainWindow();
-        if (frontendStatus === 'ready') {
-          if (app.isPackaged) {
-            mainWindow?.loadURL('app://index.html');
-          } else {
-            mainWindow?.loadURL(`http://localhost:${frontendPort}`);
-          }
-        } else {
-          mainWindow?.loadFile(path.join(__dirname, 'loading.html'));
-        }
-      }
-    },
-    { type: 'separator' },
-    {
-      label: 'Quitter',
-      click: () => {
-        stopServers();
-        isQuitting = true;
-        app.quit();
-      }
-    }
-  ]);
-
-  tray.setContextMenu(contextMenu);
-  tray.setToolTip('Superviseur Meme Swap');
-}
 
 // IPC : Écouteur pour démarrer le processus d'installation
 ipcMain.on('start-setup', async (event) => {
@@ -468,7 +399,6 @@ ipcMain.on('loading-ready', (event) => {
 
 ipcMain.on('quit-app', () => {
   stopServers();
-  isQuitting = true;
   app.quit();
 });
 
@@ -852,7 +782,6 @@ app.whenReady().then(() => {
   });
 
   createMainWindow();
-  initTray();
 
   if (isInstalled() && !process.argv.includes('--force-setup')) {
     writeToLogFile("FaceFusion est déjà installé. Démarrage des serveurs en arrière-plan.\n");
@@ -867,4 +796,8 @@ app.whenReady().then(() => {
 // Nettoyer tous les serveurs avant de quitter
 app.on('before-quit', () => {
   stopServers();
+});
+
+app.on('window-all-closed', () => {
+  app.quit();
 });
