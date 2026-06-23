@@ -26,5 +26,17 @@ contextBridge.exposeInMainWorld('electronAPI', {
 
   // Faceswap & MCP APIs
   runFaceswap: (options: any) => ipcRenderer.invoke('run-faceswap', options),
-  getMcpStatus: () => ipcRenderer.invoke('get-mcp-status')
+  onFaceswapProgress: (callback: (event: any, data: { step: string; percent: number }) => void) => {
+    const listener = (event: any, data: { step: string; percent: number }) => callback(event, data);
+    ipcRenderer.on('faceswap-progress', listener);
+    return () => {
+      ipcRenderer.removeListener('faceswap-progress', listener);
+    };
+  },
+  getMcpStatus: () => ipcRenderer.invoke('get-mcp-status'),
+  isGiphyConfigured: () => ipcRenderer.invoke('is-giphy-configured'),
+  searchGiphy: (options: any) => ipcRenderer.invoke('search-giphy', options),
+  getTrendingGiphy: (options: any) => ipcRenderer.invoke('get-trending-giphy', options),
+  getSourceHistory: () => ipcRenderer.invoke('get-source-history'),
+  saveSourceFace: (options: { path?: string; data?: Uint8Array; name: string }) => ipcRenderer.invoke('save-source-face', options),
 });

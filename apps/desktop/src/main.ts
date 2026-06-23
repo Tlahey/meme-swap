@@ -476,6 +476,7 @@ ipcMain.on('quit-app', () => {
 const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
 const TEMP_DIR = path.join(PROCESS_DIR, 'temp');
 const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
+const HISTORY_DIR = path.join(os.homedir(), '.meme-swap', 'source-history');
 
 function ensureDirectories(): void {
   if (!fs.existsSync(TEMP_DIR)) {
@@ -484,9 +485,44 @@ function ensureDirectories(): void {
   if (!fs.existsSync(RESULTS_DIR)) {
     fs.mkdirSync(RESULTS_DIR, { recursive: true });
   }
+  if (!fs.existsSync(HISTORY_DIR)) {
+    fs.mkdirSync(HISTORY_DIR, { recursive: true });
+  }
 }
 
-function cleanupTempDir(): void {
+function pruneHistoryFiles(): void {
+  if (!fs.existsSync(HISTORY_DIR)) {
+    fs.mkdirSync(HISTORY_DIR, { recursive: true });
+  }
+  const files = fs.readdirSync(HISTORY_DIR);
+  const fileInfos = files
+    .map(name => {
+      const filePath = path.join(HISTORY_DIR, name);
+      try {
+        const stats = fs.statSync(filePath);
+        return { name, mtime: stats.mtimeMs };
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter((info): info is { name: string; mtime: number } => info !== null);
+
+  fileInfos.sort((a, b) => b.mtime - a.mtime);
+
+  if (fileInfos.length > 5) {
+    const toDelete = fileInfos.slice(5);
+    for (const info of toDelete) {
+      try {
+        fs.unlinkSync(path.join(HISTORY_DIR, info.name));
+        writeToLogFile(`[History Pruning] Deleted old history file: ${info.name}\n`);
+      } catch (e) {
+        console.error(`Failed to delete old history file: ${info.name}`, e);
+      }
+    }
+  }
+}
+
+function cleanupProcessDirs(): void {
   if (fs.existsSync(TEMP_DIR)) {
     try {
       fs.rmSync(TEMP_DIR, { recursive: true, force: true });
@@ -495,6 +531,15 @@ function cleanupTempDir(): void {
     }
   }
   fs.mkdirSync(TEMP_DIR, { recursive: true });
+
+  if (fs.existsSync(RESULTS_DIR)) {
+    try {
+      fs.rmSync(RESULTS_DIR, { recursive: true, force: true });
+    } catch (error) {
+      console.error('[IPC] Erreur de nettoyage du dossier des résultats:', error);
+    }
+  }
+  fs.mkdirSync(RESULTS_DIR, { recursive: true });
 }
 
 function generateFileName(extension: string): string {
@@ -511,17 +556,140 @@ ipcMain.handle('get-mcp-status', async () => {
   };
 });
 
+// IPC : Giphy Integration Handlers
+ipcMain.handle('is-giphy-configured', async () => {
+  const key = process.env.GIPHY_API_KEY;
+  return typeof key === 'string' && key.trim().length > 0;
+});
+
+ipcMain.handle('search-giphy', async (event, options) => {
+  const key = process.env.GIPHY_API_KEY;
+  if (!key) {
+    throw new Error('GIPHY_API_KEY n\'est pas configurée dans le processus principal.');
+  }
+  const { query, limit = 8, offset = 0 } = options || {};
+  const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=g`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Le serveur Giphy a répondu avec le statut ${response.status}`);
+  }
+  return await response.json();
+});
+
+ipcMain.handle('get-trending-giphy', async (event, options) => {
+  const key = process.env.GIPHY_API_KEY;
+  if (!key) {
+    throw new Error('GIPHY_API_KEY n\'est pas configurée dans le processus principal.');
+  }
+  const { limit = 8, offset = 0 } = options || {};
+  const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(key)}&limit=${limit}&offset=${offset}&rating=g`;
+  const response = await fetch(url);
+  if (!response.ok) {
+    throw new Error(`Le serveur Giphy a répondu avec le statut ${response.status}`);
+  }
+  return await response.json();
+});
+
+// IPC : Récupérer l'historique des visages source
+ipcMain.handle('get-source-history', async () => {
+  if (!fs.existsSync(HISTORY_DIR)) {
+    fs.mkdirSync(HISTORY_DIR, { recursive: true });
+  }
+  pruneHistoryFiles();
+  const files = fs.readdirSync(HISTORY_DIR);
+  const fileInfos = files
+    .map(name => {
+      const filePath = path.join(HISTORY_DIR, name);
+      try {
+        const stats = fs.statSync(filePath);
+        return {
+          filename: name,
+          url: `/api/source-history/${name}`,
+          timestamp: stats.mtimeMs
+        };
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter((info): info is { filename: string; url: string; timestamp: number } => info !== null);
+
+  fileInfos.sort((a, b) => b.timestamp - a.timestamp);
+  return { success: true, history: fileInfos };
+});
+
+// IPC : Enregistrer un visage source dans l'historique
+ipcMain.handle('save-source-face', async (event, options) => {
+  if (!fs.existsSync(HISTORY_DIR)) {
+    fs.mkdirSync(HISTORY_DIR, { recursive: true });
+  }
+  writeToLogFile(`[History] Saving new source face to history...\n`);
+
+  try {
+    const ext = path.extname(options.name).toLowerCase() || '.jpg';
+    const cleanExt = ['.png', '.jpg', '.jpeg', '.webp'].includes(ext) ? ext : '.jpg';
+    const timestamp = Date.now();
+    const random = Math.random().toString(36).substring(2, 8);
+    const newFileName = `face-${timestamp}-${random}${cleanExt}`;
+    const destPath = path.join(HISTORY_DIR, newFileName);
+
+    if (options.path && typeof options.path === 'string') {
+      fs.copyFileSync(options.path, destPath);
+    } else if (options.data instanceof Uint8Array) {
+      fs.writeFileSync(destPath, Buffer.from(options.data));
+    } else {
+      throw new Error('Format de fichier source non supporté');
+    }
+
+    const now = new Date();
+    fs.utimesSync(destPath, now, now);
+
+    pruneHistoryFiles();
+
+    const files = fs.readdirSync(HISTORY_DIR);
+    const fileInfos = files
+      .map(name => {
+        const filePath = path.join(HISTORY_DIR, name);
+        try {
+          const stats = fs.statSync(filePath);
+          return {
+            filename: name,
+            url: `/api/source-history/${name}`,
+            timestamp: stats.mtimeMs
+          };
+        } catch (e) {
+          return null;
+        }
+      })
+      .filter((info): info is { filename: string; url: string; timestamp: number } => info !== null);
+
+    fileInfos.sort((a, b) => b.timestamp - a.timestamp);
+    return { success: true, savedFilename: newFileName, history: fileInfos };
+  } catch (err: any) {
+    const errorMsg = err instanceof Error ? err.message : 'Erreur inconnue';
+    writeToLogFile(`❌ [History] Erreur de sauvegarde du visage : ${errorMsg}\n`);
+    return { success: false, error: errorMsg };
+  }
+});
+
 // IPC : Lancer l'exécution du FaceSwap
 ipcMain.handle('run-faceswap', async (event, options) => {
   writeToLogFile("\n=== Lancement du FaceSwap par IPC Electron ===\n");
   
   try {
     ensureDirectories();
-    cleanupTempDir();
+    cleanupProcessDirs();
 
     let sourcePath = '';
     if (typeof options.source === 'string') {
-      sourcePath = options.source;
+      if (options.source.startsWith('history:')) {
+        const filename = options.source.replace('history:', '');
+        sourcePath = path.join(HISTORY_DIR, filename);
+        if (!fs.existsSync(sourcePath)) {
+          throw new Error(`Le visage de l'historique ${filename} n'existe pas`);
+        }
+      } else {
+        sourcePath = options.source;
+      }
     } else if (options.source instanceof Uint8Array) {
       sourcePath = path.join(TEMP_DIR, options.sourceName || 'source.jpg');
       fs.writeFileSync(sourcePath, Buffer.from(options.source));
@@ -577,6 +745,11 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       faceMaskBlend: options.faceMaskBlend,
       faceSwapperModel: options.faceSwapperModel,
       faceEnhancerModel: options.faceEnhancerModel,
+      faceEnhancerBlend: options.faceEnhancerBlend,
+      frameEnhancerModel: options.frameEnhancerModel,
+      onProgress: (progress) => {
+        event.sender.send('faceswap-progress', progress);
+      },
     });
 
     if (!faceswapResult.success) {
@@ -657,6 +830,13 @@ app.whenReady().then(() => {
       const fileName = pathname.replace('/api/results/', '');
       const resultsDir = path.join(os.homedir(), '.meme-swap', 'process', 'results');
       const filePath = path.join(resultsDir, fileName);
+      return electronNet.fetch(pathToFileURL(filePath).toString());
+    }
+
+    // 1b. Servir les fichiers de l'historique des visages
+    if (pathname.startsWith('/api/source-history/')) {
+      const fileName = pathname.replace('/api/source-history/', '');
+      const filePath = path.join(HISTORY_DIR, fileName);
       return electronNet.fetch(pathToFileURL(filePath).toString());
     }
 
