@@ -29,8 +29,14 @@ export interface FaceswapOptions {
   faceSwapperModel?: string;
   /** Face enhancer model to use (if true, face_enhancer processor is added) */
   faceEnhancerModel?: string;
+  /** Blend ratio for the face enhancer (maps to --face-enhancer-blend, 0-100) */
+  faceEnhancerBlend?: number;
+  /** Frame enhancer model to use (if true, frame_enhancer processor is added) */
+  frameEnhancerModel?: string;
   /** Lip syncer model to use (if true, lip_syncer processor is added) */
   lipSyncerModel?: string;
+  /** Callback triggered when a progress update is parsed from stdout/stderr */
+  onProgress?: (progress: { step: string; percent: number }) => void;
 }
 
 /**
@@ -167,6 +173,17 @@ function buildArgs(options: FaceswapOptions): string[] {
     args.push('--face-enhancer-model', options.faceEnhancerModel);
   }
 
+  // Face Enhancer Blend (maps to --face-enhancer-blend in FaceFusion)
+  if (options.faceEnhancerBlend !== undefined) {
+    args.push('--face-enhancer-blend', Math.round(options.faceEnhancerBlend).toString());
+  }
+
+  // Frame Enhancer
+  if (options.frameEnhancerModel) {
+    processors.push('frame_enhancer');
+    args.push('--frame-enhancer-model', options.frameEnhancerModel);
+  }
+
   // Lip Syncer
   if (options.lipSyncerModel) {
     processors.push('lip_syncer');
@@ -255,6 +272,9 @@ export async function runFaceSwap(
       const output = data.toString();
       stdout += output;
       console.log('[FaceFusion]', output.trim());
+      if (options.onProgress) {
+        parseProgress(output, options.onProgress);
+      }
     });
 
     // Collecte des erreurs stderr
@@ -262,6 +282,9 @@ export async function runFaceSwap(
       const error = data.toString();
       stderr += error;
       console.error('[FaceFusion Error]', error.trim());
+      if (options.onProgress) {
+        parseProgress(error, options.onProgress);
+      }
     });
 
     // Gestion de la fin du processus
@@ -287,6 +310,19 @@ export async function runFaceSwap(
       });
     });
   });
+}
+
+/**
+ * Parse tqdm progress bar patterns from FaceFusion output
+ */
+function parseProgress(data: string, onProgress: (progress: { step: string; percent: number }) => void): void {
+  const regex = /(analysing|extracting|processing|merging):\s*(\d+)%/i;
+  const match = data.match(regex);
+  if (match && match[1] && match[2]) {
+    const step = match[1].toLowerCase();
+    const percent = parseInt(match[2], 10);
+    onProgress({ step, percent });
+  }
 }
 
 /**
