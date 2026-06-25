@@ -75,7 +75,7 @@ export function getWorkspaceRoot(): string {
     }
     currentDir = path.dirname(currentDir);
   }
-  
+
   // Fallback alternatif
   let fallbackDir = process.cwd();
   while (fallbackDir !== path.parse(fallbackDir).root) {
@@ -92,7 +92,11 @@ export function getWorkspaceRoot(): string {
  * Utilise toujours le dossier global utilisateur (~/.meme-swap/facefusion).
  */
 export function getFaceFusionDir(): string {
-  return path.join(/*turbopackIgnore: true*/ os.homedir(), '.meme-swap', 'facefusion');
+  return path.join(
+    /*turbopackIgnore: true*/ os.homedir(),
+    '.meme-swap',
+    'facefusion',
+  );
 }
 
 /**
@@ -129,7 +133,11 @@ function buildArgs(options: FaceswapOptions): string[] {
   // Chemins obligatoires
   if (options.lipSyncerModel) {
     // Le lip syncer requiert une source audio. On passe la cible en tant que source audio.
-    args.push('-s', path.resolve(options.sourcePath), path.resolve(options.targetPath));
+    args.push(
+      '-s',
+      path.resolve(options.sourcePath),
+      path.resolve(options.targetPath),
+    );
   } else {
     args.push('-s', path.resolve(options.sourcePath));
   }
@@ -177,7 +185,10 @@ function buildArgs(options: FaceswapOptions): string[] {
 
   // Face Enhancer Blend (maps to --face-enhancer-blend in FaceFusion)
   if (options.faceEnhancerBlend !== undefined) {
-    args.push('--face-enhancer-blend', Math.round(options.faceEnhancerBlend).toString());
+    args.push(
+      '--face-enhancer-blend',
+      Math.round(options.faceEnhancerBlend).toString(),
+    );
   }
 
   // Frame Enhancer
@@ -208,7 +219,13 @@ function buildArgs(options: FaceswapOptions): string[] {
   }
 
   // Temp path pointing to ~/.meme-swap/process/temp/facefusion-temp
-  const facefusionTemp = path.join(os.homedir(), '.meme-swap', 'process', 'temp', 'facefusion-temp');
+  const facefusionTemp = path.join(
+    os.homedir(),
+    '.meme-swap',
+    'process',
+    'temp',
+    'facefusion-temp',
+  );
   if (!fs.existsSync(facefusionTemp)) {
     fs.mkdirSync(facefusionTemp, { recursive: true });
   }
@@ -268,8 +285,8 @@ export async function runFaceSwap(
       cwd: path.dirname(scriptPath),
       env: {
         ...process.env,
-        PATH: `${binDir}:${process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin'}`
-      }
+        PATH: `${binDir}:${process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin'}`,
+      },
     });
 
     let stdout = '';
@@ -323,7 +340,10 @@ export async function runFaceSwap(
 /**
  * Parse tqdm progress bar patterns from FaceFusion output
  */
-function parseProgress(data: string, onProgress: (progress: { step: string; percent: number }) => void): void {
+function parseProgress(
+  data: string,
+  onProgress: (progress: { step: string; percent: number }) => void,
+): void {
   const regex = /(analysing|extracting|processing|merging):\s*(\d+)%/i;
   const match = data.match(regex);
   if (match && match[1] && match[2]) {

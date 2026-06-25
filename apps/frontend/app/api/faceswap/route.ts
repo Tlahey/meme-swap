@@ -41,7 +41,10 @@ function cleanupProcessDirs(): void {
       fs.rmSync(RESULTS_DIR, { recursive: true, force: true });
       console.log('[API] Dossier de résultats nettoyé');
     } catch (error) {
-      console.error('[API] Erreur de nettoyage du dossier de résultats:', error);
+      console.error(
+        '[API] Erreur de nettoyage du dossier de résultats:',
+        error,
+      );
     }
   }
   fs.mkdirSync(RESULTS_DIR, { recursive: true });
@@ -113,10 +116,18 @@ export async function POST(request: NextRequest) {
     // Sauvegarder le fichier source ou le recuperer de l'historique
     if (typeof sourceEntry === 'string' && sourceEntry.startsWith('history:')) {
       const historyFilename = sourceEntry.replace('history:', '');
-      const historyFilePath = path.join(os.homedir(), '.meme-swap', 'source-history', historyFilename);
+      const historyFilePath = path.join(
+        os.homedir(),
+        '.meme-swap',
+        'source-history',
+        historyFilename,
+      );
       if (!fs.existsSync(historyFilePath)) {
         return NextResponse.json(
-          { success: false, error: `Le visage de l'historique ${historyFilename} n'existe pas` },
+          {
+            success: false,
+            error: `Le visage de l'historique ${historyFilename} n'existe pas`,
+          },
           { status: 400 },
         );
       }
@@ -205,8 +216,10 @@ export async function POST(request: NextRequest) {
       (formData.get('faceSwapperModel') as string | null) || undefined;
     const faceEnhancerModel =
       (formData.get('faceEnhancerModel') as string | null) || undefined;
-    
-    const rawFaceEnhancerBlend = formData.get('faceEnhancerBlend') as string | null;
+
+    const rawFaceEnhancerBlend = formData.get('faceEnhancerBlend') as
+      | string
+      | null;
     const faceEnhancerBlend = rawFaceEnhancerBlend
       ? parseInt(rawFaceEnhancerBlend, 10)
       : undefined;

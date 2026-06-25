@@ -57,10 +57,7 @@ const FaceswapToolSchema = z.object({
     .string()
     .optional()
     .describe('Expression restorer model to use (e.g. expression_restorer)'),
-  lipSyncerModel: z
-    .string()
-    .optional()
-    .describe('Lip syncer model to use'),
+  lipSyncerModel: z.string().optional().describe('Lip syncer model to use'),
   logLevel: z
     .enum(['debug', 'info', 'warning', 'error'])
     .default('info')
