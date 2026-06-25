@@ -160,6 +160,7 @@ function HomeContent() {
   const [faceEnhancerModel, setFaceEnhancerModel] = useState<string | undefined>('codeformer');
   const [faceEnhancerBlend, setFaceEnhancerBlend] = useState<number>(80);
   const [frameEnhancerModel, setFrameEnhancerModel] = useState<string | undefined>(undefined);
+  const [expressionRestorerModel, setExpressionRestorerModel] = useState<string | undefined>(undefined);
 
   // Stepper state
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
@@ -531,6 +532,7 @@ function HomeContent() {
           faceEnhancerModel,
           faceEnhancerBlend,
           frameEnhancerModel,
+          expressionRestorerModel,
         });
       } else {
         // En mode web standard
@@ -550,6 +552,7 @@ function HomeContent() {
         if (faceEnhancerModel) formData.append('faceEnhancerModel', faceEnhancerModel);
         if (faceEnhancerBlend !== undefined) formData.append('faceEnhancerBlend', faceEnhancerBlend.toString());
         if (frameEnhancerModel) formData.append('frameEnhancerModel', frameEnhancerModel);
+        if (expressionRestorerModel) formData.append('expressionRestorerModel', expressionRestorerModel);
 
         const response = await fetch('/api/faceswap', {
           method: 'POST',
@@ -1002,18 +1005,21 @@ function HomeContent() {
                               setFaceMaskBlend(80);
                               setFaceEnhancerBlend(80);
                               setFrameEnhancerModel(undefined);
+                              setExpressionRestorerModel(undefined);
                             } else if (p === 'medium') {
                               setFaceSwapperModel('inswapper_128_fp16');
                               setFaceEnhancerModel('codeformer');
                               setFaceMaskBlend(80);
                               setFaceEnhancerBlend(80);
                               setFrameEnhancerModel(undefined);
+                              setExpressionRestorerModel(undefined);
                             } else if (p === 'high') {
                               setFaceSwapperModel('inswapper_128');
                               setFaceEnhancerModel('codeformer');
                               setFaceMaskBlend(70);
                               setFaceEnhancerBlend(90);
                               setFrameEnhancerModel('real_esrgan_x2');
+                              setExpressionRestorerModel(undefined);
                             }
                           }}
                           type="button"
@@ -1113,6 +1119,8 @@ function HomeContent() {
                     setFaceEnhancerBlend={setFaceEnhancerBlend}
                     frameEnhancerModel={frameEnhancerModel}
                     setFrameEnhancerModel={setFrameEnhancerModel}
+                    expressionRestorerModel={expressionRestorerModel}
+                    setExpressionRestorerModel={setExpressionRestorerModel}
                   />
                 </div>
               )}

@@ -41,6 +41,8 @@ interface ModelSettingsProps {
   setFaceEnhancerBlend: (val: number) => void;
   frameEnhancerModel: string | undefined;
   setFrameEnhancerModel: (val: string | undefined) => void;
+  expressionRestorerModel: string | undefined;
+  setExpressionRestorerModel: (val: string | undefined) => void;
   flatMode?: boolean;
 }
 
@@ -130,6 +132,8 @@ export function ModelSettings({
   setFaceEnhancerBlend,
   frameEnhancerModel,
   setFrameEnhancerModel,
+  expressionRestorerModel,
+  setExpressionRestorerModel,
   flatMode = false,
 }: ModelSettingsProps) {
   const [isPanelOpen, setIsPanelOpen] = useState(false);
@@ -143,18 +147,21 @@ export function ModelSettings({
       setFaceMaskBlend(80);
       setFaceEnhancerBlend(80);
       setFrameEnhancerModel(undefined);
+      setExpressionRestorerModel(undefined);
     } else if (p === 'medium') {
       setFaceSwapperModel('inswapper_128_fp16');
       setFaceEnhancerModel('codeformer');
       setFaceMaskBlend(80);
       setFaceEnhancerBlend(80);
       setFrameEnhancerModel(undefined);
+      setExpressionRestorerModel(undefined);
     } else if (p === 'high') {
       setFaceSwapperModel('inswapper_128');
       setFaceEnhancerModel('codeformer');
       setFaceMaskBlend(70);
       setFaceEnhancerBlend(90);
       setFrameEnhancerModel('real_esrgan_x2');
+      setExpressionRestorerModel(undefined);
     }
   };
   
@@ -328,6 +335,32 @@ export function ModelSettings({
                 onChange={(e) => {
                   setPreset('custom');
                   setFrameEnhancerModel(e.target.checked ? 'real_esrgan_x2' : undefined);
+                }}
+              />
+              <div className="w-9 h-5 bg-[var(--border-color)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--emerald-main)]"></div>
+            </label>
+          </div>
+
+          {/* Expression Restorer (Restauration des expressions) */}
+          <div className="flex items-start justify-between p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
+            <div className="flex gap-3">
+              <Waveform size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
+              <div>
+                <h4 className="text-xs font-semibold text-[var(--text-primary)]">Expression Restorer</h4>
+                <p className="text-[10px] text-[var(--text-muted)] mt-0.5">Restores facial expressions and details.</p>
+                <div className="mt-1.5 text-[9px] font-mono text-[var(--text-secondary)] bg-[var(--bg-tertiary)] inline-block px-1.5 py-0.5 rounded">
+                  expression_restorer
+                </div>
+              </div>
+            </div>
+            <label className="relative inline-flex items-center cursor-pointer shrink-0 ml-3">
+              <input
+                type="checkbox"
+                className="sr-only peer"
+                checked={expressionRestorerModel !== undefined}
+                onChange={(e) => {
+                  setPreset('custom');
+                  setExpressionRestorerModel(e.target.checked ? 'expression_restorer' : undefined);
                 }}
               />
               <div className="w-9 h-5 bg-[var(--border-color)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--emerald-main)]"></div>

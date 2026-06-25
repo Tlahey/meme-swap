@@ -53,6 +53,10 @@ const FaceswapToolSchema = z.object({
     .string()
     .optional()
     .describe('Frame enhancer model to use (e.g. real_esrgan_x2)'),
+  expressionRestorerModel: z
+    .string()
+    .optional()
+    .describe('Expression restorer model to use (e.g. expression_restorer)'),
   lipSyncerModel: z
     .string()
     .optional()
@@ -160,6 +164,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
       faceEnhancerModel,
       faceEnhancerBlend,
       frameEnhancerModel,
+      expressionRestorerModel,
       lipSyncerModel,
       logLevel,
     } = validatedArgs;
@@ -211,6 +216,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
       faceEnhancerModel,
       faceEnhancerBlend,
       frameEnhancerModel,
+      expressionRestorerModel,
       lipSyncerModel,
       logLevel,
     };
@@ -263,6 +269,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
             `Face Enhancer Model: ${faceEnhancerModel || 'N/A'}\n` +
             `Face Enhancer Blend: ${faceEnhancerBlend !== undefined ? faceEnhancerBlend : 'N/A'}\n` +
             `Frame Enhancer Model: ${frameEnhancerModel || 'N/A'}\n` +
+            `Expression Restorer Model: ${expressionRestorerModel || 'N/A'}\n` +
             `Lip Syncer Model: ${lipSyncerModel || 'N/A'}\n` +
             `Log Level: ${logLevel}`,
         },

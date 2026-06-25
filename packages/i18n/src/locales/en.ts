@@ -60,6 +60,8 @@ export const en = {
     faceEnhancerBlendDesc: "Blends raw and enhanced face for a more natural look. (Default: 80%)",
     frameEnhancer: "Frame Enhancer",
     frameEnhancerDesc: "Enhances the entire video frame to match the face sharpness.",
+    expressionRestorer: "Expression Restorer",
+    expressionRestorerDesc: "Restores facial expressions and details.",
     faceMaskBlend: "Face Mask Blend",
     faceMaskBlendDesc: "Smooths the mask edges on the target face. (Default: 80)",
     acceleration: "Hardware Acceleration",

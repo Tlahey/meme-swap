@@ -214,6 +214,9 @@ export async function POST(request: NextRequest) {
     const frameEnhancerModel =
       (formData.get('frameEnhancerModel') as string | null) || undefined;
 
+    const expressionRestorerModel =
+      (formData.get('expressionRestorerModel') as string | null) || undefined;
+
     const lipSyncerModel =
       (formData.get('lipSyncerModel') as string | null) || undefined;
 
@@ -233,6 +236,7 @@ export async function POST(request: NextRequest) {
       faceEnhancerModel,
       faceEnhancerBlend,
       frameEnhancerModel,
+      expressionRestorerModel,
       lipSyncerModel,
     };
 

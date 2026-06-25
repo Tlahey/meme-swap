@@ -35,6 +35,8 @@ export interface FaceswapOptions {
   frameEnhancerModel?: string;
   /** Lip syncer model to use (if true, lip_syncer processor is added) */
   lipSyncerModel?: string;
+  /** Expression restorer model to use (if true, expression_restorer processor is added) */
+  expressionRestorerModel?: string;
   /** Callback triggered when a progress update is parsed from stdout/stderr */
   onProgress?: (progress: { step: string; percent: number }) => void;
 }
@@ -188,6 +190,12 @@ function buildArgs(options: FaceswapOptions): string[] {
   if (options.lipSyncerModel) {
     processors.push('lip_syncer');
     args.push('--lip-syncer-model', options.lipSyncerModel);
+  }
+
+  // Expression Restorer
+  if (options.expressionRestorerModel) {
+    processors.push('expression_restorer');
+    args.push('--expression-restorer-model', options.expressionRestorerModel);
   }
 
   // Face Mask Blend (maps to --face-mask-blur in FaceFusion)
