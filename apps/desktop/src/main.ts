@@ -850,7 +850,7 @@ ipcMain.handle('save-source-face', async (event, options) => {
 
     fileInfos.sort((a, b) => b.timestamp - a.timestamp);
     return { success: true, savedFilename: newFileName, history: fileInfos };
-  } catch (err: any) {
+  } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Erreur inconnue';
     writeToLogFile(`❌ [History] Erreur de sauvegarde du visage : ${errorMsg}\n`);
     return { success: false, error: errorMsg };
@@ -995,9 +995,10 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       outputPath: resultUrl,
       message: 'Face swap réussi',
     };
-  } catch (error: any) {
+  } catch (error: unknown) {
     const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
-    const errorCode = error?.errorCode as 'missing-install' | 'broken-install' | undefined;
+    const errorCode = (error as { errorCode?: 'missing-install' | 'broken-install' } | undefined)
+      ?.errorCode;
     writeToLogFile(`❌ Erreur pendant le FaceSwap par IPC : ${errorMsg}\n`);
     return {
       success: false,
