@@ -83,14 +83,17 @@ export function isFfmpegInstalled(): boolean {
  */
 const BROKEN_INSTALL_STDERR_PATTERN = /dyld|library not loaded|image not found/i;
 
-function isMissingBinaryError(err: Error): boolean {
+export function isMissingBinaryError(err: Error): boolean {
   return err.message.includes('ENOENT') || err.message.includes('not found');
 }
 
 /**
  * Classifies a spawn-level failure (the process never started at all).
  */
-function classifyFfmpegSpawnError(err: Error): { error: string; errorCode: ConversionErrorCode } {
+export function classifyFfmpegSpawnError(err: Error): {
+  error: string;
+  errorCode: ConversionErrorCode;
+} {
   if (isMissingBinaryError(err)) {
     return {
       error: 'FFmpeg is not installed. Install it with: brew install ffmpeg',
@@ -109,7 +112,7 @@ function classifyFfmpegSpawnError(err: Error): { error: string; errorCode: Conve
  * specific message; falls back to the raw stderr when nothing looks like a
  * broken install, matching the previous behavior.
  */
-function classifyFfmpegExit(
+export function classifyFfmpegExit(
   code: number | null,
   stderr: string,
   context: string,
