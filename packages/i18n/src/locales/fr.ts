@@ -246,4 +246,10 @@ export const fr = {
     footerNote:
       'Cette étape installe FaceFusion et son environnement virtuel Python dans ~/.meme-swap, et FFmpeg via Homebrew.',
   },
+  updateBanner: {
+    title: 'Mise à jour disponible',
+    message: 'Une nouvelle version ({version}) est disponible.',
+    downloadButton: 'Voir la publication',
+    dismiss: 'Ignorer',
+  },
 };

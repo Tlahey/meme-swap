@@ -41,4 +41,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSourceHistory: () => ipcRenderer.invoke('get-source-history'),
   saveSourceFace: (options: { path?: string; data?: Uint8Array; name: string }) => ipcRenderer.invoke('save-source-face', options),
   getResultsHistory: () => ipcRenderer.invoke('get-results-history'),
+
+  // Update check APIs
+  onUpdateAvailable: (callback: (event: any, data: { version: string; url: string }) => void) => {
+    ipcRenderer.on('update-available', callback);
+  },
+  openExternalUrl: (url: string) => ipcRenderer.invoke('open-external-url', url),
 });
