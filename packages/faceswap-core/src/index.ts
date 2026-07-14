@@ -280,14 +280,17 @@ export async function runFaceSwap(
     );
   }
 
-  const binDir = path.join(os.homedir(), '.meme-swap', 'bin');
   return new Promise((resolve) => {
     const childProcess = spawn(pythonPath, [scriptPath, ...args], {
       stdio: ['ignore', 'pipe', 'pipe'],
       cwd: path.dirname(scriptPath),
       env: {
         ...process.env,
-        PATH: `${binDir}:${process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin'}`,
+        // FaceFusion shells out to ffmpeg itself; prepend Homebrew's bin dirs so it
+        // resolves the live, correctly-linked binary instead of whatever the host
+        // process's own PATH happens to carry (GUI-launched apps on macOS often get
+        // a minimal PATH that omits Homebrew entirely).
+        PATH: `/opt/homebrew/bin:/usr/local/bin:${process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin'}`,
       },
     });
 

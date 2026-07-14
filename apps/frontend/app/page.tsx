@@ -27,6 +27,7 @@ import {
 import { McpSettings } from './components/McpSettings';
 import { SettingsModal } from './components/SettingsModal';
 import { GiphySearch } from './components/GiphySearch';
+import { SetupWizard } from './components/SetupWizard';
 import { I18nProvider, useTranslation } from '@meme-swap/i18n';
 
 interface FaceswapResult {
@@ -38,9 +39,46 @@ interface FaceswapResult {
 export default function Home() {
   return (
     <I18nProvider>
-      <HomeContent />
+      <SetupGate />
     </I18nProvider>
   );
+}
+
+function SetupGate() {
+  const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const checkStatus = async () => {
+      try {
+        const res = await fetch('/api/setup/status');
+        const data = res.ok ? await res.json() : { installed: false };
+        if (!cancelled) setIsInstalled(Boolean(data.installed));
+      } catch {
+        if (!cancelled) setIsInstalled(false);
+      }
+    };
+
+    checkStatus();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
+  if (isInstalled === null) {
+    return (
+      <main className="min-h-[100dvh] flex items-center justify-center">
+        <div className="w-8 h-8 rounded-full border-2 border-[var(--border-color)] border-t-[var(--emerald-main)] animate-spin" />
+      </main>
+    );
+  }
+
+  if (!isInstalled) {
+    return <SetupWizard onComplete={() => setIsInstalled(true)} />;
+  }
+
+  return <HomeContent />;
 }
 
 function HomeContent() {
