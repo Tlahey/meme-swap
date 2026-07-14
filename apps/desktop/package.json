@@ -19,7 +19,7 @@
     "electron-builder": "^24.13.3",
     "typescript": "^5.3.0",
     "copyfiles": "^2.4.1",
-    "@types/node": "^20.10.0"
+    "@types/node": "^20.19.39"
   },
   "build": {
     "appId": "com.memeswap.desktop",

@@ -35,20 +35,6 @@ export interface ConversionResult {
 }
 
 /**
- * Error thrown when video processing operation fails
- */
-export class VideoProcessorError extends Error {
-  constructor(
-    message: string,
-    public cause?: unknown,
-    public details?: Partial<ConversionOptions>,
-  ) {
-    super(message);
-    this.name = 'VideoProcessorError';
-  }
-}
-
-/**
  * Homebrew keeps its formulae's binaries and shared libraries in sync on every
  * upgrade, so resolving ffmpeg through these paths (rather than a copy taken at
  * install time) can never go stale.

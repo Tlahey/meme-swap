@@ -29,7 +29,6 @@ function getNestedValue(obj: any, path: string): string {
 
 export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [locale, setLocaleState] = useState<Locale>('en');
-  const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     if (typeof window !== 'undefined') {
@@ -42,7 +41,6 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
           setLocaleState('fr');
         }
       }
-      setIsMounted(true);
     }
   }, []);
 

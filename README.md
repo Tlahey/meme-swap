@@ -173,7 +173,6 @@ meme-swap/
 │   └── adr/                  # Architecture Decision Records
 │
 ├── .github/workflows/        # CI — auto-deploys website/ to GitHub Pages
-├── configs/                  # Shared ESLint / TS configs
 ├── turbo.json                # Turborepo pipeline
 └── pnpm-workspace.yaml       # pnpm workspace config
 ```
