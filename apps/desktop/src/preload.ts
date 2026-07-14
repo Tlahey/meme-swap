@@ -40,4 +40,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getTrendingGiphy: (options: any) => ipcRenderer.invoke('get-trending-giphy', options),
   getSourceHistory: () => ipcRenderer.invoke('get-source-history'),
   saveSourceFace: (options: { path?: string; data?: Uint8Array; name: string }) => ipcRenderer.invoke('save-source-face', options),
+  getResultsHistory: () => ipcRenderer.invoke('get-results-history'),
 });
