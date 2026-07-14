@@ -1,10 +1,6 @@
 import { z } from 'zod';
 import { runFaceSwap, FaceswapOptions } from '@meme-swap/faceswap-core';
-import {
-  gifToMp4,
-  mp4ToGif,
-  ConversionOptions,
-} from '@meme-swap/video-processor';
+import { gifToMp4, mp4ToGif } from '@meme-swap/video-processor';
 import fs from 'node:fs';
 import path from 'node:path';
 import os from 'node:os';

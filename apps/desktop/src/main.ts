@@ -288,9 +288,13 @@ async function startServers() {
   } else {
     // Mode dev : on utilise le shell système pour exécuter `next dev`
     writeToLogFile(`Démarrage du frontend Next.js sur le port ${frontendPort} (next dev, shell)...\n`);
+    // `detached: true` place le process (et ses enfants next dev) dans son propre
+    // groupe de processus, ce qui permet à stopServers() de tous les tuer via
+    // process.kill(-pid, ...). Sans ça, les sous-process de next dev survivent.
     frontendProcess = spawn('pnpm', ['--filter', 'frontend', 'dev'], {
       cwd: root,
       shell: true,
+      detached: true,
       env: { ...process.env, PORT: frontendPort, MCP_PORT: mcpPort }
     });
 
@@ -677,6 +681,8 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       faceEnhancerModel: options.faceEnhancerModel,
       faceEnhancerBlend: options.faceEnhancerBlend,
       frameEnhancerModel: options.frameEnhancerModel,
+      expressionRestorerModel: options.expressionRestorerModel,
+      lipSyncerModel: options.lipSyncerModel,
       onProgress: (progress) => {
         event.sender.send('faceswap-progress', progress);
       },
