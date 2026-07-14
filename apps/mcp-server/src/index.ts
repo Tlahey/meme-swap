@@ -1,6 +1,6 @@
 import { Server } from './server';
 
-const PORT = parseInt(process.env.PORT || '3001', 10);
+const PORT = parseInt(process.env.MCP_PORT || process.env.PORT || '3001', 10);
 
 async function main() {
   const server = new Server();
