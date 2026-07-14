@@ -31,6 +31,8 @@ import { GiphySearch } from './components/GiphySearch';
 import { SetupWizard, DiskSpaceInfo } from './components/SetupWizard';
 import { UpdateBanner } from './components/UpdateBanner';
 import { I18nProvider, useTranslation } from '@meme-swap/i18n';
+import type { GiphyGif } from '@meme-swap/api-client';
+import type { ElectronFile } from './types/electron';
 
 /**
  * `errorCode` is only set for failures classified as an install/environment
@@ -168,8 +170,8 @@ interface HomeContentProps {
 
 function HomeContent({ onRecheckInstall }: HomeContentProps) {
   const { t, locale, setLocale } = useTranslation();
-  const [sourceImage, setSourceImage] = useState<File | null>(null);
-  const [targetGif, setTargetGif] = useState<File | null>(null);
+  const [sourceImage, setSourceImage] = useState<ElectronFile | null>(null);
+  const [targetGif, setTargetGif] = useState<ElectronFile | null>(null);
   const [sourcePreviewUrl, setSourcePreviewUrl] = useState<string | null>(null);
   const [targetPreviewUrl, setTargetPreviewUrl] = useState<string | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
@@ -211,7 +213,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
   const loadHistory = async () => {
     if (typeof window === 'undefined') return;
 
-    const electronAPI = (window as any).electronAPI;
+    const electronAPI = window.electronAPI;
     if (electronAPI && typeof electronAPI.getSourceHistory === 'function') {
       try {
         const res = await electronAPI.getSourceHistory();
@@ -254,7 +256,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
     }
 
     // Check Electron IPC
-    const electronAPI = (window as any).electronAPI;
+    const electronAPI = window.electronAPI;
     if (electronAPI && typeof electronAPI.isGiphyConfigured === 'function') {
       try {
         const configured = await electronAPI.isGiphyConfigured();
@@ -284,7 +286,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
     loadHistory();
   }, []);
 
-  const handleSelectGiphy = async (gif: any) => {
+  const handleSelectGiphy = async (gif: GiphyGif) => {
     const gifUrl = gif.images.original.url;
     setIsGiphyLoading(true);
     try {
@@ -339,8 +341,8 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
 
   useEffect(() => {
     const checkMcpStatus = async () => {
-      const electronAPI = (window as any).electronAPI;
-      if (electronAPI) {
+      const electronAPI = window.electronAPI;
+      if (electronAPI && typeof electronAPI.getMcpStatus === 'function') {
         try {
           const status = await electronAPI.getMcpStatus();
           setIsMcpActive(status.active);
@@ -389,26 +391,25 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
   // { step, percent } progress from FaceFusion over IPC).
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const electronAPI = (window as any).electronAPI;
+    const electronAPI = window.electronAPI;
     if (electronAPI && typeof electronAPI.onFaceswapProgress === 'function') {
-      const unsubscribe = electronAPI.onFaceswapProgress(
-        (event: any, progress: FaceswapProgress) => {
-          // Set stepper to step 2 (inference)
-          updateStepIndex(2);
-          setStepStatuses((prev) => {
-            const next = [...prev];
-            next[0] = 'completed';
-            next[1] = 'completed';
-            next[2] = 'running';
-            next[3] = 'idle';
-            return next;
-          });
+      const unsubscribe = electronAPI.onFaceswapProgress((_event, progress) => {
+        // Set stepper to step 2 (inference)
+        updateStepIndex(2);
+        setStepStatuses((prev) => {
+          const next = [...prev];
+          next[0] = 'completed';
+          next[1] = 'completed';
+          next[2] = 'running';
+          next[3] = 'idle';
+          return next;
+        });
 
-          setFaceswapProgress(progress);
-        },
-      );
+        setFaceswapProgress(progress);
+      });
       return unsubscribe;
     }
+    return undefined;
   }, []);
 
   useEffect(() => {
@@ -423,7 +424,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
     setIsDarkMode((prev) => !prev);
   };
 
-  const handleSourceChange = async (file: File) => {
+  const handleSourceChange = async (file: ElectronFile) => {
     setResult(null);
     setIsSavingHistory(true);
 
@@ -432,9 +433,9 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
     setSourcePreviewUrl(tempBlobUrl);
 
     try {
-      const electronAPI = (window as any).electronAPI;
+      const electronAPI = window.electronAPI;
       if (electronAPI && typeof electronAPI.saveSourceFace === 'function') {
-        const path = (file as any).path;
+        const path = file.path;
         let saveResult;
         if (path) {
           saveResult = await electronAPI.saveSourceFace({
@@ -503,7 +504,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
     setSourcePreviewUrl(`/api/source-history/${filename}`);
   };
 
-  const handleTargetChange = (file: File) => {
+  const handleTargetChange = (file: ElectronFile) => {
     setTargetGif(file);
     setResult(null);
     if (targetPreviewUrl) URL.revokeObjectURL(targetPreviewUrl);
@@ -679,23 +680,23 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
 
     try {
       let data: FaceswapResult;
-      const electronAPI = (window as any).electronAPI;
+      const electronAPI = window.electronAPI;
 
-      let sourceData: any;
+      let sourceData: string | Uint8Array = '';
       let sourceName = '';
       if (selectedHistoryFilename) {
         sourceData = `history:${selectedHistoryFilename}`;
         sourceName = selectedHistoryFilename;
       } else if (sourceImage) {
-        const sourcePath = (sourceImage as any).path;
+        const sourcePath = sourceImage.path;
         sourceData = sourcePath ? sourcePath : new Uint8Array(await sourceImage.arrayBuffer());
         sourceName = sourceImage.name;
       }
 
-      if (electronAPI) {
+      if (electronAPI && typeof electronAPI.runFaceswap === 'function') {
         // En mode desktop Electron, on passe par l'IPC (progrès réel déjà
         // reçu via l'effet onFaceswapProgress ci-dessus)
-        const targetPath = (targetGif as any).path;
+        const targetPath = targetGif.path;
         const targetData = targetPath ? targetPath : new Uint8Array(await targetGif.arrayBuffer());
 
         data = await electronAPI.runFaceswap({

@@ -14,7 +14,7 @@ interface I18nContextProps {
 
 const I18nContext = createContext<I18nContextProps | undefined>(undefined);
 
-function getNestedValue(obj: Record<string, unknown>, path: string): string {
+export function getNestedValue(obj: Record<string, unknown>, path: string): string {
   const parts = path.split('.');
   let current: unknown = obj;
   for (const part of parts) {

@@ -25,7 +25,10 @@ export async function GET(request: NextRequest) {
     }
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to search Giphy' }, { status: 500 });
+  } catch (error) {
+    return NextResponse.json(
+      { error: error instanceof Error ? error.message : 'Failed to search Giphy' },
+      { status: 500 },
+    );
   }
 }

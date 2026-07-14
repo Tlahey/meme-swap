@@ -8,6 +8,7 @@
     "dev": "turbo run dev",
     "build": "turbo run build",
     "lint": "turbo run lint",
+    "test": "turbo run test",
     "clean": "turbo run clean && rm -rf node_modules",
     "frontend:dev": "turbo run dev --filter=frontend",
     "frontend:build": "turbo run build --filter=frontend",
@@ -27,7 +28,8 @@
     "eslint-config-prettier": "catalog:",
     "prettier": "catalog:",
     "turbo": "^2.0.0",
-    "typescript-eslint": "catalog:"
+    "typescript-eslint": "catalog:",
+    "vitest": "catalog:"
   },
   "packageManager": "pnpm@9.15.9",
   "engines": {

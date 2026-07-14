@@ -100,7 +100,7 @@ export function getFaceFusionDir(): string {
 /**
  * Chemin vers le binaire Python de l'environnement virtuel FaceFusion
  */
-function getPythonPath(): string {
+export function getPythonPath(): string {
   const ffDir = getFaceFusionDir();
   // Utiliser python3.11 si disponible (plus stable pour FaceFusion)
   const python311Path = path.join(ffDir, 'venv', 'bin', 'python3.11');
@@ -123,9 +123,11 @@ function getScriptPath(): string {
 }
 
 /**
- * Construit les arguments pour la commande FaceFusion
+ * Construit les arguments pour la commande FaceFusion. Exported for unit
+ * testing (pure function, no I/O beyond the --temp-path mkdir side effect
+ * below) — not part of the package's intended public API otherwise.
  */
-function buildArgs(options: FaceswapOptions): string[] {
+export function buildArgs(options: FaceswapOptions): string[] {
   const args: string[] = ['headless-run'];
 
   // Chemins obligatoires

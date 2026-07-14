@@ -30,7 +30,7 @@ export function ResultsHistory({ refreshSignal }: ResultsHistoryProps) {
     const loadHistory = async () => {
       if (typeof window === 'undefined') return;
 
-      const electronAPI = (window as any).electronAPI;
+      const electronAPI = window.electronAPI;
       if (electronAPI && typeof electronAPI.getResultsHistory === 'function') {
         try {
           const res = await electronAPI.getResultsHistory();
