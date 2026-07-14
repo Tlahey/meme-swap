@@ -119,8 +119,7 @@ See [docs/architecture.md](./docs/architecture.md) for the full system diagram a
 apps/
 ├── frontend/         → Next.js 14 web app
 ├── desktop/          → Electron desktop app
-├── mcp-server/       → MCP server
-└── raycast-extension/→ Raycast extension (planned)
+└── mcp-server/       → MCP server
 
 packages/
 ├── faceswap-core/    → FaceFusion Python wrapper

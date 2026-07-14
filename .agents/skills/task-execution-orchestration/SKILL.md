@@ -105,7 +105,7 @@ Track the status of each ticket and subtask using the following JSON structure:
 ## Example Prompts to Try This Skill
 
 1. "Execute the planned face swap feature tickets using sub-agents and validate the work"
-2. "Orchestrate the execution of the Raycast extension tickets with validation steps"
+2. "Orchestrate the execution of the queue/batch processing tickets with validation steps"
 3. "Execute the MCP server integration subtasks and validate against acceptance criteria"
 
 ## Related Skills

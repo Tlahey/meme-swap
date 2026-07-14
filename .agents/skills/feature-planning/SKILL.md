@@ -120,7 +120,7 @@ Create a structured JSON manifest that can be consumed by the `task-execution-or
 ## Example Prompts to Try This Skill
 
 1. "Plan the implementation of a new face swap feature with GIF upload and preview"
-2. "Create a task breakdown for adding Raycast extension support"
+2. "Create a task breakdown for adding queue/batch processing support"
 3. "Break down the MCP server integration into tickets with subtasks and validation requirements"
 
 ## Related Skills
