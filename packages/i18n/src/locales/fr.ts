@@ -165,6 +165,9 @@ export const fr = {
     subtitle: 'Vos derniers swaps, prêts à être re-téléchargés à tout moment.',
     empty: 'Aucun résultat généré pour le moment.',
     downloadTitle: 'Télécharger ce résultat',
+    deleteTitle: 'Supprimer ce résultat',
+    clearAll: 'Tout supprimer',
+    clearAllConfirm: "Supprimer tout l'historique des résultats ? Cette action est irréversible.",
   },
   settings: {
     title: "Configuration de l'application",

@@ -86,3 +86,27 @@ export async function GET() {
     );
   }
 }
+
+/**
+ * Vide entièrement l'historique des résultats (DELETE /api/results-history)
+ */
+export async function DELETE() {
+  try {
+    ensureResultsDirectory();
+    const files = fs.readdirSync(RESULTS_DIR);
+    for (const name of files) {
+      try {
+        fs.unlinkSync(path.join(RESULTS_DIR, name));
+      } catch (error) {
+        console.error(`[API Results History] Failed to delete result file: ${name}`, error);
+      }
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[API Results History] DELETE Error:', error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' },
+      { status: 500 },
+    );
+  }
+}

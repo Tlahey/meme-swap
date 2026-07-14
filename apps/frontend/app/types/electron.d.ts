@@ -42,6 +42,12 @@ interface HistoryResult {
   history?: HistoryItem[];
 }
 
+/** Return shape of deleteResult/clearResultsHistory (preload.ts). */
+interface DeleteResultResponse {
+  success: boolean;
+  error?: string;
+}
+
 /**
  * Return shape of saveSourceFace (preload.ts / main.ts's save-source-face
  * handler) — a discriminated union on `success`, matching main.ts exactly:
@@ -83,6 +89,10 @@ export interface ElectronAPI {
   }) => Promise<SaveSourceFaceResult>;
   /** preload.ts: `getResultsHistory: () => ipcRenderer.invoke('get-results-history')` */
   getResultsHistory?: () => Promise<HistoryResult>;
+  /** preload.ts: `deleteResult: (filename: string) => ipcRenderer.invoke('delete-result', filename)` */
+  deleteResult?: (filename: string) => Promise<DeleteResultResponse>;
+  /** preload.ts: `clearResultsHistory: () => ipcRenderer.invoke('clear-results-history')` */
+  clearResultsHistory?: () => Promise<DeleteResultResponse>;
   /** preload.ts: `isGiphyConfigured: () => ipcRenderer.invoke('is-giphy-configured')` */
   isGiphyConfigured?: () => Promise<boolean>;
   /** preload.ts: `getMcpStatus: () => ipcRenderer.invoke('get-mcp-status')` */

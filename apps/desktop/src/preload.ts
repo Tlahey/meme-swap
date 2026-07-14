@@ -96,6 +96,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveSourceFace: (options: { path?: string; data?: Uint8Array; name: string }) =>
     ipcRenderer.invoke('save-source-face', options),
   getResultsHistory: () => ipcRenderer.invoke('get-results-history'),
+  deleteResult: (filename: string) => ipcRenderer.invoke('delete-result', filename),
+  clearResultsHistory: () => ipcRenderer.invoke('clear-results-history'),
 
   // Update check APIs
   onUpdateAvailable: (

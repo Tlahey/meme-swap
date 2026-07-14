@@ -801,6 +801,58 @@ ipcMain.handle('get-results-history', async () => {
   return { success: true, history: fileInfos };
 });
 
+// IPC : Supprimer un résultat de l'historique
+ipcMain.handle('delete-result', async (event, filename: string) => {
+  try {
+    if (
+      typeof filename !== 'string' ||
+      !filename ||
+      filename.includes('/') ||
+      filename.includes('\\') ||
+      filename.includes('..')
+    ) {
+      throw new Error('Nom de fichier invalide');
+    }
+
+    const filePath = path.join(RESULTS_DIR, filename);
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(path.resolve(RESULTS_DIR))) {
+      throw new Error('Accès non autorisé');
+    }
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Erreur inconnue';
+    writeToLogFile(`❌ [History] Erreur de suppression du résultat : ${errorMsg}\n`);
+    return { success: false, error: errorMsg };
+  }
+});
+
+// IPC : Vider entièrement l'historique des résultats
+ipcMain.handle('clear-results-history', async () => {
+  try {
+    if (!fs.existsSync(RESULTS_DIR)) {
+      fs.mkdirSync(RESULTS_DIR, { recursive: true });
+    }
+    const files = fs.readdirSync(RESULTS_DIR);
+    for (const name of files) {
+      try {
+        fs.unlinkSync(path.join(RESULTS_DIR, name));
+      } catch (error) {
+        writeToLogFile(`❌ [History] Erreur de suppression du fichier ${name} : ${error}\n`);
+      }
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Erreur inconnue';
+    writeToLogFile(`❌ [History] Erreur de vidage de l'historique des résultats : ${errorMsg}\n`);
+    return { success: false, error: errorMsg };
+  }
+});
+
 // IPC : Enregistrer un visage source dans l'historique
 ipcMain.handle('save-source-face', async (event, options) => {
   if (!fs.existsSync(HISTORY_DIR)) {
