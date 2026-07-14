@@ -20,6 +20,12 @@ export const en = {
     processing: 'Generation in progress...',
     errorOccurred: 'An error occurred',
     checkSettings: 'Verify your settings or the provided media files.',
+    installErrorTitle: 'Installation problem detected',
+    installErrorDesc:
+      "This isn't a settings or media problem — part of your local install (FaceFusion, Python, or FFmpeg) appears to be missing or broken. Re-check your installation below, or re-run setup to fix it.",
+    recheckInstallButton: 'Re-check installation',
+    recheckInstallOk:
+      'Your installation looks fine — this may have been a temporary issue. Feel free to try the swap again.',
     technicalDetails: 'Technical Details',
     tipsTitle: 'Tips for Best Results',
     tipsDesc:

@@ -44,26 +44,26 @@ export interface FaceswapOptions {
 }
 
 /**
+ * Closed set of environment/install problems the pipeline can classify, as
+ * opposed to an ordinary swap failure (bad media, FaceFusion crashing on a
+ * specific frame, etc). Threaded through FaceswapResult and mirrored by
+ * video-processor's ConversionResult (same string values, kept as an
+ * independent literal type there since the two packages don't depend on each
+ * other) so callers — the SSE `done` event in
+ * apps/frontend/app/api/faceswap/route.ts and the desktop `run-faceswap` IPC
+ * response — can tell "FaceFusion/Python/ffmpeg is missing or broken" apart
+ * from a regular failure without re-parsing error message strings.
+ */
+export type FaceswapErrorCode = 'missing-install' | 'broken-install';
+
+/**
  * Résultat d'une opération de face swap
  */
 export interface FaceswapResult {
   success: boolean;
   outputPath?: string;
   error?: string;
-}
-
-/**
- * Error thrown when faceswap operation fails
- */
-export class FaceswapError extends Error {
-  constructor(
-    message: string,
-    public cause?: unknown,
-    public details?: Partial<FaceswapOptions>,
-  ) {
-    super(message);
-    this.name = 'FaceswapError';
-  }
+  errorCode?: FaceswapErrorCode;
 }
 
 /**
@@ -263,21 +263,27 @@ export async function runFaceSwap(
   const scriptPath = getScriptPath();
   const args = buildArgs(options);
 
-  // Vérification des chemins
+  // Vérification des chemins : FaceFusion/Python absent ou non installé.
+  // Renvoyé comme un FaceswapResult classifié plutôt que levé en exception,
+  // pour que tous les appelants (déjà écrits pour `await`er un résultat, pas
+  // pour catcher une FaceswapError) reçoivent la même forme de réponse que
+  // pour n'importe quel autre échec, avec errorCode='missing-install' pour
+  // permettre au frontend de proposer de relancer l'assistant d'installation
+  // plutôt qu'un message générique.
   if (!existsSync(pythonPath)) {
-    throw new FaceswapError(
-      `Python de FaceFusion non trouvé à: ${pythonPath}`,
-      null,
-      options,
-    );
+    return {
+      success: false,
+      error: `FaceFusion's Python environment was not found at ${pythonPath}. Run the setup wizard again to (re)install FaceFusion.`,
+      errorCode: 'missing-install',
+    };
   }
 
   if (!existsSync(scriptPath)) {
-    throw new FaceswapError(
-      `Script FaceFusion non trouvé à: ${scriptPath}`,
-      null,
-      options,
-    );
+    return {
+      success: false,
+      error: `FaceFusion is not installed (missing facefusion.py at ${scriptPath}). Run the setup wizard to install it.`,
+      errorCode: 'missing-install',
+    };
   }
 
   return new Promise((resolve) => {
@@ -329,16 +335,23 @@ export async function runFaceSwap(
       } else {
         resolve({
           success: false,
-          error: stderr || `Processus terminé avec le code ${code}`,
+          error: stderr || `FaceFusion exited with code ${code}`,
         });
       }
     });
 
-    // Gestion des erreurs de spawn
+    // Gestion des erreurs de spawn. pythonPath a déjà été validé plus haut ;
+    // un ENOENT ici signifierait une suppression concurrente du binaire entre
+    // la vérification et le spawn — rare, mais on le classe quand même comme
+    // 'missing-install' plutôt que comme une erreur générique.
     childProcess.on('error', (err: Error) => {
+      const isMissingBinary = err.message.includes('ENOENT');
       resolve({
         success: false,
-        error: `Erreur lors du lancement de FaceFusion: ${err.message}`,
+        error: isMissingBinary
+          ? `FaceFusion's Python environment appears to have disappeared (${err.message}). Run the setup wizard again to (re)install FaceFusion.`
+          : `Failed to launch FaceFusion: ${err.message}`,
+        errorCode: isMissingBinary ? 'missing-install' : undefined,
       });
     });
   });
