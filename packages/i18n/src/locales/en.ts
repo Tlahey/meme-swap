@@ -136,6 +136,7 @@ export const en = {
       processing: 'Swapping faces',
       merging: 'Merging video',
     },
+    etaRemaining: '~{time} remaining',
   },
   result: {
     title: 'Final Result',

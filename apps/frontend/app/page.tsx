@@ -16,7 +16,7 @@ import {
   GearIcon as Gear,
 } from '@phosphor-icons/react';
 import { UploadZone } from './components/UploadZone';
-import { ProcessSteps, Step } from './components/ProcessSteps';
+import { ProcessSteps, Step, FaceswapProgress } from './components/ProcessSteps';
 import { ResultDisplay } from './components/ResultDisplay';
 import {
   ModelSettings,
@@ -34,6 +34,46 @@ interface FaceswapResult {
   success: boolean;
   outputPath?: string;
   error?: string;
+}
+
+/** Shape of the "progress" SSE events emitted by POST /api/faceswap. */
+interface FaceswapProgressEvent {
+  stepIndex: number;
+  status: 'running' | 'completed';
+  faceswapProgress: FaceswapProgress | null;
+}
+
+/**
+ * Parses a single Server-Sent Events buffer chunk into `{ event, data }`
+ * pairs. SSE frames are separated by a blank line; each frame has one or
+ * more `event:`/`data:` lines. Returns the parsed frames plus whatever
+ * incomplete trailing text should be kept for the next chunk.
+ */
+function parseSseChunk(buffer: string): {
+  frames: { event: string; data: string }[];
+  remainder: string;
+} {
+  const parts = buffer.split('\n\n');
+  const remainder = parts.pop() ?? '';
+  const frames: { event: string; data: string }[] = [];
+
+  for (const part of parts) {
+    if (!part.trim()) continue;
+    let event = 'message';
+    const dataLines: string[] = [];
+    for (const line of part.split('\n')) {
+      if (line.startsWith('event:')) {
+        event = line.slice('event:'.length).trim();
+      } else if (line.startsWith('data:')) {
+        dataLines.push(line.slice('data:'.length).trim());
+      }
+    }
+    if (dataLines.length > 0) {
+      frames.push({ event, data: dataLines.join('\n') });
+    }
+  }
+
+  return { frames, remainder };
 }
 
 export default function Home() {
@@ -94,10 +134,9 @@ function HomeContent() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<FaceswapResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [faceswapProgress, setFaceswapProgress] = useState<{
-    step: string;
-    percent: number;
-  } | null>(null);
+  const [faceswapProgress, setFaceswapProgress] = useState<FaceswapProgress | null>(
+    null,
+  );
 
   // States for source face history
   const [historyList, setHistoryList] = useState<
@@ -287,21 +326,28 @@ function HomeContent() {
     return () => clearInterval(interval);
   }, []);
 
-  // Listen for progress from Electron IPC
+  // Refs for scrolling and for tracking the current step outside of React's
+  // render cycle (needed so async progress/error handlers always see the
+  // latest step, not a stale render-time closure).
+  const processStepsRef = useRef<HTMLDivElement>(null);
+  const resultDisplayRef = useRef<HTMLDivElement>(null);
+  const currentStepIndexRef = useRef<number>(0);
+
+  const updateStepIndex = (index: number) => {
+    currentStepIndexRef.current = index;
+    setCurrentStepIndex(index);
+  };
+
+  // Listen for progress from Electron IPC (desktop already streams real
+  // { step, percent } progress from FaceFusion over IPC).
   useEffect(() => {
     if (typeof window === 'undefined') return;
     const electronAPI = (window as any).electronAPI;
     if (electronAPI && typeof electronAPI.onFaceswapProgress === 'function') {
       const unsubscribe = electronAPI.onFaceswapProgress(
-        (event: any, progress: { step: string; percent: number }) => {
-          // Clear simulation interval since we are getting real progress
-          if (simulationIntervalRef.current) {
-            clearTimeout(simulationIntervalRef.current);
-            simulationIntervalRef.current = null;
-          }
-
+        (event: any, progress: FaceswapProgress) => {
           // Set stepper to step 2 (inference)
-          setCurrentStepIndex(2);
+          updateStepIndex(2);
           setStepStatuses((prev) => {
             const next = [...prev];
             next[0] = 'completed';
@@ -317,11 +363,6 @@ function HomeContent() {
       return unsubscribe;
     }
   }, []);
-
-  // Refs for scrolling
-  const processStepsRef = useRef<HTMLDivElement>(null);
-  const resultDisplayRef = useRef<HTMLDivElement>(null);
-  const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   useEffect(() => {
     if (isDarkMode) {
@@ -504,77 +545,75 @@ function HomeContent() {
     },
   ];
 
-  const startSimulation = () => {
-    // Reset steps
-    setCurrentStepIndex(0);
-    setStepStatuses(['running', 'idle', 'idle', 'idle']);
-
-    let currentIdx = 0;
-    const timeline = [
-      { step: 0, nextAt: 1500 }, // Upload takes 1.5s
-      { step: 1, nextAt: 4000 }, // Preprocessing takes 2.5s more
-      { step: 2, nextAt: 99999 }, // Inference takes dynamic time until resolve
-    ];
-
-    const runNext = () => {
-      const currentConfig = timeline[currentIdx];
-      if (!currentConfig) return;
-
-      simulationIntervalRef.current = setTimeout(
-        () => {
-          setStepStatuses((prev) => {
-            const next = [...prev];
-            next[currentIdx] = 'completed';
-            if (currentIdx + 1 < next.length) {
-              next[currentIdx + 1] = 'running';
-            }
-            return next;
-          });
-          currentIdx += 1;
-          setCurrentStepIndex(currentIdx);
-
-          if (currentIdx < timeline.length - 1) {
-            runNext();
-          }
-        },
-        currentConfig.nextAt - (timeline[currentIdx - 1]?.nextAt || 0),
-      );
-    };
-
-    runNext();
+  /** Applies one "progress" SSE event to the stepper + inference progress state. */
+  const applyProgressEvent = (data: FaceswapProgressEvent) => {
+    updateStepIndex(data.stepIndex);
+    setStepStatuses((prev) => {
+      const next = [...prev] as typeof prev;
+      for (let i = 0; i < data.stepIndex; i++) {
+        next[i] = 'completed';
+      }
+      next[data.stepIndex] = data.status;
+      return next;
+    });
+    if (data.stepIndex === 2) {
+      setFaceswapProgress(data.faceswapProgress);
+    }
   };
 
-  const stopSimulation = (success: boolean) => {
-    if (simulationIntervalRef.current) {
-      clearTimeout(simulationIntervalRef.current);
+  /**
+   * Runs the web (non-Electron) faceswap pipeline by POSTing the form data
+   * and manually reading the SSE response stream (fetch + getReader, since
+   * the native EventSource API is GET-only and can't carry a request body).
+   */
+  const runFaceswapWeb = async (formData: FormData): Promise<FaceswapResult> => {
+    const response = await fetch('/api/faceswap', {
+      method: 'POST',
+      body: formData,
+    });
+
+    if (!response.ok || !response.body) {
+      throw new Error(`Le serveur a répondu avec le statut ${response.status}`);
     }
 
-    if (success) {
-      // Transition step 2 to complete, then step 3 to running, then complete step 3
-      setStepStatuses((prev) => {
-        const next = [...prev];
-        // Mark all preceding steps as completed
-        for (let i = 0; i < 3; i++) {
-          next[i] = 'completed';
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let finalResult: FaceswapResult | null = null;
+
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+      const { frames, remainder } = parseSseChunk(buffer);
+      buffer = remainder;
+
+      for (const frame of frames) {
+        if (frame.event === 'progress') {
+          applyProgressEvent(JSON.parse(frame.data) as FaceswapProgressEvent);
+        } else if (frame.event === 'done') {
+          finalResult = JSON.parse(frame.data) as FaceswapResult;
         }
-        next[3] = 'running';
-        return next;
-      });
-      setCurrentStepIndex(3);
-
-      setTimeout(() => {
-        setStepStatuses(['completed', 'completed', 'completed', 'completed']);
-        setCurrentStepIndex(4);
-      }, 1000);
-    } else {
-      // Mark current index as failed
-      setStepStatuses((prev) => {
-        const next = [...prev];
-        const activeIdx = Math.min(currentStepIndex, 3);
-        next[activeIdx] = 'failed';
-        return next;
-      });
+      }
     }
+
+    if (!finalResult) {
+      throw new Error(
+        'La connexion avec le serveur a été interrompue avant la fin du traitement.',
+      );
+    }
+
+    return finalResult;
+  };
+
+  const markCurrentStepFailed = () => {
+    setStepStatuses((prev) => {
+      const next = [...prev];
+      const activeIdx = Math.min(currentStepIndexRef.current, 3);
+      next[activeIdx] = 'failed';
+      return next;
+    });
   };
 
   const handleSubmit = async () => {
@@ -583,7 +622,8 @@ function HomeContent() {
     setIsProcessing(true);
     setResult(null);
     setFaceswapProgress(null);
-    startSimulation();
+    updateStepIndex(0);
+    setStepStatuses(['running', 'idle', 'idle', 'idle']);
 
     // Scroll to progress
     setTimeout(() => {
@@ -594,7 +634,7 @@ function HomeContent() {
     }, 100);
 
     try {
-      let data;
+      let data: FaceswapResult;
       const electronAPI = (window as any).electronAPI;
 
       let sourceData: any;
@@ -611,7 +651,8 @@ function HomeContent() {
       }
 
       if (electronAPI) {
-        // En mode desktop Electron, on passe par l'IPC
+        // En mode desktop Electron, on passe par l'IPC (progrès réel déjà
+        // reçu via l'effet onFaceswapProgress ci-dessus)
         const targetPath = (targetGif as any).path;
         const targetData = targetPath
           ? targetPath
@@ -634,7 +675,7 @@ function HomeContent() {
           expressionRestorerModel,
         });
       } else {
-        // En mode web standard
+        // En mode web standard : flux SSE avec progression réelle
         const formData = new FormData();
         if (selectedHistoryFilename) {
           formData.append('source', `history:${selectedHistoryFilename}`);
@@ -658,20 +699,16 @@ function HomeContent() {
         if (expressionRestorerModel)
           formData.append('expressionRestorerModel', expressionRestorerModel);
 
-        const response = await fetch('/api/faceswap', {
-          method: 'POST',
-          body: formData,
-        });
-
-        data = await response.json();
+        data = await runFaceswapWeb(formData);
       }
 
       if (data.success) {
-        stopSimulation(true);
-        // Wait for final step completion animation
+        setStepStatuses(['completed', 'completed', 'completed', 'completed']);
+        updateStepIndex(4);
+        // Brief pause so the final step's completion animation is visible
         setTimeout(() => {
           setResult({ success: true, outputPath: data.outputPath });
-          setPreviewUrl(data.outputPath);
+          setPreviewUrl(data.outputPath ?? null);
           setIsProcessing(false);
           // Scroll to result
           setTimeout(() => {
@@ -680,16 +717,16 @@ function HomeContent() {
               block: 'center',
             });
           }, 100);
-        }, 1200);
+        }, 800);
       } else {
-        stopSimulation(false);
+        markCurrentStepFailed();
         setTimeout(() => {
           setResult({ success: false, error: data.error });
           setIsProcessing(false);
-        }, 800);
+        }, 400);
       }
     } catch (error) {
-      stopSimulation(false);
+      markCurrentStepFailed();
       setTimeout(() => {
         setResult({
           success: false,
@@ -697,7 +734,7 @@ function HomeContent() {
             error instanceof Error ? error.message : 'Une erreur est survenue',
         });
         setIsProcessing(false);
-      }, 800);
+      }, 400);
     }
   };
 
@@ -714,7 +751,7 @@ function HomeContent() {
     if (targetPreviewUrl) URL.revokeObjectURL(targetPreviewUrl);
     setSourcePreviewUrl(null);
     setTargetPreviewUrl(null);
-    setCurrentStepIndex(0);
+    updateStepIndex(0);
     setStepStatuses(['idle', 'idle', 'idle', 'idle']);
     // Reset quality parameters
     setPreset('medium');
@@ -744,9 +781,6 @@ function HomeContent() {
     return () => {
       if (sourceUrlRef.current) URL.revokeObjectURL(sourceUrlRef.current);
       if (targetUrlRef.current) URL.revokeObjectURL(targetUrlRef.current);
-      if (simulationIntervalRef.current) {
-        clearTimeout(simulationIntervalRef.current);
-      }
     };
   }, []);
 
