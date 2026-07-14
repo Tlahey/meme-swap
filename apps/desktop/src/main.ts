@@ -479,12 +479,83 @@ function pruneHistoryFiles(): void {
 }
 
 /**
+ * Cap safety net proportionné pour TEMP_DIR. Le nettoyage par requête
+ * ci-dessous purge déjà TEMP_DIR sans condition avant chaque run, mais cette
+ * purge avale silencieusement ses erreurs (voir le try/catch), et elle ne se
+ * déclenche que si un *autre* swap a lieu ensuite — un run planté ou
+ * abandonné sans requête suivante laisse ses fichiers pour toujours. Ce n'est
+ * pas un timer d'arrière-plan (rien d'autre dans ce code base n'en a un) :
+ * juste un contrôle de taille à chaque appel de cleanupProcessDirs() *et* au
+ * démarrage de l'app (voir app.whenReady ci-dessous, pour couvrir le cas où
+ * l'utilisateur ne relance jamais de swap après un crash), qui force une
+ * purge complète et logue bruyamment si TEMP_DIR devient anormalement gros,
+ * pour qu'une suppression silencieusement en échec devienne visible plutôt
+ * qu'invisible.
+ *
+ * Même seuil et même raisonnement que côté web
+ * (apps/frontend/app/api/faceswap/route.ts) : l'empreinte temp d'un seul run
+ * (source, MP4 converti, dossier de travail frames de FaceFusion, MP4 de
+ * sortie avant reconversion) se situe typiquement entre quelques dizaines et
+ * quelques centaines de Mo. 2 Go est environ un ordre de grandeur au-dessus
+ * d'un run lourd isolé : le franchir signifie soit plusieurs runs abandonnés
+ * accumulés, soit une purge en échec silencieux — pas un usage normal à un
+ * seul run.
+ */
+const TEMP_DIR_SAFETY_CAP_BYTES = 2 * 1024 * 1024 * 1024;
+
+function getDirSizeBytes(dirPath: string): number {
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+
+  let total = 0;
+  for (const entry of entries) {
+    const entryPath = path.join(dirPath, entry.name);
+    try {
+      if (entry.isDirectory()) {
+        total += getDirSizeBytes(entryPath);
+      } else {
+        total += fs.statSync(entryPath).size;
+      }
+    } catch {
+      // Fichier supprimé entre le readdir et le stat : on ignore et continue.
+    }
+  }
+  return total;
+}
+
+function enforceTempDirSafetyNet(): void {
+  if (!fs.existsSync(TEMP_DIR)) return;
+
+  const sizeBytes = getDirSizeBytes(TEMP_DIR);
+  if (sizeBytes <= TEMP_DIR_SAFETY_CAP_BYTES) return;
+
+  const message =
+    `[Cleanup] SAFETY NET: ${TEMP_DIR} has reached ${(sizeBytes / (1024 * 1024)).toFixed(0)} MB, ` +
+    `above the ${(TEMP_DIR_SAFETY_CAP_BYTES / (1024 * 1024 * 1024)).toFixed(0)} GB cap for normal single-run usage. ` +
+    'Forcing a full purge — this usually means a previous cleanup silently failed, or several runs were abandoned without a follow-up swap.\n';
+  console.error(message);
+  writeToLogFile(`❌ ${message}`);
+
+  try {
+    fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+  } catch (error) {
+    console.error(`[Cleanup] SAFETY NET purge also failed for ${TEMP_DIR}:`, error);
+  }
+}
+
+/**
  * Supprime les fichiers temporaires au début de chaque run. RESULTS_DIR
  * n'est volontairement plus purgé ici : les résultats y persistent d'un run
  * à l'autre pour alimenter l'historique de re-téléchargement (voir
  * pruneResultsFiles, appelée après chaque run réussi).
  */
 function cleanupProcessDirs(): void {
+  enforceTempDirSafetyNet();
+
   if (fs.existsSync(TEMP_DIR)) {
     try {
       fs.rmSync(TEMP_DIR, { recursive: true, force: true });
@@ -740,7 +811,9 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       });
 
       if (!gifToMp4Result.success) {
-        throw new Error(`Conversion GIF→MP4 échouée: ${gifToMp4Result.error}`);
+        throw Object.assign(new Error(`GIF→MP4 conversion failed: ${gifToMp4Result.error}`), {
+          errorCode: gifToMp4Result.errorCode,
+        });
       }
 
       targetForFaceswap = tempMp4Path;
@@ -782,7 +855,9 @@ ipcMain.handle('run-faceswap', async (event, options) => {
     faceswapProcess = null;
 
     if (!faceswapResult.success) {
-      throw new Error(`Face swap échoué: ${faceswapResult.error}`);
+      throw Object.assign(new Error(`Face swap failed: ${faceswapResult.error}`), {
+        errorCode: faceswapResult.errorCode,
+      });
     }
 
     writeToLogFile('[IPC] Face swap terminé avec succès\n');
@@ -801,7 +876,9 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       });
 
       if (!mp4ToGifResult.success) {
-        throw new Error(`Conversion MP4→GIF échouée: ${mp4ToGifResult.error}`);
+        throw Object.assign(new Error(`MP4→GIF conversion failed: ${mp4ToGifResult.error}`), {
+          errorCode: mp4ToGifResult.errorCode,
+        });
       }
 
       finalOutputPath = outputGifPath;
@@ -821,10 +898,12 @@ ipcMain.handle('run-faceswap', async (event, options) => {
 
   } catch (error: any) {
     const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
+    const errorCode = error?.errorCode as 'missing-install' | 'broken-install' | undefined;
     writeToLogFile(`❌ Erreur pendant le FaceSwap par IPC : ${errorMsg}\n`);
     return {
       success: false,
       error: errorMsg,
+      errorCode,
     };
   }
 });
@@ -843,6 +922,12 @@ app.whenReady().then(() => {
   // Si nous n'avons pas obtenu le verrou, quit() a déjà été appelé plus haut.
   // On garde un guard ici par sécurité.
   if (!gotTheLock) return;
+
+  // Vérifie TEMP_DIR dès le démarrage de l'app : le nettoyage par requête ne
+  // se déclenche que si un swap suivant a lieu, donc un run planté juste
+  // avant que l'utilisateur ne quitte l'app laisserait sinon ses fichiers
+  // pour toujours (voir enforceTempDirSafetyNet ci-dessus).
+  enforceTempDirSafetyNet();
 
   // Créer un fichier icône vide temporaire pour éviter une erreur de chargement
   const placeholderPath = path.join(__dirname, 'icon_placeholder.png');

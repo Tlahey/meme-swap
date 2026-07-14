@@ -20,6 +20,12 @@ export const fr = {
     processing: 'Génération en cours…',
     errorOccurred: "Une erreur s'est produite",
     checkSettings: 'Vérifiez vos paramètres ou les médias fournis.',
+    installErrorTitle: "Problème d'installation détecté",
+    installErrorDesc:
+      "Ce n'est pas un problème de paramètres ou de média : une partie de votre installation locale (FaceFusion, Python ou FFmpeg) semble manquante ou cassée. Vérifiez votre installation ci-dessous, ou relancez la configuration pour la réparer.",
+    recheckInstallButton: "Vérifier l'installation",
+    recheckInstallOk:
+      'Votre installation semble correcte — il pourrait s\'agir d\'un problème temporaire. Vous pouvez réessayer le swap.',
     technicalDetails: 'Détails Techniques',
     tipsTitle: 'Conseils pour un meilleur rendu',
     tipsDesc:

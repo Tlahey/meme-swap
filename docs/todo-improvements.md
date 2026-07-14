@@ -18,8 +18,8 @@ Backlog of ideas to triage/prioritize before implementation. No date commitment,
 
 ## Robustness
 
-- [ ] Actionable error message when FaceFusion/Python/ffmpeg are missing or broken, instead of a raw stack trace.
-- [ ] Automatic cleanup/monitoring of `~/.meme-swap/process/temp` if the folder grows too large.
+- [x] Actionable error message when FaceFusion/Python/ffmpeg are missing or broken, instead of a raw stack trace. Added `errorCode?: 'missing-install' | 'broken-install'` to `FaceswapResult`/`ConversionResult`, threaded through the SSE `done` event and the desktop IPC response (no re-parsing error strings client-side). Detects both "missing entirely" (ENOENT) and "exists but broken" (ffmpeg dyld/library errors) cases. The frontend now shows a distinct, accurate message for install/environment failures plus a "Re-check installation" button that reuses the existing `/api/setup/status` + `SetupWizard` flow instead of a second parallel one.
+- [x] Automatic cleanup/monitoring of `~/.meme-swap/process/temp` if the folder grows too large. `TEMP_DIR` was already wiped per-request, but silently (a failed delete just logged and moved on) and only when another request actually happened. Added a size-check safety net (2 GiB cap, ~10x a heavy single run) that force-purges and logs loudly if crossed — checked on every `cleanupProcessDirs()` call (web + desktop) and additionally at desktop app startup, to catch the "crashed run, app never reopened" case per-request cleanup can't reach.
 
 ## Distribution
 

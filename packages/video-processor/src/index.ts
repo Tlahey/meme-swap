@@ -17,12 +17,21 @@ export interface ConversionOptions {
 }
 
 /**
+ * Closed set of environment/install problems this package can classify, kept
+ * as an independent literal type mirroring faceswap-core's FaceswapErrorCode
+ * (same string values) since neither package depends on the other. See that
+ * type's doc comment for how this threads through to the frontend/desktop.
+ */
+export type ConversionErrorCode = 'missing-install' | 'broken-install';
+
+/**
  * Résultat d'une opération de conversion
  */
 export interface ConversionResult {
   success: boolean;
   outputPath?: string;
   error?: string;
+  errorCode?: ConversionErrorCode;
 }
 
 /**
@@ -73,6 +82,65 @@ export function isFfmpegInstalled(): boolean {
   } catch {
     return false;
   }
+}
+
+/**
+ * Substrings that show up in ffmpeg's stderr when the binary itself exists
+ * but its dynamic library links are broken — the exact failure mode that
+ * broke real swaps on this machine when a stale copy of ffmpeg (taken at
+ * install time) survived a `brew upgrade ffmpeg` that moved its shared
+ * libraries. Resolving ffmpeg live from Homebrew's bin dirs (see
+ * findHomebrewFfmpeg above) fixes the common case; this pattern exists for
+ * if it ever happens again anyway (corrupted install, mid-upgrade state,
+ * etc). Kept narrow and dyld/library-loading-specific so an ordinary
+ * encoding error never gets misclassified as an install problem.
+ */
+const BROKEN_INSTALL_STDERR_PATTERN = /dyld|library not loaded|image not found/i;
+
+function isMissingBinaryError(err: Error): boolean {
+  return err.message.includes('ENOENT') || err.message.includes('not found');
+}
+
+/**
+ * Classifies a spawn-level failure (the process never started at all).
+ */
+function classifyFfmpegSpawnError(
+  err: Error,
+): { error: string; errorCode: ConversionErrorCode } {
+  if (isMissingBinaryError(err)) {
+    return {
+      error: 'FFmpeg is not installed. Install it with: brew install ffmpeg',
+      errorCode: 'missing-install',
+    };
+  }
+  return {
+    error: `FFmpeg failed to start (${err.message}). Your FFmpeg installation may be corrupted — try reinstalling it with: brew reinstall ffmpeg`,
+    errorCode: 'broken-install',
+  };
+}
+
+/**
+ * Classifies a non-zero exit (the process started but failed). `context`
+ * describes which phase failed (e.g. "converting GIF to MP4") for a more
+ * specific message; falls back to the raw stderr when nothing looks like a
+ * broken install, matching the previous behavior.
+ */
+function classifyFfmpegExit(
+  code: number | null,
+  stderr: string,
+  context: string,
+): { error: string; errorCode?: ConversionErrorCode } {
+  if (BROKEN_INSTALL_STDERR_PATTERN.test(stderr)) {
+    return {
+      error:
+        `FFmpeg crashed while ${context} (exit code ${code}). This looks like a broken FFmpeg ` +
+        `install rather than a normal encoding error — try reinstalling it with: brew reinstall ffmpeg\n\n${stderr}`,
+      errorCode: 'broken-install',
+    };
+  }
+  return {
+    error: stderr || `FFmpeg exited with code ${code}`,
+  };
 }
 
 /**
@@ -156,24 +224,16 @@ export async function gifToMp4(
       } else {
         resolve({
           success: false,
-          error: stderr || `FFmpeg terminé avec le code ${code}`,
+          ...classifyFfmpegExit(code, stderr, 'converting GIF to MP4'),
         });
       }
     });
 
     process.on('error', (err: Error) => {
-      if (err.message.includes('not found') || err.message.includes('ENOENT')) {
-        resolve({
-          success: false,
-          error:
-            "FFmpeg n'est pas installé. Installez-le avec: brew install ffmpeg",
-        });
-      } else {
-        resolve({
-          success: false,
-          error: `Erreur FFmpeg: ${err.message}`,
-        });
-      }
+      resolve({
+        success: false,
+        ...classifyFfmpegSpawnError(err),
+      });
     });
   });
 }
@@ -251,7 +311,7 @@ export async function mp4ToGif(
       if (code !== 0) {
         resolve({
           success: false,
-          error: `Échec de la génération de palette: ${pass1Error}`,
+          ...classifyFfmpegExit(code, pass1Error, 'generating the color palette'),
         });
         return;
       }
@@ -289,7 +349,7 @@ export async function mp4ToGif(
         } else {
           resolve({
             success: false,
-            error: pass2Error || `FFmpeg terminé avec le code ${code}`,
+            ...classifyFfmpegExit(code, pass2Error, 'converting MP4 to GIF'),
           });
         }
       });
@@ -297,24 +357,16 @@ export async function mp4ToGif(
       pass2.on('error', (err: Error) => {
         resolve({
           success: false,
-          error: `Erreur FFmpeg: ${err.message}`,
+          ...classifyFfmpegSpawnError(err),
         });
       });
     });
 
     pass1.on('error', (err: Error) => {
-      if (err.message.includes('not found') || err.message.includes('ENOENT')) {
-        resolve({
-          success: false,
-          error:
-            "FFmpeg n'est pas installé. Installez-le avec: brew install ffmpeg",
-        });
-      } else {
-        resolve({
-          success: false,
-          error: `Erreur FFmpeg: ${err.message}`,
-        });
-      }
+      resolve({
+        success: false,
+        ...classifyFfmpegSpawnError(err),
+      });
     });
   });
 }

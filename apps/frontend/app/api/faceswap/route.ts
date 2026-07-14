@@ -23,12 +23,18 @@ interface FaceswapProgressEvent {
 
 /**
  * Événement final (unique) envoyé au client, qu'il s'agisse d'un succès ou
- * d'un échec — remplace les anciennes réponses JSON directes.
+ * d'un échec — remplace les anciennes réponses JSON directes. `errorCode`
+ * n'est renseigné que pour les échecs classifiés comme un problème
+ * d'install/environnement (FaceFusion/Python/ffmpeg manquant ou cassé, voir
+ * FaceswapErrorCode / ConversionErrorCode) plutôt qu'un échec de swap
+ * ordinaire, pour que le frontend puisse afficher un message et un call-to-
+ * action différents sans re-parser la chaîne d'erreur.
  */
 interface FaceswapDoneEvent {
   success: boolean;
   outputPath?: string;
   error?: string;
+  errorCode?: 'missing-install' | 'broken-install';
 }
 
 // Configuration des chemins
@@ -58,12 +64,78 @@ function ensureDirectories(): void {
 }
 
 /**
+ * Cap safety net proportionné pour TEMP_DIR. Le nettoyage par requête
+ * ci-dessous purge déjà TEMP_DIR sans condition avant chaque run, mais cette
+ * purge avale silencieusement ses erreurs (voir le try/catch), et elle ne se
+ * déclenche que si un *autre* swap a lieu ensuite — un run planté ou
+ * abandonné sans requête suivante laisse ses fichiers pour toujours. Ce n'est
+ * pas un timer d'arrière-plan (rien d'autre dans ce code base n'en a un) :
+ * juste un contrôle de taille à chaque appel de cleanupProcessDirs(), qui
+ * force une purge complète et logue bruyamment si TEMP_DIR devient
+ * anormalement gros, pour qu'une suppression silencieusement en échec
+ * devienne visible plutôt qu'invisible.
+ *
+ * L'empreinte temp d'un seul run (source, MP4 converti, dossier de travail
+ * frames de FaceFusion, MP4 de sortie avant reconversion) se situe
+ * typiquement entre quelques dizaines et quelques centaines de Mo. 2 Go est
+ * environ un ordre de grandeur au-dessus d'un run lourd isolé : le franchir
+ * signifie soit plusieurs runs abandonnés accumulés, soit une purge en échec
+ * silencieux — pas un usage normal à un seul run.
+ */
+const TEMP_DIR_SAFETY_CAP_BYTES = 2 * 1024 * 1024 * 1024;
+
+function getDirSizeBytes(dirPath: string): number {
+  let entries: fs.Dirent[];
+  try {
+    entries = fs.readdirSync(dirPath, { withFileTypes: true });
+  } catch {
+    return 0;
+  }
+
+  let total = 0;
+  for (const entry of entries) {
+    const entryPath = path.join(dirPath, entry.name);
+    try {
+      if (entry.isDirectory()) {
+        total += getDirSizeBytes(entryPath);
+      } else {
+        total += fs.statSync(entryPath).size;
+      }
+    } catch {
+      // Fichier supprimé entre le readdir et le stat : on ignore et continue.
+    }
+  }
+  return total;
+}
+
+function enforceTempDirSafetyNet(): void {
+  if (!fs.existsSync(TEMP_DIR)) return;
+
+  const sizeBytes = getDirSizeBytes(TEMP_DIR);
+  if (sizeBytes <= TEMP_DIR_SAFETY_CAP_BYTES) return;
+
+  console.error(
+    `[API][Cleanup] SAFETY NET: ${TEMP_DIR} has reached ${(sizeBytes / (1024 * 1024)).toFixed(0)} MB, ` +
+      `above the ${(TEMP_DIR_SAFETY_CAP_BYTES / (1024 * 1024 * 1024)).toFixed(0)} GB cap for normal single-run usage. ` +
+      'Forcing a full purge — this usually means a previous cleanup silently failed, or several runs were abandoned without a follow-up swap.',
+  );
+
+  try {
+    fs.rmSync(TEMP_DIR, { recursive: true, force: true });
+  } catch (error) {
+    console.error(`[API][Cleanup] SAFETY NET purge also failed for ${TEMP_DIR}:`, error);
+  }
+}
+
+/**
  * Supprime les fichiers temporaires au début de chaque run. RESULTS_DIR
  * n'est volontairement plus purgé ici : les résultats y persistent d'un run
  * à l'autre pour alimenter l'historique de re-téléchargement (voir
  * pruneResultsFiles, appelée après chaque run réussi).
  */
 function cleanupProcessDirs(): void {
+  enforceTempDirSafetyNet();
+
   if (fs.existsSync(TEMP_DIR)) {
     try {
       fs.rmSync(TEMP_DIR, { recursive: true, force: true });
@@ -256,7 +328,8 @@ export async function POST(request: NextRequest) {
           if (!gifToMp4Result.success) {
             finish({
               success: false,
-              error: `Conversion GIF→MP4 échouée: ${gifToMp4Result.error}`,
+              error: `GIF→MP4 conversion failed: ${gifToMp4Result.error}`,
+              errorCode: gifToMp4Result.errorCode,
             });
             return;
           }
@@ -351,7 +424,8 @@ export async function POST(request: NextRequest) {
         if (!faceswapResult.success) {
           finish({
             success: false,
-            error: `Face swap échoué: ${faceswapResult.error}`,
+            error: `Face swap failed: ${faceswapResult.error}`,
+            errorCode: faceswapResult.errorCode,
           });
           return;
         }
@@ -373,7 +447,8 @@ export async function POST(request: NextRequest) {
         if (!mp4ToGifResult.success) {
           finish({
             success: false,
-            error: `Conversion MP4→GIF échouée: ${mp4ToGifResult.error}`,
+            error: `MP4→GIF conversion failed: ${mp4ToGifResult.error}`,
+            errorCode: mp4ToGifResult.errorCode,
           });
           return;
         }

@@ -31,10 +31,20 @@ import { GiphySearch } from './components/GiphySearch';
 import { SetupWizard, DiskSpaceInfo } from './components/SetupWizard';
 import { I18nProvider, useTranslation } from '@meme-swap/i18n';
 
+/**
+ * `errorCode` is only set for failures classified as an install/environment
+ * problem (FaceFusion/Python/ffmpeg missing or broken — see
+ * FaceswapErrorCode/ConversionErrorCode in the faceswap-core/video-processor
+ * packages), as opposed to an ordinary swap failure. Used to show a distinct,
+ * actionable error UI instead of the generic "check your settings" message.
+ */
+type InstallErrorCode = 'missing-install' | 'broken-install';
+
 interface FaceswapResult {
   success: boolean;
   outputPath?: string;
   error?: string;
+  errorCode?: InstallErrorCode;
 }
 
 /** Shape of the "progress" SSE events emitted by POST /api/faceswap. */
@@ -111,6 +121,30 @@ function SetupGate() {
     };
   }, []);
 
+  /**
+   * Re-checks install status on demand — used by HomeContent's error UI when
+   * a swap fails with an install/environment errorCode, so the user gets a
+   * concrete way forward instead of just a "check your settings" message.
+   * Reuses the existing SetupWizard flow (GET /api/setup/status is the same
+   * endpoint the initial gate check above uses) rather than building a
+   * second, parallel "something's wrong" screen. Returns whether something
+   * is actually confirmed missing, so the caller can tell the user "looks
+   * fine now" when it isn't (e.g. a transient failure).
+   */
+  const recheckInstall = async (): Promise<boolean> => {
+    try {
+      const res = await fetch('/api/setup/status');
+      const data = res.ok ? await res.json() : { installed: false, diskSpace: null };
+      setDiskSpace(data.diskSpace ?? null);
+      const installed = Boolean(data.installed);
+      setIsInstalled(installed);
+      return !installed;
+    } catch {
+      setIsInstalled(false);
+      return true;
+    }
+  };
+
   if (isInstalled === null) {
     return (
       <main className="min-h-[100dvh] flex items-center justify-center">
@@ -123,10 +157,15 @@ function SetupGate() {
     return <SetupWizard onComplete={() => setIsInstalled(true)} diskSpace={diskSpace} />;
   }
 
-  return <HomeContent />;
+  return <HomeContent onRecheckInstall={recheckInstall} />;
 }
 
-function HomeContent() {
+interface HomeContentProps {
+  /** See SetupGate.recheckInstall — re-checks /api/setup/status on demand. */
+  onRecheckInstall: () => Promise<boolean>;
+}
+
+function HomeContent({ onRecheckInstall }: HomeContentProps) {
   const { t, locale, setLocale } = useTranslation();
   const [sourceImage, setSourceImage] = useState<File | null>(null);
   const [targetGif, setTargetGif] = useState<File | null>(null);
@@ -138,6 +177,27 @@ function HomeContent() {
   const [faceswapProgress, setFaceswapProgress] = useState<FaceswapProgress | null>(
     null,
   );
+
+  // "Re-check installation" CTA shown on install/environment error results
+  // (see the error alert below). isRecheckingInstall drives the button's
+  // loading state; recheckMessage surfaces feedback when the check comes
+  // back clean (SetupGate already handles the "actually missing" case by
+  // unmounting HomeContent in favor of SetupWizard).
+  const [isRecheckingInstall, setIsRecheckingInstall] = useState(false);
+  const [recheckMessage, setRecheckMessage] = useState<string | null>(null);
+
+  const handleRecheckInstall = async () => {
+    setIsRecheckingInstall(true);
+    setRecheckMessage(null);
+    try {
+      const stillMissing = await onRecheckInstall();
+      if (!stillMissing) {
+        setRecheckMessage(t('page.recheckInstallOk'));
+      }
+    } finally {
+      setIsRecheckingInstall(false);
+    }
+  };
 
   // Bumped after each successful swap to trigger a ResultsHistory refetch
   const [resultsHistoryRefreshKey, setResultsHistoryRefreshKey] = useState(0);
@@ -626,6 +686,7 @@ function HomeContent() {
     setIsProcessing(true);
     setResult(null);
     setFaceswapProgress(null);
+    setRecheckMessage(null);
     updateStepIndex(0);
     setStepStatuses(['running', 'idle', 'idle', 'idle']);
 
@@ -750,6 +811,7 @@ function HomeContent() {
     setResult(null);
     setPreviewUrl(null);
     setFaceswapProgress(null);
+    setRecheckMessage(null);
     if (sourcePreviewUrl && sourcePreviewUrl.startsWith('blob:')) {
       URL.revokeObjectURL(sourcePreviewUrl);
     }
@@ -1360,10 +1422,14 @@ function HomeContent() {
                     />
                     <div>
                       <h3 className="text-sm font-bold">
-                        {t('page.errorOccurred')}
+                        {result.errorCode
+                          ? t('page.installErrorTitle')
+                          : t('page.errorOccurred')}
                       </h3>
                       <p className="text-xs mt-1 leading-relaxed opacity-90">
-                        {t('page.checkSettings')}
+                        {result.errorCode
+                          ? t('page.installErrorDesc')
+                          : t('page.checkSettings')}
                       </p>
                     </div>
                   </div>
@@ -1377,7 +1443,23 @@ function HomeContent() {
                       </pre>
                     </div>
                   )}
-                  <div className="flex justify-end">
+                  {recheckMessage && (
+                    <p className="text-xs text-[var(--text-secondary)] -mt-1">
+                      {recheckMessage}
+                    </p>
+                  )}
+                  <div className="flex justify-end gap-2">
+                    {result.errorCode && (
+                      <button
+                        onClick={handleRecheckInstall}
+                        disabled={isRecheckingInstall}
+                        className="px-5 py-2 bg-[var(--emerald-bg)] border border-[var(--emerald-border)] hover:bg-[var(--emerald-border)]/40 text-[var(--emerald-text)] rounded-lg text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        {isRecheckingInstall
+                          ? t('common.loading')
+                          : t('page.recheckInstallButton')}
+                      </button>
+                    )}
                     <button
                       onClick={handleReset}
                       className="px-5 py-2 bg-[var(--bg-primary)] border border-[var(--border-color)] hover:bg-[var(--bg-tertiary)] text-[var(--text-primary)] rounded-lg text-xs font-semibold transition-all active:scale-[0.98]"
