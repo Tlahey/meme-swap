@@ -23,5 +23,5 @@ Backlog of ideas to triage/prioritize before implementation. No date commitment,
 
 ## Distribution
 
-- [ ] Decide the fate of `apps/raycast-extension` (empty folder): build it out or remove it from the repo to avoid confusion.
+- [x] Decide the fate of `apps/raycast-extension` (empty folder): build it out or remove it from the repo to avoid confusion. Removed — it was an empty placeholder (`.keep` only, no `package.json`) that never shipped anything. Deleted the directory, its `raycast:dev`/`raycast:build` root scripts, and every mention across README, CONTRIBUTING, CLAUDE.md, AGENTS.md, docs/architecture.md and the two `.agents/skills` example prompts, so the docs no longer promise a fourth surface that doesn't exist.
 - [ ] Add auto-update for the Electron app (electron-builder supports this natively).

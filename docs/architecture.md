@@ -13,8 +13,7 @@ meme-swap/
 ├── apps/           → runnable applications
 │   ├── frontend        (Next.js 14, port 3010)
 │   ├── desktop         (Electron)
-│   ├── mcp-server      (Express + MCP SDK, port 3001)
-│   └── raycast-extension (planned)
+│   └── mcp-server      (Express + MCP SDK, port 3001)
 │
 └── packages/       → shared libraries
     ├── faceswap-core   (@meme-swap/faceswap-core)
@@ -38,8 +37,6 @@ graph LR
 
     MCP[mcp-server] --> FC
     MCP --> VP
-
-    RE[raycast-extension] --> AC[api-client]
 
     FC --> FF["FaceFusion (Python)\n~/.meme-swap/facefusion"]
     VP --> FFMPEG["FFmpeg (system binary)"]
@@ -102,10 +99,6 @@ Exposes face-swap capabilities as MCP tools so AI clients (Cursor, Claude Deskto
 **Key files:**
 - `src/server.ts` — Express server setup and MCP registration
 - `src/tools/faceswap.ts` — `run_faceswap` tool implementation
-
-### `apps/raycast-extension` — Raycast Extension *(Planned)*
-
-Placeholder workspace member. Will expose Raycast commands for quick face swaps from the macOS command palette.
 
 ---
 

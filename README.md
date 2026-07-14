@@ -31,7 +31,6 @@ No cloud. No uploads. Just memes.
 | 🌐 **Web app** | Next.js 14 | Drag & drop face swap, Giphy search, model settings, live progress |
 | 🖥️ **Desktop app** | Electron | Native macOS app with guided first-run setup, packaged as a `.dmg` |
 | 🤖 **MCP server** | Model Context Protocol | Lets AI assistants (Claude, Cursor…) run face swaps as a tool |
-| 🚀 **Raycast extension** | Raycast API | Command-palette swaps *(planned)* |
 
 ### Why it's different
 
@@ -87,7 +86,6 @@ graph TB
         FE["Web Frontend\n(Next.js 14)"]
         DE["Desktop App\n(Electron)"]
         MCP["MCP Server\n(HTTP/SSE)"]
-        RE["Raycast Extension\n(planned)"]
     end
 
     subgraph "Shared Packages"
@@ -108,7 +106,6 @@ graph TB
     DE --> VP
     MCP --> FC
     MCP --> VP
-    RE --> AC
 
     FC --> FF
     VP --> FFMPEG
@@ -157,8 +154,7 @@ meme-swap/
 ├── apps/
 │   ├── frontend/             # Next.js 14 web application
 │   ├── desktop/              # Electron desktop application
-│   ├── mcp-server/           # MCP server (HTTP/SSE transport)
-│   └── raycast-extension/    # Raycast extension (placeholder)
+│   └── mcp-server/           # MCP server (HTTP/SSE transport)
 │
 ├── packages/
 │   ├── faceswap-core/        # TypeScript wrapper for FaceFusion
@@ -409,4 +405,3 @@ Meme Swap is built for entertainment and creative use. **Always get consent** be
 - [CodeFormer](https://github.com/sczhou/CodeFormer) — face restoration
 - [Real-ESRGAN](https://github.com/xinntao/Real-ESRGAN) — super-resolution
 - [FFmpeg](https://ffmpeg.org/) — media conversion
-- [Raycast](https://www.raycast.com/) — extension platform

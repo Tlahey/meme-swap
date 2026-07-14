@@ -23,8 +23,7 @@ This document contains rules and guidelines for AI development agents working on
 **meme-swap** is a mono-repo application that allows users to replace faces in animated media (GIFs and videos) using FaceFusion. The project consists of:
 
 1. **Frontend Application** - React/Vue web application
-2. **Raycast Extension** - macOS Raycast extension
-3. **Shared Packages** - Reusable core libraries
+2. **Shared Packages** - Reusable core libraries
 
 ### Core Technologies
 
@@ -59,12 +58,6 @@ This document contains rules and guidelines for AI development agents working on
 - **TailwindCSS** - Utility-first CSS
 - **Radix UI / shadcn/ui** - Component library
 - **Zustand** - State management
-
-### Raycast Extension Stack
-
-- **Raycast CLI** - Extension development
-- **React** - UI components
-- **TypeScript** - Type safety
 
 ### Shared Packages
 
@@ -153,8 +146,7 @@ export async function mp4ToGif(options: ConversionOptions): Promise<ConversionRe
 ```
 meme-swap/
 ├── apps/                     # Application packages
-│   ├── frontend/             # React application
-│   └── raycast-extension/    # Raycast extension
+│   └── frontend/             # React application
 ├── packages/                 # Shared packages
 │   ├── api-client/           # API client
 │   ├── faceswap-core/        # FaceFusion wrapper and face processing
@@ -173,33 +165,32 @@ meme-swap/
 │                   (turbo.json)                       │
 └─────────────────────────────────────────────────────┘
                           │
-        ┌─────────────────┼─────────────────┐
-        │                 │                 │
-        ▼                 ▼                 ▼
-┌──────────────┐  ┌──────────────┐  ┌──────────────┐
-│    apps/     │  │    apps/     │  │  packages/   │
-│              │  │              │  │  ┌────────┐  │
-│  - React     │  │  - Commands  │  │  │ api-   │  │
-│  - Vite      │  │  - UI        │  │  │ client │  │
-│  - Tailwind  │  │              │  │  └───┬────┘  │
-│ frontend/    │  │raycast-ext/  │  │      │       │
-└──────┬───────┘  └──────┬───────┘  │  ┌───▼────┐  │
-       │                 │          │  │faceswap│  │
-       │                 │          │  │ -core  │  │
-       │                 │          │  │(Python)│  │
-       └────────┬────────┘          │  └───┬────┘  │
-                │                   │      │       │
-                │                   │  ┌───▼────┐  │
-                │                   │  │video-  │  │
-                │                   │  │processor│ │
-                │                   │  └────────┘  │
-                └───────────────────┘              │
-                         │                         │
-                         ▼                         │
-                 ┌──────────────┐                  │
-                 │ Shared Code  │◄─────────────────┘
-                 │  Packages    │
-                 └──────────────┘
+              ┌───────────┴───────────┐
+              │                       │
+              ▼                       ▼
+      ┌──────────────┐        ┌──────────────┐
+      │    apps/     │        │  packages/   │
+      │              │        │  ┌────────┐  │
+      │  - React     │        │  │ api-   │  │
+      │  - Vite      │        │  │ client │  │
+      │  - Tailwind  │        │  └───┬────┘  │
+      │ frontend/    │        │      │       │
+      └──────┬───────┘        │  ┌───▼────┐  │
+             │                │  │faceswap│  │
+             │                │  │ -core  │  │
+             │                │  │(Python)│  │
+             │                │  └───┬────┘  │
+             │                │      │       │
+             │                │  ┌───▼────┐  │
+             │                │  │video-  │  │
+             │                │  │processor│ │
+             │                │  └────────┘  │
+             │                │              │
+             ▼                │              │
+     ┌──────────────┐         │              │
+     │ Shared Code  │◄────────┴──────────────┘
+     │  Packages    │
+     └──────────────┘
 ```
 
 ---
@@ -932,10 +923,6 @@ pnpm format
 # Frontend specific (Next.js)
 pnpm frontend:dev         # Start Next.js dev server on port 3010
 pnpm frontend:build       # Build for production
-
-# Raycast specific
-pnpm raycast:dev
-pnpm raycast:build
 
 # Package specific
 pnpm faceswap-core:build  # Build TypeScript wrapper
