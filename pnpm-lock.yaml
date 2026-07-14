@@ -180,6 +180,9 @@ importers:
       '@meme-swap/faceswap-core':
         specifier: workspace:*
         version: link:../faceswap-core
+      '@meme-swap/video-processor':
+        specifier: workspace:*
+        version: link:../video-processor
     devDependencies:
       '@types/node':
         specifier: ^20.19.39

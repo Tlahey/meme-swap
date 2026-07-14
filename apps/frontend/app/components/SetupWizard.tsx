@@ -7,11 +7,12 @@ import {
   CircleNotchIcon as CircleNotch,
   DownloadSimpleIcon as DownloadSimple,
   TerminalWindowIcon as TerminalWindow,
+  WarningIcon as Warning,
   WrenchIcon as Wrench,
 } from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
 
-type SetupStepId = 'system-checks' | 'clone-repo' | 'setup-venv' | 'install-deps';
+type SetupStepId = 'system-checks' | 'clone-repo' | 'setup-venv' | 'install-deps' | 'verify-install';
 type SetupStepStatus = 'idle' | 'active' | 'completed' | 'failed';
 
 interface ProgressEventData {
@@ -20,8 +21,15 @@ interface ProgressEventData {
   percent: number;
 }
 
+export interface DiskSpaceInfo {
+  freeBytes: number;
+  totalBytes: number;
+  meetsMinimum: boolean;
+}
+
 interface SetupWizardProps {
   onComplete: () => void;
+  diskSpace?: DiskSpaceInfo | null;
 }
 
 const IDLE_STATUSES: Record<SetupStepId, SetupStepStatus> = {
@@ -29,9 +37,14 @@ const IDLE_STATUSES: Record<SetupStepId, SetupStepStatus> = {
   'clone-repo': 'idle',
   'setup-venv': 'idle',
   'install-deps': 'idle',
+  'verify-install': 'idle',
 };
 
-export function SetupWizard({ onComplete }: SetupWizardProps) {
+function formatGb(bytes: number): string {
+  return (bytes / 1024 ** 3).toFixed(1);
+}
+
+export function SetupWizard({ onComplete, diskSpace }: SetupWizardProps) {
   const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
@@ -77,6 +90,11 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
       id: 'install-deps',
       label: t('setup.steps.installDeps.label'),
       desc: t('setup.steps.installDeps.desc'),
+    },
+    {
+      id: 'verify-install',
+      label: t('setup.steps.verifyInstall.label'),
+      desc: t('setup.steps.verifyInstall.desc'),
     },
   ];
 
@@ -264,6 +282,15 @@ export function SetupWizard({ onComplete }: SetupWizardProps) {
               {hasFailed ? t('setup.retryButton') : t('setup.startButton')}
             </button>
           </div>
+          <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{t('setup.sizeEstimate')}</p>
+          {diskSpace && !diskSpace.meetsMinimum && (
+            <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
+              <Warning size={14} weight="fill" className="text-amber-500 shrink-0 mt-0.5" />
+              <p className="text-[10px] text-amber-600 dark:text-amber-400 leading-relaxed">
+                {t('setup.diskWarning', { free: `${formatGb(diskSpace.freeBytes)} GB` })}
+              </p>
+            </div>
+          )}
           <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{t('setup.footerNote')}</p>
         </div>
       </motion.div>

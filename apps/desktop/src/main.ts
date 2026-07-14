@@ -7,6 +7,7 @@ import net from 'node:net';
 import { pathToFileURL } from 'node:url';
 import { spawn, fork, ChildProcess } from 'node:child_process';
 import { runInstallation } from './installer';
+import { checkDiskSpace } from '@meme-swap/installer-core';
 import { getFaceFusionDir, runFaceSwap } from '@meme-swap/faceswap-core';
 import { gifToMp4, mp4ToGif } from '@meme-swap/video-processor';
 
@@ -397,6 +398,11 @@ ipcMain.on('start-setup', async (event) => {
       startServers();
     }, 2500);
   }
+});
+
+// IPC : Vérification préalable (espace disque) affichée avant de démarrer l'installation
+ipcMain.handle('get-setup-preflight', async () => {
+  return checkDiskSpace();
 });
 
 // IPC : Écouteurs pour l'écran de chargement

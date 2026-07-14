@@ -15,10 +15,11 @@ interface DesktopInstallProgressEvent {
 }
 
 /**
- * Drives the Electron setup wizard (apps/desktop/src/setup.html): the 4
- * shared FaceFusion install steps from @meme-swap/installer-core, plus a
- * desktop-packaging-only step 5 (build-monorepo) that isn't part of
- * "installing FaceFusion" and so stays local to this file.
+ * Drives the Electron setup wizard (apps/desktop/src/setup.html): the 5
+ * shared FaceFusion install steps from @meme-swap/installer-core (including
+ * verify-install, its post-install test swap), plus a desktop-packaging-only
+ * step 6 (build-monorepo) that isn't part of "installing FaceFusion" and so
+ * stays local to this file.
  */
 export async function runInstallation(
   onProgress: (data: DesktopInstallProgressEvent) => void,
@@ -27,17 +28,18 @@ export async function runInstallation(
   const root = getWorkspaceRoot();
   onLog(`Starting installation in: ${root}\n`);
 
-  // Shared steps report 0-100; rescale to 0-80 here since step 5
-  // (build-monorepo below) owns the remaining 80-100 of this wizard's bar.
+  // Shared steps report 0-100 regardless of how many steps produce that range
+  // internally; rescale to 0-80 here since step 6 (build-monorepo below) owns
+  // the remaining 80-100 of this wizard's bar.
   const success = await runFaceFusionInstall(
     (event) => onProgress({ ...event, percent: Math.round(event.percent * 0.8) }),
     onLog,
   );
   if (!success) return false;
 
-  // ---- Step 5: Build the monorepo (80 -> 100) ----
+  // ---- Step 6: Build the monorepo (80 -> 100) ----
   onProgress({ step: 'build-monorepo', status: 'active', percent: 90 });
-  onLog('\n=== STEP 5: Building the monorepo packages ===\n');
+  onLog('\n=== STEP 6: Building the monorepo packages ===\n');
 
   onLog('Building the monorepo (pnpm run build)...\n');
   const monorepoBuilt = await runCmd('pnpm', ['run', 'build'], root, onLog);
