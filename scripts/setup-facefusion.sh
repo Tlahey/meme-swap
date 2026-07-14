@@ -4,6 +4,21 @@
 TARGET_DIR="$HOME/.meme-swap/facefusion"
 VENV_PATH="$TARGET_DIR/venv"
 
+# 0. Homebrew is required: it installs ffmpeg and keeps its binary and shared
+# libraries in sync on every `brew upgrade`, so ffmpeg is resolved from
+# Homebrew's own bin dirs at runtime instead of a copy that would go stale.
+if ! command -v brew &> /dev/null; then
+    echo "❌ Homebrew is required but was not found. Install it from https://brew.sh, then re-run this script."
+    exit 1
+fi
+
+if brew list ffmpeg &> /dev/null; then
+    echo "ℹ️  ffmpeg is already installed via Homebrew."
+else
+    echo "🚀 Installing ffmpeg via Homebrew..."
+    brew install ffmpeg
+fi
+
 # 1. Check: if the directory and virtual environment already exist, skip setup
 if [ -d "$VENV_PATH" ]; then
     echo "ℹ️  FaceFusion is already installed at $TARGET_DIR. Skipping setup."
@@ -27,26 +42,6 @@ else
     pip install --upgrade pip
     pip install -r requirements.txt
     pip install onnxruntime-silicon
-fi
-
-# 5. Copy ffmpeg and ffprobe into ~/.meme-swap/bin if available on the system
-echo "Checking and copying ffmpeg/ffprobe to ~/.meme-swap/bin..."
-BIN_DIR="$HOME/.meme-swap/bin"
-mkdir -p "$BIN_DIR"
-
-FFMPEG_PATH=$(which ffmpeg)
-FFPROBE_PATH=$(which ffprobe)
-
-if [ ! -z "$FFMPEG_PATH" ] && [ -f "$FFMPEG_PATH" ]; then
-    echo "Copying ffmpeg from $FFMPEG_PATH to $BIN_DIR"
-    cp "$FFMPEG_PATH" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/ffmpeg"
-fi
-
-if [ ! -z "$FFPROBE_PATH" ] && [ -f "$FFPROBE_PATH" ]; then
-    echo "Copying ffprobe from $FFPROBE_PATH to $BIN_DIR"
-    cp "$FFPROBE_PATH" "$BIN_DIR/"
-    chmod +x "$BIN_DIR/ffprobe"
 fi
 
 echo "✅ Setup complete!"

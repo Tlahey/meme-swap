@@ -1,7 +1,6 @@
-import { spawn } from 'node:child_process';
+import { spawn, execSync } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
-import os from 'node:os';
 
 /**
  * Options pour la conversion de fichiers média
@@ -41,14 +40,39 @@ export class VideoProcessorError extends Error {
 }
 
 /**
- * Vérifie si ffmpeg est disponible sur le système
+ * Homebrew keeps its formulae's binaries and shared libraries in sync on every
+ * upgrade, so resolving ffmpeg through these paths (rather than a copy taken at
+ * install time) can never go stale.
  */
-function getFfmpegPath(): string {
-  const userHomeFfmpeg = path.join(/*turbopackIgnore: true*/ os.homedir(), '.meme-swap', 'bin', 'ffmpeg');
-  if (fs.existsSync(userHomeFfmpeg)) {
-    return userHomeFfmpeg;
+const HOMEBREW_BIN_DIRS = ['/opt/homebrew/bin', '/usr/local/bin'];
+
+function findHomebrewFfmpeg(): string | null {
+  for (const dir of HOMEBREW_BIN_DIRS) {
+    const candidate = path.join(dir, 'ffmpeg');
+    if (fs.existsSync(candidate)) {
+      return candidate;
+    }
   }
-  return 'ffmpeg';
+  return null;
+}
+
+function getFfmpegPath(): string {
+  return findHomebrewFfmpeg() ?? 'ffmpeg';
+}
+
+/**
+ * Vérifie si ffmpeg est disponible sur le système (Homebrew ou PATH)
+ */
+export function isFfmpegInstalled(): boolean {
+  if (findHomebrewFfmpeg() !== null) {
+    return true;
+  }
+  try {
+    execSync('which ffmpeg', { stdio: ['ignore', 'pipe', 'ignore'] });
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 /**

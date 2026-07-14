@@ -189,4 +189,37 @@ export const en = {
     prevPage: 'Previous',
     nextPage: 'Next',
   },
+  setup: {
+    title: 'Setting Up Meme Swap',
+    subtitle:
+      "We need to install FaceFusion and its dependencies before you can start swapping faces. This only happens once and stays on your Mac.",
+    steps: {
+      systemChecks: {
+        label: 'System Checks',
+        desc: 'Verifying Python 3 and Homebrew, then installing FFmpeg via Homebrew.',
+      },
+      cloneRepo: {
+        label: 'Downloading FaceFusion',
+        desc: 'Cloning the FaceFusion engine repository.',
+      },
+      setupVenv: {
+        label: 'Python Environment',
+        desc: 'Creating an isolated virtual environment.',
+      },
+      installDeps: {
+        label: 'Installing Dependencies',
+        desc: 'Installing ONNX CoreML and Python packages.',
+      },
+    },
+    logsTitle: 'Installation Logs',
+    waitingLogs: 'Waiting for the installation to start...',
+    readyStatus: 'Ready to install',
+    runningStatus: 'Installing...',
+    successStatus: 'Setup complete! Loading the app...',
+    failedStatus: 'Setup failed. Check the logs above for details.',
+    startButton: 'Start Setup',
+    retryButton: 'Retry',
+    footerNote:
+      'This installs FaceFusion and its Python virtual environment into ~/.meme-swap, and FFmpeg via Homebrew.',
+  },
 };

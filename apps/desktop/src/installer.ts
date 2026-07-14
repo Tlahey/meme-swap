@@ -1,7 +1,6 @@
-import { spawn, execSync } from 'node:child_process';
+import { spawn } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
-import os from 'node:os';
 import { getFaceFusionDir, getWorkspaceRoot } from '@meme-swap/faceswap-core';
 
 /**
@@ -57,9 +56,9 @@ export async function runInstallation(
   const root = getWorkspaceRoot();
   onLog(`Démarrage de l'installation dans : ${root}\n`);
 
-  // ---- Étape 1 : Vérification système (FFmpeg, Python) ----
+  // ---- Étape 1 : Vérification système (Homebrew, Python, FFmpeg) ----
   onProgress({ step: 'system-checks', status: 'active', percent: 5 });
-  onLog("=== ÉTAPE 1 : Vérification de FFmpeg et Python ===\n");
+  onLog("=== ÉTAPE 1 : Vérification de Homebrew, Python et FFmpeg ===\n");
 
   // 1.1 Python
   onLog("Recherche de python3...\n");
@@ -70,97 +69,32 @@ export async function runInstallation(
     return false;
   }
 
-  // 1.2 FFmpeg
-  onLog("Recherche de ffmpeg...\n");
-  let hasFfmpeg = await runCmd('ffmpeg', ['-version'], root, (t) => {
-    // Éviter de flooder avec le pavé complet de ffmpeg -version
-    if (t.includes('ffmpeg version')) {
-      onLog(t.split('\n')[0] + '\n');
-    }
-  });
+  // 1.2 Homebrew (requis : c'est lui qui installe et maintient FFmpeg à jour)
+  onLog("Recherche de Homebrew...\n");
+  const hasBrew = await runCmd('which', ['brew'], root, onLog);
+  if (!hasBrew) {
+    onLog("[ERROR] Homebrew est requis mais introuvable. Installez-le depuis https://brew.sh puis relancez la configuration.\n");
+    onProgress({ step: 'system-checks', status: 'failed', percent: 10 });
+    return false;
+  }
 
+  // 1.3 FFmpeg via Homebrew (jamais copié : toujours résolu depuis Homebrew au runtime,
+  // pour rester synchronisé avec ses librairies partagées après un `brew upgrade`)
+  onLog("Recherche de ffmpeg (Homebrew)...\n");
+  const hasFfmpeg = await runCmd('brew', ['list', 'ffmpeg'], root, () => {});
   if (!hasFfmpeg) {
-    onLog("FFmpeg non détecté. Tentative d'installation via Homebrew...\n");
-    // Vérification de brew
-    const hasBrew = await runCmd('which', ['brew'], root, onLog);
-    if (hasBrew) {
-      onLog("Homebrew détecté. Installation de FFmpeg...\n");
-      const installedFfmpeg = await runCmd('brew', ['install', 'ffmpeg'], root, onLog);
-      if (!installedFfmpeg) {
-        onLog("[ERROR] Échec de l'installation de FFmpeg via Homebrew.\n");
-        onProgress({ step: 'system-checks', status: 'failed', percent: 15 });
-        return false;
-      }
-      hasFfmpeg = true;
-    } else {
-      onLog("[ERROR] FFmpeg est introuvable et Homebrew n'est pas installé. Veuillez installer FFmpeg pour continuer (ex: 'brew install ffmpeg').\n");
+    onLog("FFmpeg non installé. Installation via Homebrew (brew install ffmpeg)...\n");
+    const installedFfmpeg = await runCmd('brew', ['install', 'ffmpeg'], root, onLog);
+    if (!installedFfmpeg) {
+      onLog("[ERROR] Échec de l'installation de FFmpeg via Homebrew.\n");
       onProgress({ step: 'system-checks', status: 'failed', percent: 15 });
       return false;
     }
+  } else {
+    onLog("[OK] FFmpeg déjà installé via Homebrew.\n");
   }
 
   onLog("[OK] Vérifications système réussies.\n");
-
-  // ---- Copie de FFmpeg et FFprobe dans ~/.meme-swap/bin ----
-  onLog("Copie de ffmpeg et ffprobe dans ~/.meme-swap/bin...\n");
-  const binDir = path.join(os.homedir(), '.meme-swap', 'bin');
-  if (!fs.existsSync(binDir)) {
-    fs.mkdirSync(binDir, { recursive: true });
-  }
-
-  const getExecutablePath = (name: string): string | null => {
-    try {
-      const cmdPath = execSync(`which ${name}`, {
-        env: { ...process.env, PATH: `/usr/local/bin:/opt/homebrew/bin:/usr/bin:/bin:/usr/sbin:/sbin:${process.env.PATH}` }
-      }).toString().trim();
-      if (cmdPath && fs.existsSync(cmdPath)) {
-        return cmdPath;
-      }
-    } catch (e) {
-      // ignore
-    }
-    const fallbacks = [
-      `/opt/homebrew/bin/${name}`,
-      `/usr/local/bin/${name}`,
-      `/usr/bin/${name}`
-    ];
-    for (const fallback of fallbacks) {
-      if (fs.existsSync(fallback)) {
-        return fallback;
-      }
-    }
-    return null;
-  };
-
-  const ffmpegSrc = getExecutablePath('ffmpeg');
-  const ffprobeSrc = getExecutablePath('ffprobe');
-
-  if (ffmpegSrc) {
-    const dest = path.join(binDir, 'ffmpeg');
-    onLog(`Copie de ffmpeg : ${ffmpegSrc} -> ${dest}\n`);
-    try {
-      fs.copyFileSync(ffmpegSrc, dest);
-      fs.chmodSync(dest, 0o755);
-    } catch (err: any) {
-      onLog(`[WARNING] Impossible de copier ffmpeg : ${err.message}\n`);
-    }
-  } else {
-    onLog("[WARNING] Source ffmpeg non trouvée.\n");
-  }
-
-  if (ffprobeSrc) {
-    const dest = path.join(binDir, 'ffprobe');
-    onLog(`Copie de ffprobe : ${ffprobeSrc} -> ${dest}\n`);
-    try {
-      fs.copyFileSync(ffprobeSrc, dest);
-      fs.chmodSync(dest, 0o755);
-    } catch (err: any) {
-      onLog(`[WARNING] Impossible de copier ffprobe : ${err.message}\n`);
-    }
-  } else {
-    onLog("[WARNING] Source ffprobe non trouvée.\n");
-  }
-
   onProgress({ step: 'system-checks', status: 'completed', percent: 20 });
 
 
