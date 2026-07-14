@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain, protocol, net as electronNet } from 'electron';
+import { app, BrowserWindow, ipcMain, protocol, net as electronNet, shell } from 'electron';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -129,6 +129,73 @@ function sendServerStatus() {
       mcp: mcpStatus,
       frontend: frontendStatus
     });
+  }
+}
+
+// ── Vérification de mise à jour (check + notify, pas d'auto-update silencieux) ─
+// L'app n'est pas signée/notarisée (voir build.mac dans package.json et le
+// README), et Squirrel.Mac exige un binaire signé pour valider l'app en
+// cours d'exécution : un vrai auto-update silencieux est donc hors de
+// portée pour l'instant. On se contente de vérifier périodiquement la
+// dernière release GitHub et de notifier l'IHM si une version plus récente
+// existe ; l'utilisateur clique alors pour ouvrir la page de release dans
+// son navigateur (voir open-external-url ci-dessous).
+const GITHUB_LATEST_RELEASE_URL = 'https://api.github.com/repos/Tlahey/meme-swap/releases/latest';
+const UPDATE_CHECK_INTERVAL_MS = 6 * 60 * 60 * 1000; // 6 heures
+let updateCheckInterval: ReturnType<typeof setInterval> | null = null;
+
+/**
+ * Compare deux versions "major.minor.patch" (sans préfixe 'v').
+ * Retourne un entier positif si `a` > `b`, négatif si `a` < `b`, 0 si égales.
+ * Volontairement minimaliste (pas de dépendance `semver`) : les tags de ce
+ * repo suivent strictement X.Y.Z (voir `git tag -l`), pas de pré-release/build
+ * metadata à gérer ici.
+ */
+function compareVersions(a: string, b: string): number {
+  const partsA = a.split('.').map((n) => parseInt(n, 10) || 0);
+  const partsB = b.split('.').map((n) => parseInt(n, 10) || 0);
+  for (let i = 0; i < Math.max(partsA.length, partsB.length); i++) {
+    const numA = partsA[i] ?? 0;
+    const numB = partsB[i] ?? 0;
+    if (numA !== numB) return numA - numB;
+  }
+  return 0;
+}
+
+/**
+ * Interroge l'API GitHub pour la dernière release publique et notifie l'IHM
+ * (event `update-available`) si elle est plus récente que la version
+ * actuelle. Best-effort : toute erreur (hors ligne, API GitHub down/rate
+ * limited, JSON malformé) est simplement journalisée — cette vérification ne
+ * doit jamais bloquer le démarrage ni afficher d'erreur à l'utilisateur.
+ */
+async function checkForUpdate(): Promise<void> {
+  try {
+    const response = await fetch(GITHUB_LATEST_RELEASE_URL, {
+      headers: { Accept: 'application/vnd.github+json' },
+    });
+    if (!response.ok) {
+      writeToLogFile(`[UpdateCheck] Réponse GitHub non-OK : ${response.status}\n`);
+      return;
+    }
+
+    const data = await response.json();
+    const tagName = typeof data?.tag_name === 'string' ? data.tag_name : null;
+    const releaseUrl = typeof data?.html_url === 'string' ? data.html_url : null;
+    if (!tagName || !releaseUrl) {
+      writeToLogFile('[UpdateCheck] Réponse GitHub malformée (tag_name/html_url manquant)\n');
+      return;
+    }
+
+    const remoteVersion = tagName.replace(/^v/, '');
+    const currentVersion = app.getVersion();
+
+    if (compareVersions(remoteVersion, currentVersion) > 0) {
+      writeToLogFile(`[UpdateCheck] Nouvelle version disponible : ${remoteVersion} (actuelle : ${currentVersion})\n`);
+      mainWindow?.webContents.send('update-available', { version: remoteVersion, url: releaseUrl });
+    }
+  } catch (error) {
+    writeToLogFile(`[UpdateCheck] Échec de la vérification de mise à jour : ${error}\n`);
   }
 }
 
@@ -617,6 +684,20 @@ ipcMain.handle('get-mcp-status', async () => {
   };
 });
 
+// IPC : Ouvrir une URL dans le navigateur système (utilisé par la bannière de
+// mise à jour pour envoyer l'utilisateur vers la page de release GitHub).
+// Volontairement scopé à ce seul usage plutôt qu'un setWindowOpenHandler
+// global, pour ne pas élargir la surface d'attaque inutilement. L'URL vient
+// de la réponse de l'API GitHub donc elle est de confiance, mais on la
+// valide quand même par défense en profondeur.
+ipcMain.handle('open-external-url', async (event, url: string) => {
+  if (typeof url !== 'string' || !/^https:\/\/github\.com\//.test(url)) {
+    writeToLogFile(`[open-external-url] URL rejetée (hors github.com) : ${url}\n`);
+    return;
+  }
+  await shell.openExternal(url);
+});
+
 // IPC : Giphy Integration Handlers
 ipcMain.handle('is-giphy-configured', async () => {
   const key = process.env.GIPHY_API_KEY;
@@ -977,11 +1058,34 @@ app.whenReady().then(() => {
     writeToLogFile("FaceFusion n'est pas détecté ou setup forcé. Lancement de l'assistant d'installation.\n");
     mainWindow?.loadFile(path.join(__dirname, 'setup.html'));
   }
+
+  // Vérification de mise à jour en arrière-plan : ne bloque jamais le
+  // démarrage (pas d'await), lancée une fois puis répétée périodiquement
+  // pour les sessions longues (voir checkForUpdate ci-dessus).
+  //
+  // Le premier appel est différé de quelques secondes : webContents.send()
+  // ne met pas en file d'attente les messages envoyés avant que le renderer
+  // n'ait un listener actif sur le canal (contrairement à sendServerStatus,
+  // qui a son propre handshake de re-envoi via l'IPC 'loading-ready' —
+  // voir plus bas). Sans ce délai, un fetch GitHub qui répond vite pourrait
+  // envoyer 'update-available' avant que UpdateBanner (React) ne soit monté
+  // et abonné, et le message serait silencieusement perdu jusqu'à la
+  // prochaine vérification périodique.
+  setTimeout(() => {
+    void checkForUpdate();
+  }, 15_000);
+  updateCheckInterval = setInterval(() => {
+    void checkForUpdate();
+  }, UPDATE_CHECK_INTERVAL_MS);
 });
 
 // Nettoyer tous les serveurs avant de quitter
 app.on('before-quit', () => {
   stopServers();
+  if (updateCheckInterval) {
+    clearInterval(updateCheckInterval);
+    updateCheckInterval = null;
+  }
 });
 
 app.on('window-all-closed', () => {

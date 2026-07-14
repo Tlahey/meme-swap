@@ -29,6 +29,7 @@ import { McpSettings } from './components/McpSettings';
 import { SettingsModal } from './components/SettingsModal';
 import { GiphySearch } from './components/GiphySearch';
 import { SetupWizard, DiskSpaceInfo } from './components/SetupWizard';
+import { UpdateBanner } from './components/UpdateBanner';
 import { I18nProvider, useTranslation } from '@meme-swap/i18n';
 
 /**
@@ -853,6 +854,9 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
 
   return (
     <main className="min-h-[100dvh] relative overflow-x-hidden flex flex-col selection:bg-[var(--emerald-bg)] selection:text-[var(--emerald-text)]">
+      {/* Electron-only "new version available" toast (no-op on the web app) */}
+      <UpdateBanner />
+
       {/* Header Bar */}
       <div className="w-full h-16 border-b border-[var(--border-color)] bg-[var(--bg-primary)]/80 backdrop-blur-md sticky top-0 z-50">
         <div className="max-w-[1150px] w-full h-full mx-auto px-4 md:px-8 flex items-center justify-between">
