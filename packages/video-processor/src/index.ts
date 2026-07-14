@@ -355,6 +355,11 @@ export async function mp4ToGif(
       });
 
       pass2.on('error', (err: Error) => {
+        // Nettoyer la palette temporaire (même si le spawn de pass 2 échoue)
+        fs.unlink(tempPalette, () => {
+          // Ignore les erreurs de suppression
+        });
+
         resolve({
           success: false,
           ...classifyFfmpegSpawnError(err),

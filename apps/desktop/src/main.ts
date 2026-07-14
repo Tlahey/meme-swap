@@ -34,7 +34,7 @@ let faceswapProcess: ChildProcess | null = null;
 
 // Ces ports sont résolus dynamiquement au démarrage (voir findFreePort)
 let frontendPort: string = process.env.MEME_SWAP_PORT || process.env.PORT || '3010';
-let mcpPort: string = process.env.MCP_PORT || '10001';
+let mcpPort: string = process.env.MCP_PORT || '3001';
 
 /**
  * Teste si un port TCP est libre sur 127.0.0.1.

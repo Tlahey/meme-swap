@@ -153,8 +153,10 @@ export class Server {
     this.app.use(express.json());
 
     // Request logging middleware
+    // Only logs method + URL — request headers (which may include Authorization)
+    // and bodies are never logged, since stdout is persisted to disk by PM2.
     this.app.use((req, res, next) => {
-      console.log(`[MCP Server Request] ${req.method} ${req.url} - Headers: ${JSON.stringify(req.headers)} - Body: ${JSON.stringify(req.body)}`);
+      console.log(`[MCP Server Request] ${req.method} ${req.url}`);
       next();
     });
 
