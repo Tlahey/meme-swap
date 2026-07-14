@@ -12,11 +12,7 @@ import {
 import { gifToMp4 } from '@meme-swap/video-processor';
 
 export type InstallStepId =
-  | 'system-checks'
-  | 'clone-repo'
-  | 'setup-venv'
-  | 'install-deps'
-  | 'verify-install';
+  'system-checks' | 'clone-repo' | 'setup-venv' | 'install-deps' | 'verify-install';
 export type InstallStepStatus = 'active' | 'completed' | 'failed';
 
 export interface InstallProgressEvent {
@@ -115,7 +111,12 @@ export function checkDiskSpace(): DiskSpaceInfo {
       const stats = fs.statfsSync(target);
       const freeBytes = stats.bavail * stats.bsize;
       const totalBytes = stats.blocks * stats.bsize;
-      if (Number.isFinite(freeBytes) && freeBytes > 0 && Number.isFinite(totalBytes) && totalBytes > 0) {
+      if (
+        Number.isFinite(freeBytes) &&
+        freeBytes > 0 &&
+        Number.isFinite(totalBytes) &&
+        totalBytes > 0
+      ) {
         return { freeBytes, totalBytes, meetsMinimum: freeBytes >= MINIMUM_FREE_BYTES };
       }
     } catch {
@@ -163,7 +164,9 @@ function checkDiskSpaceViaDf(target: string): DiskSpaceInfo {
  *   apps/desktop/package.json's `build.extraResources`), where files under
  *   `public/` land at the export root rather than staying nested under `public/`.
  */
-function resolveTestAssetPaths(workspaceRoot: string): { sourcePath: string; targetPath: string } | null {
+function resolveTestAssetPaths(
+  workspaceRoot: string,
+): { sourcePath: string; targetPath: string } | null {
   const candidateDirs: string[] = [];
 
   const resourcesPath = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath;
@@ -194,7 +197,10 @@ function resolveTestAssetPaths(workspaceRoot: string): { sourcePath: string; tar
  */
 const VERIFY_SWAP_TIMEOUT_MS = 15 * 60 * 1000;
 
-function runFaceSwapWithTimeout(options: FaceswapOptions, timeoutMs: number): Promise<FaceswapResult> {
+function runFaceSwapWithTimeout(
+  options: FaceswapOptions,
+  timeoutMs: number,
+): Promise<FaceswapResult> {
   return new Promise((resolve) => {
     let settled = false;
     let child: ChildProcess | undefined;

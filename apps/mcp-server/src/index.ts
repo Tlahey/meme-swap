@@ -7,8 +7,8 @@ async function main() {
 
   try {
     await server.start(PORT);
-    console.log(`✅ MCP Server started on http://localhost:${PORT}`);
-    console.log(`📍 Ready to accept MCP connections`);
+    console.info(`✅ MCP Server started on http://localhost:${PORT}`);
+    console.info(`📍 Ready to accept MCP connections`);
   } catch (error) {
     console.error('❌ Failed to start server:', error);
     process.exit(1);

@@ -1,4 +1,4 @@
-import { spawn, SpawnOptions, ChildProcess } from 'node:child_process';
+import { spawn, ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -94,11 +94,7 @@ export function getWorkspaceRoot(): string {
  * Utilise toujours le dossier global utilisateur (~/.meme-swap/facefusion).
  */
 export function getFaceFusionDir(): string {
-  return path.join(
-    /*turbopackIgnore: true*/ os.homedir(),
-    '.meme-swap',
-    'facefusion',
-  );
+  return path.join(/*turbopackIgnore: true*/ os.homedir(), '.meme-swap', 'facefusion');
 }
 
 /**
@@ -135,11 +131,7 @@ function buildArgs(options: FaceswapOptions): string[] {
   // Chemins obligatoires
   if (options.lipSyncerModel) {
     // Le lip syncer requiert une source audio. On passe la cible en tant que source audio.
-    args.push(
-      '-s',
-      path.resolve(options.sourcePath),
-      path.resolve(options.targetPath),
-    );
+    args.push('-s', path.resolve(options.sourcePath), path.resolve(options.targetPath));
   } else {
     args.push('-s', path.resolve(options.sourcePath));
   }
@@ -187,10 +179,7 @@ function buildArgs(options: FaceswapOptions): string[] {
 
   // Face Enhancer Blend (maps to --face-enhancer-blend in FaceFusion)
   if (options.faceEnhancerBlend !== undefined) {
-    args.push(
-      '--face-enhancer-blend',
-      Math.round(options.faceEnhancerBlend).toString(),
-    );
+    args.push('--face-enhancer-blend', Math.round(options.faceEnhancerBlend).toString());
   }
 
   // Frame Enhancer
@@ -256,9 +245,7 @@ function buildArgs(options: FaceswapOptions): string[] {
  * }
  * ```
  */
-export async function runFaceSwap(
-  options: FaceswapOptions,
-): Promise<FaceswapResult> {
+export async function runFaceSwap(options: FaceswapOptions): Promise<FaceswapResult> {
   const pythonPath = getPythonPath();
   const scriptPath = getScriptPath();
   const args = buildArgs(options);
@@ -302,14 +289,12 @@ export async function runFaceSwap(
 
     options.onProcessStart?.(childProcess);
 
-    let stdout = '';
     let stderr = '';
 
     // Collecte des logs stdout
     childProcess.stdout?.on('data', (data: Buffer) => {
       const output = data.toString();
-      stdout += output;
-      console.log('[FaceFusion]', output.trim());
+      console.info('[FaceFusion]', output.trim());
       if (options.onProgress) {
         parseProgress(output, options.onProgress);
       }

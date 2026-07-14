@@ -41,6 +41,7 @@ cd packages/faceswap-core && pnpm dev   # tsc --watch
 - `apps/mcp-server` — Express + `@modelcontextprotocol/sdk`, exposes a single `run_faceswap` tool over SSE (`/mcp` GET), stateless JSON-RPC (`/mcp` POST), and stdio (`--stdio` flag). Also has a `/health` endpoint.
 
 Shared packages:
+
 - `packages/faceswap-core` — spawns FaceFusion's Python CLI via `spawn()`. Resolves `~/.meme-swap/facefusion/venv/bin/python3.11` (preferred) or `python3`/`python`, and `~/.meme-swap/facefusion/facefusion.py`. Invokes it with the `headless-run` subcommand (not `run --headless`, despite what AGENTS.md's example shows) plus flags built from `FaceswapOptions` (execution providers, face selector mode, processors like `face_swapper`/`face_enhancer`/`frame_enhancer`/`lip_syncer`/`expression_restorer`, blend/blur values, temp path). Target media **must already be MP4** — GIFs are converted first.
 - `packages/video-processor` — FFmpeg wrapper. `gifToMp4()` is single-pass with `faststart`; `mp4ToGif()` is two-pass (palettegen then paletteuse) for quality, default 10fps/320px width. Looks for ffmpeg at `~/.meme-swap/bin/ffmpeg` first, falls back to `ffmpeg` on PATH.
 - `packages/api-client` — **not a placeholder**, despite what README/AGENTS.md/docs say. It's a working Giphy client (`giphy.search()`, `giphy.trending()`) with a fallback chain: browser `localStorage` API key → Electron IPC (`window.electronAPI.searchGiphy`) → Next.js proxy route (`/api/giphy/*`) → server-side `GIPHY_API_KEY` env var → curated static mock GIF list (`CURATED_FALLBACK_GIFS`) if nothing else is configured.
@@ -58,14 +59,14 @@ Both the frontend API route (`apps/frontend/app/api/faceswap/route.ts`) and the 
 
 All runtime data lives under `~/.meme-swap/` in the user's home directory, **not** in `.process/` inside the repo (that path appears in older parts of AGENTS.md and is stale):
 
-| Path | Purpose |
-|---|---|
-| `~/.meme-swap/facefusion/` | FaceFusion clone + `venv/` |
-| `~/.meme-swap/bin/` | Copied `ffmpeg`/`ffprobe` |
-| `~/.meme-swap/process/temp/` | Per-run temp files (wiped at the start of each request) |
-| `~/.meme-swap/process/results/` | Output files served back to the client |
-| `~/.meme-swap/source-history/` | Saved source faces (desktop only; pruned to the 5 most recent) |
-| `~/.meme-swap/logs/desktop.log` | Desktop app log, reset each launch |
+| Path                            | Purpose                                                        |
+| ------------------------------- | -------------------------------------------------------------- |
+| `~/.meme-swap/facefusion/`      | FaceFusion clone + `venv/`                                     |
+| `~/.meme-swap/bin/`             | Copied `ffmpeg`/`ffprobe`                                      |
+| `~/.meme-swap/process/temp/`    | Per-run temp files (wiped at the start of each request)        |
+| `~/.meme-swap/process/results/` | Output files served back to the client                         |
+| `~/.meme-swap/source-history/`  | Saved source faces (desktop only; pruned to the 5 most recent) |
+| `~/.meme-swap/logs/desktop.log` | Desktop app log, reset each launch                             |
 
 ### Code style
 

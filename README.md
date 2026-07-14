@@ -26,11 +26,11 @@ No cloud. No uploads. Just memes.
 
 **meme-swap** wraps the [FaceFusion](https://github.com/facefusion/facefusion) AI engine in a fully typed TypeScript pipeline, and ships it as three apps that share one local engine:
 
-| Surface | Stack | What you get |
-|---|---|---|
-| 🌐 **Web app** | Next.js 16 | Drag & drop face swap, Giphy search, model settings, live progress |
-| 🖥️ **Desktop app** | Electron | Native macOS app with guided first-run setup, packaged as a `.dmg` |
-| 🤖 **MCP server** | Model Context Protocol | Lets AI assistants (Claude, Cursor…) run face swaps as a tool |
+| Surface            | Stack                  | What you get                                                       |
+| ------------------ | ---------------------- | ------------------------------------------------------------------ |
+| 🌐 **Web app**     | Next.js 16             | Drag & drop face swap, Giphy search, model settings, live progress |
+| 🖥️ **Desktop app** | Electron               | Native macOS app with guided first-run setup, packaged as a `.dmg` |
+| 🤖 **MCP server**  | Model Context Protocol | Lets AI assistants (Claude, Cursor…) run face swaps as a tool      |
 
 ### Why it's different
 
@@ -135,13 +135,13 @@ sequenceDiagram
 
 ### AI models in play
 
-| Processor | Model | Role |
-|---|---|---|
-| Face swapper | `inswapper_128` / `inswapper_128_fp16` | Identity transfer, frame by frame |
-| Face enhancer | `codeformer` | Restores and sharpens the swapped face |
-| Frame enhancer | `real_esrgan_x2` | Optional ×2 super-resolution of the whole frame |
-| Expression restorer | `expression_restorer` | Keeps the original grimaces and blinks |
-| Lip syncer | optional | Re-syncs mouth movement to the source audio |
+| Processor           | Model                                  | Role                                            |
+| ------------------- | -------------------------------------- | ----------------------------------------------- |
+| Face swapper        | `inswapper_128` / `inswapper_128_fp16` | Identity transfer, frame by frame               |
+| Face enhancer       | `codeformer`                           | Restores and sharpens the swapped face          |
+| Frame enhancer      | `real_esrgan_x2`                       | Optional ×2 super-resolution of the whole frame |
+| Expression restorer | `expression_restorer`                  | Keeps the original grimaces and blinks          |
+| Lip syncer          | optional                               | Re-syncs mouth movement to the source audio     |
 
 Execution providers: `coreml` (default on Apple Silicon) → `cpu` fallback, `cuda` supported.
 
@@ -183,13 +183,13 @@ meme-swap/
 
 ## Prerequisites
 
-| Tool | Version | Install |
-|---|---|---|
-| Node.js | ≥ 18 | [nodejs.org](https://nodejs.org) |
-| pnpm | ≥ 9 | `npm i -g pnpm` |
-| Python | ≥ 3.9 | `brew install python` |
-| FFmpeg | any | `brew install ffmpeg` |
-| Git | ≥ 2 | pre-installed on macOS |
+| Tool    | Version | Install                          |
+| ------- | ------- | -------------------------------- |
+| Node.js | ≥ 18    | [nodejs.org](https://nodejs.org) |
+| pnpm    | ≥ 9     | `npm i -g pnpm`                  |
+| Python  | ≥ 3.9   | `brew install python`            |
+| FFmpeg  | any     | `brew install ffmpeg`            |
+| Git     | ≥ 2     | pre-installed on macOS           |
 
 ---
 
@@ -272,6 +272,7 @@ To use the MCP server with an AI client (e.g. Cursor), add to your MCP config:
 ```
 
 Available MCP tools:
+
 - **`run_faceswap`** — perform a face swap given a source image and target media path
 
 See [`apps/mcp-server/README.md`](./apps/mcp-server/README.md) for the full API reference.
@@ -304,21 +305,21 @@ if (result.success) {
 }
 ```
 
-| Option | Type | Default | Description |
-|---|---|---|---|
-| `sourcePath` | `string` | — | Source face image |
-| `targetPath` | `string` | — | Target video (must be MP4) |
-| `outputPath` | `string` | — | Output file path |
-| `executionProviders` | `('coreml' \| 'cpu' \| 'cuda')[]` | `['coreml','cpu']` | Hardware accelerators |
-| `faceSelectorMode` | `string` | — | `'many'`, `'one'`, `'reference'` |
-| `faceSwapperModel` | `string` | — | e.g. `inswapper_128_fp16` |
-| `faceEnhancerModel` | `string` | — | e.g. `codeformer` |
-| `frameEnhancerModel` | `string` | — | e.g. `real_esrgan_x2` |
-| `expressionRestorerModel` | `string` | — | Restores original expressions |
-| `lipSyncerModel` | `string` | — | Re-syncs lips to source audio |
-| `threadCount` | `number` | auto | Parallel execution threads |
-| `logLevel` | `'debug' \| 'info' \| 'warning' \| 'error'` | `'info'` | Log verbosity |
-| `onProgress` | `(p) => void` | — | Live progress callback (analysing / extracting / processing / merging) |
+| Option                    | Type                                        | Default            | Description                                                            |
+| ------------------------- | ------------------------------------------- | ------------------ | ---------------------------------------------------------------------- |
+| `sourcePath`              | `string`                                    | —                  | Source face image                                                      |
+| `targetPath`              | `string`                                    | —                  | Target video (must be MP4)                                             |
+| `outputPath`              | `string`                                    | —                  | Output file path                                                       |
+| `executionProviders`      | `('coreml' \| 'cpu' \| 'cuda')[]`           | `['coreml','cpu']` | Hardware accelerators                                                  |
+| `faceSelectorMode`        | `string`                                    | —                  | `'many'`, `'one'`, `'reference'`                                       |
+| `faceSwapperModel`        | `string`                                    | —                  | e.g. `inswapper_128_fp16`                                              |
+| `faceEnhancerModel`       | `string`                                    | —                  | e.g. `codeformer`                                                      |
+| `frameEnhancerModel`      | `string`                                    | —                  | e.g. `real_esrgan_x2`                                                  |
+| `expressionRestorerModel` | `string`                                    | —                  | Restores original expressions                                          |
+| `lipSyncerModel`          | `string`                                    | —                  | Re-syncs lips to source audio                                          |
+| `threadCount`             | `number`                                    | auto               | Parallel execution threads                                             |
+| `logLevel`                | `'debug' \| 'info' \| 'warning' \| 'error'` | `'info'`           | Log verbosity                                                          |
+| `onProgress`              | `(p) => void`                               | —                  | Live progress callback (analysing / extracting / processing / merging) |
 
 ### `@meme-swap/video-processor`
 
@@ -368,6 +369,7 @@ The project landing page lives in [`website/`](./website) and is deployed automa
 > **One-time setup:** in the repo settings, set **Settings → Pages → Source** to **GitHub Actions**.
 
 More docs:
+
 - [`docs/architecture.md`](./docs/architecture.md) — detailed architecture notes
 - [`docs/development.md`](./docs/development.md) — local development guide
 - [`docs/adr/`](./docs/adr) — Architecture Decision Records
@@ -379,6 +381,7 @@ More docs:
 See [CONTRIBUTING.md](./CONTRIBUTING.md) for the full guide.
 
 Quick summary:
+
 1. Fork the repo and create a branch: `feature/<name>` or `fix/<name>`
 2. Follow the [code style rules](./AGENTS.md) — TypeScript strict mode, named exports, async/await
 3. Open a pull request with a clear description

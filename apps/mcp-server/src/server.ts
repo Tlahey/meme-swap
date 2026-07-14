@@ -2,10 +2,7 @@ import express, { Request, Response } from 'express';
 import { Server as MCPServer } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import {
-  CallToolRequestSchema,
-  ListToolsRequestSchema,
-} from '@modelcontextprotocol/sdk/types.js';
+import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
 import { runFaceswapTool } from './tools/faceswap.js';
 
 class AbsoluteSSEServerTransport extends SSEServerTransport {
@@ -17,10 +14,10 @@ class AbsoluteSSEServerTransport extends SSEServerTransport {
     self.res.writeHead(200, {
       'Content-Type': 'text/event-stream',
       'Cache-Control': 'no-cache, no-transform',
-      'Connection': 'keep-alive',
+      Connection: 'keep-alive',
       'Access-Control-Allow-Origin': '*',
       'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-      'Access-Control-Allow-Headers': 'Content-Type, Authorization'
+      'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     });
 
     const endpointUrl = new URL(self._endpoint);
@@ -67,8 +64,7 @@ export class Server {
       tools: [
         {
           name: 'run_faceswap',
-          description:
-            'Perform face swap on images and videos. Supports GIFs and MP4 files.',
+          description: 'Perform face swap on images and videos. Supports GIFs and MP4 files.',
           inputSchema: {
             type: 'object',
             properties: {
@@ -89,8 +85,7 @@ export class Server {
               executionProviders: {
                 type: 'array',
                 items: { type: 'string' },
-                description:
-                  'Execution providers for FaceFusion (coreml, cpu, cuda)',
+                description: 'Execution providers for FaceFusion (coreml, cpu, cuda)',
                 default: ['coreml', 'cpu'],
               },
               threadCount: {
@@ -156,7 +151,7 @@ export class Server {
     // Only logs method + URL — request headers (which may include Authorization)
     // and bodies are never logged, since stdout is persisted to disk by PM2.
     this.app.use((req, res, next) => {
-      console.log(`[MCP Server Request] ${req.method} ${req.url}`);
+      console.info(`[MCP Server Request] ${req.method} ${req.url}`);
       next();
     });
 
@@ -178,7 +173,7 @@ export class Server {
       const protocol = req.protocol || 'http';
       // Dynamically construct absolute URL to ensure clients receive a fully qualified path for POSTing messages
       const absoluteEndpoint = `${protocol}://${host}/message`;
-      
+
       const transport = new AbsoluteSSEServerTransport(absoluteEndpoint, res);
       const sessionId = transport.sessionId;
 
@@ -193,7 +188,7 @@ export class Server {
         this.sseTransports.delete(sessionId);
         try {
           await mcpServer.close();
-        } catch (error) {
+        } catch {
           // ignore or log
         }
       });
@@ -236,28 +231,31 @@ export class Server {
           close: async () => {},
         };
 
-        mcpServer.connect(transport).then(() => {
-          if (transport.onmessage) {
-            transport.onmessage(jsonRpcRequest);
-            if (isNotification) {
-              resolved = true;
-              res.status(204).end();
-              resolve();
+        mcpServer
+          .connect(transport)
+          .then(() => {
+            if (transport.onmessage) {
+              transport.onmessage(jsonRpcRequest);
+              if (isNotification) {
+                resolved = true;
+                res.status(204).end();
+                resolve();
+              }
+            } else {
+              if (!resolved) {
+                resolved = true;
+                res.status(500).json({ error: 'Transport onmessage handler not registered' });
+                resolve();
+              }
             }
-          } else {
+          })
+          .catch((err) => {
             if (!resolved) {
               resolved = true;
-              res.status(500).json({ error: 'Transport onmessage handler not registered' });
+              res.status(500).json({ error: err.message });
               resolve();
             }
-          }
-        }).catch((err) => {
-          if (!resolved) {
-            resolved = true;
-            res.status(500).json({ error: err.message });
-            resolve();
-          }
-        });
+          });
       });
     });
 
@@ -283,7 +281,7 @@ export class Server {
   async start(port: number): Promise<void> {
     // Start HTTP server for SSE transport
     this.app.listen(port, '127.0.0.1', () => {
-      console.log(`HTTP server listening on http://127.0.0.1:${port}`);
+      console.info(`HTTP server listening on http://127.0.0.1:${port}`);
     });
 
     // Also support stdio transport for direct CLI usage

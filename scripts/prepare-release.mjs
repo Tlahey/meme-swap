@@ -56,7 +56,11 @@ function workspacePackageJsons(dir) {
     });
 }
 
-const packageJsonPaths = ['package.json', ...workspacePackageJsons('apps'), ...workspacePackageJsons('packages')];
+const packageJsonPaths = [
+  'package.json',
+  ...workspacePackageJsons('apps'),
+  ...workspacePackageJsons('packages'),
+];
 
 console.log(`Bumping ${packageJsonPaths.length} package.json files to ${version}:\n`);
 
@@ -93,7 +97,11 @@ run(`git add ${packageJsonPaths.map((p) => `"${p}"`).join(' ')} pnpm-lock.yaml`)
 run(`git commit -m "chore: bump version to ${version}"`);
 run(`git tag -a v${version} -m "v${version}"`);
 
-console.log(`\nDone — commit and tag v${version} created locally. Review with \`git show\`, then push:\n`);
+console.log(
+  `\nDone — commit and tag v${version} created locally. Review with \`git show\`, then push:\n`,
+);
 console.log(`  git push origin main v${version}\n`);
-console.log('Pushing the tag triggers .github/workflows/release.yml, which builds the .dmg from this exact');
+console.log(
+  'Pushing the tag triggers .github/workflows/release.yml, which builds the .dmg from this exact',
+);
 console.log('commit and opens a draft GitHub Release (you still click "Publish" yourself).');

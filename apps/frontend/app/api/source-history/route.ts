@@ -15,7 +15,7 @@ function pruneHistoryFiles(): void {
   ensureHistoryDirectory();
   const files = fs.readdirSync(HISTORY_DIR);
   const fileInfos = files
-    .map(name => {
+    .map((name) => {
       const filePath = path.join(HISTORY_DIR, name);
       try {
         const stats = fs.statSync(filePath);
@@ -46,14 +46,14 @@ function getHistoryList() {
   pruneHistoryFiles();
   const files = fs.readdirSync(HISTORY_DIR);
   const fileInfos = files
-    .map(name => {
+    .map((name) => {
       const filePath = path.join(HISTORY_DIR, name);
       try {
         const stats = fs.statSync(filePath);
         return {
           filename: name,
           url: `/api/source-history/${name}`,
-          timestamp: stats.mtimeMs
+          timestamp: stats.mtimeMs,
         };
       } catch (e) {
         return null;
@@ -73,7 +73,7 @@ export async function GET() {
     console.error('[API History] GET Error:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -85,10 +85,7 @@ export async function POST(request: NextRequest) {
     const file = formData.get('file') as File | null;
 
     if (!file) {
-      return NextResponse.json(
-        { success: false, error: 'Aucun fichier fourni' },
-        { status: 400 }
-      );
+      return NextResponse.json({ success: false, error: 'Aucun fichier fourni' }, { status: 400 });
     }
 
     const ext = path.extname(file.name).toLowerCase() || '.jpg';
@@ -110,13 +107,13 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({
       success: true,
       savedFilename: newFileName,
-      history
+      history,
     });
   } catch (error) {
     console.error('[API History] POST Error:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

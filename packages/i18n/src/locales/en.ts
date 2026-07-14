@@ -65,16 +65,13 @@ export const en = {
     faceEnhancer: 'Face Enhancer',
     faceEnhancerDesc: 'Restores facial details and refines sharpness.',
     faceEnhancerBlend: 'Enhancement Intensity',
-    faceEnhancerBlendDesc:
-      'Blends raw and enhanced face for a more natural look. (Default: 80%)',
+    faceEnhancerBlendDesc: 'Blends raw and enhanced face for a more natural look. (Default: 80%)',
     frameEnhancer: 'Frame Enhancer',
-    frameEnhancerDesc:
-      'Enhances the entire video frame to match the face sharpness.',
+    frameEnhancerDesc: 'Enhances the entire video frame to match the face sharpness.',
     expressionRestorer: 'Expression Restorer',
     expressionRestorerDesc: 'Restores facial expressions and details.',
     faceMaskBlend: 'Face Mask Blend',
-    faceMaskBlendDesc:
-      'Smooths the mask edges on the target face. (Default: 80)',
+    faceMaskBlendDesc: 'Smooths the mask edges on the target face. (Default: 80)',
     acceleration: 'Hardware Acceleration',
     providers: {
       coreml: 'Apple Neural Engine (CoreML)',
@@ -178,8 +175,7 @@ export const en = {
     helpStep2: '2. Sign in or create a free account.',
     helpStep3: "3. Click on 'Create an App' in the dashboard.",
     helpStep4: "4. Select the 'API' option (not SDK) and click 'Next Step'.",
-    helpStep5:
-      "5. Name your application (e.g. 'Meme Swap') and provide a short description.",
+    helpStep5: "5. Name your application (e.g. 'Meme Swap') and provide a short description.",
     helpStep6: "6. Click 'Create App' to generate your API Key.",
     helpStep7:
       '7. Copy your API Key (e.g. a string of letters and numbers) and paste it into the field on the left.',
@@ -196,8 +192,7 @@ export const en = {
     offlineBadge: 'Preset Memes Mode',
     dropTargetLabel: 'Or drop here to load as target',
     loadingGif: 'Downloading selected GIF...',
-    fetchingError:
-      'Failed to download Giphy GIF. Please check your internet connection.',
+    fetchingError: 'Failed to download Giphy GIF. Please check your internet connection.',
     selectedBadge: 'Target Media',
     prevPage: 'Previous',
     nextPage: 'Next',
@@ -205,7 +200,7 @@ export const en = {
   setup: {
     title: 'Setting Up Meme Swap',
     subtitle:
-      "We need to install FaceFusion and its dependencies before you can start swapping faces. This only happens once and stays on your Mac.",
+      'We need to install FaceFusion and its dependencies before you can start swapping faces. This only happens once and stays on your Mac.',
     steps: {
       systemChecks: {
         label: 'System Checks',

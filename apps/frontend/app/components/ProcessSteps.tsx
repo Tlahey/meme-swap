@@ -101,9 +101,10 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
   const { t } = useTranslation();
   const etaLabel = useEtaLabel(currentStepIndex, faceswapProgress);
 
-  const inferencePercent = (currentStepIndex === 2 && faceswapProgress) ? faceswapProgress.percent : 0;
+  const inferencePercent =
+    currentStepIndex === 2 && faceswapProgress ? faceswapProgress.percent : 0;
   const progressPercent = Math.min(
-    Math.round(((currentStepIndex + (inferencePercent / 100)) / steps.length) * 100),
+    Math.round(((currentStepIndex + inferencePercent / 100) / steps.length) * 100),
     100,
   );
 
@@ -116,9 +117,7 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
             <h3 className="text-sm font-semibold text-[var(--text-primary)]">
               {t('process.title')}
             </h3>
-            <p className="text-xs text-[var(--text-muted)] mt-1">
-              {t('process.subtitle')}
-            </p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">{t('process.subtitle')}</p>
           </div>
           <span className="text-xs px-3 py-1 bg-[var(--bg-tertiary)] text-[var(--text-secondary)] border border-[var(--border-color)] rounded-full font-mono font-medium tabular-nums">
             {progressPercent}%
@@ -149,8 +148,7 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
             const isFailed = step.status === 'failed';
             const isCompleted =
               !isFailed && (step.status === 'completed' || idx < currentStepIndex);
-            const isRunning =
-              !isFailed && (step.status === 'running' || idx === currentStepIndex);
+            const isRunning = !isFailed && (step.status === 'running' || idx === currentStepIndex);
             const Icon = step.icon;
 
             return (
@@ -159,11 +157,7 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
                 <div className="relative z-10 flex items-center justify-center w-8 h-8 rounded-full shrink-0 bg-[var(--bg-primary)]">
                   {isCompleted ? (
                     <motion.div
-                      initial={
-                        shouldReduceMotion
-                          ? { opacity: 0 }
-                          : { scale: 0.8, opacity: 0 }
-                      }
+                      initial={shouldReduceMotion ? { opacity: 0 } : { scale: 0.8, opacity: 0 }}
                       animate={{ scale: 1, opacity: 1 }}
                       transition={{ duration: shouldReduceMotion ? 0 : 0.2 }}
                       className="flex items-center justify-center w-full h-full rounded-full bg-[var(--emerald-main)] text-white shadow-sm"
@@ -222,7 +216,8 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
                   >
                     {idx === 2 && faceswapProgress && isRunning ? (
                       <span className="font-semibold text-[var(--emerald-main)]">
-                        {t(`process.progress.${faceswapProgress.step}`)} : {faceswapProgress.percent}%
+                        {t(`process.progress.${faceswapProgress.step}`)} :{' '}
+                        {faceswapProgress.percent}%
                         {etaLabel && (
                           <span className="ml-2 font-normal text-[var(--text-muted)]">
                             {t('process.etaRemaining', { time: etaLabel })}
@@ -255,21 +250,14 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
         <AnimatePresence>
           {currentStepIndex === 2 && (
             <motion.div
-              initial={
-                shouldReduceMotion
-                  ? { opacity: 0 }
-                  : { opacity: 0, y: -5, height: 0 }
-              }
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -5, height: 0 }}
               animate={{ opacity: 1, y: 0, height: 'auto' }}
               exit={{ opacity: 0, y: -5, height: 0 }}
               transition={{ duration: shouldReduceMotion ? 0 : 0.3 }}
               className="overflow-hidden"
             >
               <div className="text-xs bg-[var(--bg-tertiary)] border border-[var(--border-color)] text-[var(--text-secondary)] rounded-lg p-3 flex gap-3 items-start leading-relaxed mt-2">
-                <Cpu
-                  size={16}
-                  className="text-[var(--emerald-main)] shrink-0 mt-0.5"
-                />
+                <Cpu size={16} className="text-[var(--emerald-main)] shrink-0 mt-0.5" />
                 <span>
                   <span className="text-[var(--text-primary)] font-semibold">
                     {t('process.note')}

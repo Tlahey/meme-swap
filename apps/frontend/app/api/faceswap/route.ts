@@ -139,7 +139,7 @@ function cleanupProcessDirs(): void {
   if (fs.existsSync(TEMP_DIR)) {
     try {
       fs.rmSync(TEMP_DIR, { recursive: true, force: true });
-      console.log('[API] Dossier temporaire nettoyé');
+      console.info('[API] Dossier temporaire nettoyé');
     } catch (error) {
       console.error('[API] Erreur de nettoyage du dossier temporaire:', error);
     }
@@ -215,9 +215,7 @@ export async function POST(request: NextRequest) {
       const sendEvent = (event: string, data: unknown) => {
         if (closed) return;
         try {
-          controller.enqueue(
-            encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`),
-          );
+          controller.enqueue(encoder.encode(`event: ${event}\ndata: ${JSON.stringify(data)}\n\n`));
         } catch {
           // Le client a probablement fermé la connexion.
           closed = true;
@@ -306,9 +304,9 @@ export async function POST(request: NextRequest) {
         const targetBuffer = await targetFile.arrayBuffer();
         fs.writeFileSync(targetPath, Buffer.from(targetBuffer));
 
-        console.log('[API] Fichiers sauvegardés');
-        console.log(`  Source: ${sourcePath}`);
-        console.log(`  Target: ${targetPath}`);
+        console.info('[API] Fichiers sauvegardés');
+        console.info(`  Source: ${sourcePath}`);
+        console.info(`  Target: ${targetPath}`);
 
         sendProgress(0, 'completed');
 
@@ -318,7 +316,7 @@ export async function POST(request: NextRequest) {
         let targetForFaceswap = targetPath;
 
         if (targetFile.name.toLowerCase().endsWith('.gif')) {
-          console.log('[API] Conversion GIF → MP4...');
+          console.info('[API] Conversion GIF → MP4...');
 
           const gifToMp4Result = await gifToMp4({
             inputPath: targetPath,
@@ -335,7 +333,7 @@ export async function POST(request: NextRequest) {
           }
 
           targetForFaceswap = tempMp4Path;
-          console.log('[API] Conversion terminée');
+          console.info('[API] Conversion terminée');
         } else if (targetFile.name.toLowerCase().endsWith('.mp4')) {
           // Le fichier est déjà un MP4
           targetForFaceswap = targetPath;
@@ -353,35 +351,21 @@ export async function POST(request: NextRequest) {
           ? (rawProviders.split(',') as ('coreml' | 'cpu' | 'cuda')[])
           : ['coreml', 'cpu'];
 
-        const faceSelectorMode =
-          (formData.get('faceSelectorMode') as string | null) || undefined;
+        const faceSelectorMode = (formData.get('faceSelectorMode') as string | null) || undefined;
 
         const rawThreadCount = formData.get('threadCount') as string | null;
-        const threadCount = rawThreadCount
-          ? parseInt(rawThreadCount, 10)
-          : undefined;
+        const threadCount = rawThreadCount ? parseInt(rawThreadCount, 10) : undefined;
 
         const logLevel =
-          (formData.get('logLevel') as
-            | 'debug'
-            | 'info'
-            | 'warning'
-            | 'error'
-            | null) || undefined;
+          (formData.get('logLevel') as 'debug' | 'info' | 'warning' | 'error' | null) || undefined;
 
         const rawFaceMaskBlend = formData.get('faceMaskBlend') as string | null;
-        const faceMaskBlend = rawFaceMaskBlend
-          ? parseInt(rawFaceMaskBlend, 10)
-          : undefined;
+        const faceMaskBlend = rawFaceMaskBlend ? parseInt(rawFaceMaskBlend, 10) : undefined;
 
-        const faceSwapperModel =
-          (formData.get('faceSwapperModel') as string | null) || undefined;
-        const faceEnhancerModel =
-          (formData.get('faceEnhancerModel') as string | null) || undefined;
+        const faceSwapperModel = (formData.get('faceSwapperModel') as string | null) || undefined;
+        const faceEnhancerModel = (formData.get('faceEnhancerModel') as string | null) || undefined;
 
-        const rawFaceEnhancerBlend = formData.get('faceEnhancerBlend') as
-          | string
-          | null;
+        const rawFaceEnhancerBlend = formData.get('faceEnhancerBlend') as string | null;
         const faceEnhancerBlend = rawFaceEnhancerBlend
           ? parseInt(rawFaceEnhancerBlend, 10)
           : undefined;
@@ -392,14 +376,13 @@ export async function POST(request: NextRequest) {
         const expressionRestorerModel =
           (formData.get('expressionRestorerModel') as string | null) || undefined;
 
-        const lipSyncerModel =
-          (formData.get('lipSyncerModel') as string | null) || undefined;
+        const lipSyncerModel = (formData.get('lipSyncerModel') as string | null) || undefined;
 
         sendProgress(1, 'completed');
 
         // Étape 2: Exécuter FaceFusion pour le face swap
         sendProgress(2, 'running');
-        console.log('[API] Lancement du face swap...');
+        console.info('[API] Lancement du face swap...');
 
         const faceswapOptions: FaceswapOptions = {
           sourcePath,
@@ -430,12 +413,12 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        console.log('[API] Face swap terminé');
+        console.info('[API] Face swap terminé');
         sendProgress(2, 'completed');
 
         // Étape 3: Reconvertir MP4 en GIF pour l'affichage
         sendProgress(3, 'running');
-        console.log('[API] Conversion MP4 → GIF...');
+        console.info('[API] Conversion MP4 → GIF...');
 
         const mp4ToGifResult = await mp4ToGif({
           inputPath: outputMp4Path,
@@ -453,7 +436,7 @@ export async function POST(request: NextRequest) {
           return;
         }
 
-        console.log('[API] Conversion terminée');
+        console.info('[API] Conversion terminée');
         sendProgress(3, 'completed');
 
         pruneResultsFiles();

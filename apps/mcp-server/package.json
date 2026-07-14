@@ -7,7 +7,8 @@
     "dev": "node build/index.js",
     "build": "tsc",
     "bundle": "esbuild build/index.js --bundle --platform=node --target=node18 --outfile=bundle/index.js",
-    "start": "node build/index.js"
+    "start": "node build/index.js",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@meme-swap/faceswap-core": "workspace:*",
@@ -18,10 +19,12 @@
   },
   "devDependencies": {
     "@types/express": "^4.17.21",
-    "@types/node": "^20.19.39",
+    "@types/node": "catalog:",
     "esbuild": "^0.25.0",
+    "eslint": "catalog:",
     "ts-node": "^10.9.2",
-    "typescript": "^5.3.0"
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:"
   },
   "engines": {
     "node": ">=18.0.0"

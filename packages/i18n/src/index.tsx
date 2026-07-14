@@ -62,11 +62,7 @@ export const I18nProvider: React.FC<{ children: React.ReactNode }> = ({ children
     return val;
   };
 
-  return (
-    <I18nContext.Provider value={{ locale, setLocale, t }}>
-      {children}
-    </I18nContext.Provider>
-  );
+  return <I18nContext.Provider value={{ locale, setLocale, t }}>{children}</I18nContext.Provider>;
 };
 
 export const useTranslation = () => {

@@ -146,7 +146,10 @@ export function UploadZone({
         </span>
         {file && (
           <span className="text-[10px] text-[var(--text-muted)] font-mono">
-            {file.name.length > 20 ? `${file.name.substring(0, 12)}...${file.name.split('.').pop()}` : file.name} · {formatBytes(file.size)}
+            {file.name.length > 20
+              ? `${file.name.substring(0, 12)}...${file.name.split('.').pop()}`
+              : file.name}{' '}
+            · {formatBytes(file.size)}
           </span>
         )}
       </div>
@@ -176,9 +179,9 @@ export function UploadZone({
         className={`relative flex flex-col items-center justify-center border border-dashed rounded-xl overflow-hidden transition-colors ${
           file
             ? 'cursor-default p-3'
-            : (isProcessing || isDownloading)
-            ? 'cursor-not-allowed opacity-50 p-5 min-h-[160px]'
-            : 'hover:border-[var(--emerald-main)]/50 hover:bg-[var(--bg-tertiary)]/30 group cursor-pointer p-5 min-h-[160px]'
+            : isProcessing || isDownloading
+              ? 'cursor-not-allowed opacity-50 p-5 min-h-[160px]'
+              : 'hover:border-[var(--emerald-main)]/50 hover:bg-[var(--bg-tertiary)]/30 group cursor-pointer p-5 min-h-[160px]'
         } shadow-[inset_0_1px_1px_rgba(255,255,255,0.01)]`}
       >
         <AnimatePresence mode="wait">
@@ -196,7 +199,9 @@ export function UploadZone({
                   <div className="p-3 bg-[var(--bg-primary)] rounded-xl border border-[var(--emerald-main)]/30 text-[var(--emerald-main)] shadow-[0_0_15px_var(--emerald-bg)]">
                     <VideoCamera size={24} className="animate-bounce" />
                   </div>
-                  <p className="text-xs font-semibold">{t('giphySearch.loadingGif') || 'Téléchargement...'}</p>
+                  <p className="text-xs font-semibold">
+                    {t('giphySearch.loadingGif') || 'Téléchargement...'}
+                  </p>
                 </div>
               ) : (
                 <>

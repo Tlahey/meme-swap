@@ -90,9 +90,7 @@ function isMissingBinaryError(err: Error): boolean {
 /**
  * Classifies a spawn-level failure (the process never started at all).
  */
-function classifyFfmpegSpawnError(
-  err: Error,
-): { error: string; errorCode: ConversionErrorCode } {
+function classifyFfmpegSpawnError(err: Error): { error: string; errorCode: ConversionErrorCode } {
   if (isMissingBinaryError(err)) {
     return {
       error: 'FFmpeg is not installed. Install it with: brew install ffmpeg',
@@ -147,9 +145,7 @@ function classifyFfmpegExit(
  * }
  * ```
  */
-export async function gifToMp4(
-  options: ConversionOptions,
-): Promise<ConversionResult> {
+export async function gifToMp4(options: ConversionOptions): Promise<ConversionResult> {
   const { inputPath, outputPath } = options;
 
   // Vérifier que le fichier d'entrée existe
@@ -188,7 +184,7 @@ export async function gifToMp4(
       outputPath,
     ];
 
-    console.log(`[FFmpeg] Conversion GIF → MP4: ${inputPath} → ${outputPath}`);
+    console.info(`[FFmpeg] Conversion GIF → MP4: ${inputPath} → ${outputPath}`);
 
     const process = spawn(ffmpegPath, args);
 
@@ -198,7 +194,7 @@ export async function gifToMp4(
       const error = data.toString();
       stderr += error;
       // FFmpeg écrit les logs sur stderr
-      console.log(`[FFmpeg] ${error.trim()}`);
+      console.info(`[FFmpeg] ${error.trim()}`);
     });
 
     process.on('close', (code: number) => {
@@ -244,9 +240,7 @@ export async function gifToMp4(
  * }
  * ```
  */
-export async function mp4ToGif(
-  options: ConversionOptions,
-): Promise<ConversionResult> {
+export async function mp4ToGif(options: ConversionOptions): Promise<ConversionResult> {
   const { inputPath, outputPath, fps = 10, maxWidth = 320 } = options;
 
   // Vérifier que le fichier d'entrée existe
@@ -268,12 +262,10 @@ export async function mp4ToGif(
 
     // Nom temporaire unique pour la palette (évite les collisions entre
     // conversions simultanées écrivant dans le même dossier de sortie)
-    const paletteName = `palette-${Date.now()}-${Math.random()
-      .toString(36)
-      .substring(2, 8)}.png`;
+    const paletteName = `palette-${Date.now()}-${Math.random().toString(36).substring(2, 8)}.png`;
     const tempPalette = path.join(path.dirname(outputPath), paletteName);
 
-    console.log(`[FFmpeg] Conversion MP4 → GIF: ${inputPath} → ${outputPath}`);
+    console.info(`[FFmpeg] Conversion MP4 → GIF: ${inputPath} → ${outputPath}`);
 
     // Two-pass pour un GIF de qualité optimale
     // Pass 1: Générer la palette de couleurs

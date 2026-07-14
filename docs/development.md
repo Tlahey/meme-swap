@@ -6,13 +6,13 @@ This guide covers everything you need to run and develop meme-swap locally.
 
 ## Prerequisites
 
-| Tool | Minimum Version | Install |
-|---|---|---|
-| Node.js | 18.x | [nodejs.org](https://nodejs.org) |
-| pnpm | 9.x | `npm i -g pnpm` |
-| Python | 3.9 | `brew install python` |
-| FFmpeg | any | `brew install ffmpeg` |
-| Git | 2.x | pre-installed on macOS |
+| Tool    | Minimum Version | Install                          |
+| ------- | --------------- | -------------------------------- |
+| Node.js | 18.x            | [nodejs.org](https://nodejs.org) |
+| pnpm    | 9.x             | `npm i -g pnpm`                  |
+| Python  | 3.9             | `brew install python`            |
+| FFmpeg  | any             | `brew install ffmpeg`            |
+| Git     | 2.x             | pre-installed on macOS           |
 
 ---
 
@@ -35,6 +35,7 @@ pnpm install:facefusion
 ```
 
 This script will:
+
 - Check that Homebrew and Python 3 are available, and install FFmpeg via Homebrew (`brew install ffmpeg`) if it's missing
 - Clone [FaceFusion](https://github.com/facefusion/facefusion) from GitHub
 - Create a Python virtual environment at `~/.meme-swap/facefusion/venv/`
@@ -73,6 +74,7 @@ Opens on **http://localhost:3010**.
 The frontend is a Next.js 16 App Router application. Hot-reload is enabled. Changes to `apps/frontend/app/` are reflected immediately.
 
 > If you change code in `packages/faceswap-core` or `packages/video-processor`, rebuild them first:
+>
 > ```bash
 > pnpm build --filter=@meme-swap/faceswap-core
 > pnpm build --filter=@meme-swap/video-processor
@@ -121,6 +123,7 @@ pnpm dev
 The server listens on **http://localhost:3001**.
 
 Health check:
+
 ```bash
 curl http://localhost:3001/health
 ```
@@ -165,20 +168,20 @@ pnpm build          # rebuild everything from scratch
 
 All variables are optional unless marked **required**.
 
-| Variable | Default | Description |
-|---|---|---|
-| `GIPHY_API_KEY` | — | Giphy API key for `@meme-swap/api-client`'s GIF search/trending; falls back to a curated GIF list if unset |
-| `FACEFUSION_EXECUTION_PROVIDERS` | `coreml,cpu` | Comma-separated list of providers: `coreml`, `cpu`, `cuda` |
-| `FACEFUSION_THREAD_COUNT` | auto | Number of parallel threads for FaceFusion |
-| `PORT` | `3010` | Port for the web frontend dev server |
+| Variable                         | Default      | Description                                                                                                |
+| -------------------------------- | ------------ | ---------------------------------------------------------------------------------------------------------- |
+| `GIPHY_API_KEY`                  | —            | Giphy API key for `@meme-swap/api-client`'s GIF search/trending; falls back to a curated GIF list if unset |
+| `FACEFUSION_EXECUTION_PROVIDERS` | `coreml,cpu` | Comma-separated list of providers: `coreml`, `cpu`, `cuda`                                                 |
+| `FACEFUSION_THREAD_COUNT`        | auto         | Number of parallel threads for FaceFusion                                                                  |
+| `PORT`                           | `3010`       | Port for the web frontend dev server                                                                       |
 
 ### Execution Providers
 
-| Hardware | Recommended providers |
-|---|---|
-| Apple Silicon (M1/M2/M3) | `coreml,cpu` |
-| NVIDIA GPU | `cuda,cpu` |
-| Any / fallback | `cpu` |
+| Hardware                 | Recommended providers |
+| ------------------------ | --------------------- |
+| Apple Silicon (M1/M2/M3) | `coreml,cpu`          |
+| NVIDIA GPU               | `cuda,cpu`            |
+| Any / fallback           | `cpu`                 |
 
 ---
 
@@ -215,6 +218,7 @@ import { Button } from './Button';
 There is currently no automated test suite. The plan is to add Vitest unit tests to each package. See [AGENTS.md](../AGENTS.md#testing-requirements) for the target coverage requirements.
 
 Manual testing of the full pipeline:
+
 1. Start the frontend: `pnpm frontend:dev`
 2. Open http://localhost:3010
 3. Upload a face image and a target GIF/MP4

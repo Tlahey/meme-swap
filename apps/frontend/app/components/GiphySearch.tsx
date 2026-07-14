@@ -3,7 +3,14 @@
 
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { MagnifyingGlassIcon as SearchIcon, SparkleIcon as Sparkle, InfoIcon as Info, GearIcon as Settings, CaretLeftIcon as CaretLeft, CaretRightIcon as CaretRight } from '@phosphor-icons/react';
+import {
+  MagnifyingGlassIcon as SearchIcon,
+  SparkleIcon as Sparkle,
+  InfoIcon as Info,
+  GearIcon as Settings,
+  CaretLeftIcon as CaretLeft,
+  CaretRightIcon as CaretRight,
+} from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
 import { giphy, GiphyGif } from '@meme-swap/api-client';
 
@@ -39,7 +46,7 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
   // Check Giphy key configuration status on mount/update
   const checkConfig = async () => {
     if (typeof window === 'undefined') return;
-    
+
     // Check localStorage
     const localKey = window.localStorage.getItem('giphy_api_key');
     if (localKey && localKey.trim().length > 0) {
@@ -137,7 +144,7 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
     const dataToSend = {
       gifUrl: gif.images.original.url,
       title: gif.title,
-      id: gif.id
+      id: gif.id,
     };
     e.dataTransfer.setData('application/json', JSON.stringify(dataToSend));
     // Standard text/plain fallback for basic drop zones
@@ -157,7 +164,10 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
             placeholder={t('giphySearch.searchPlaceholder')}
             className="w-full pl-10 pr-4 py-2.5 rounded-xl bg-[var(--bg-secondary)] border border-[var(--border-color)] focus:border-[var(--emerald-main)] text-sm text-[var(--text-primary)] transition-all"
           />
-          <SearchIcon size={16} className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]" />
+          <SearchIcon
+            size={16}
+            className="absolute left-3.5 top-1/2 -translate-y-1/2 text-[var(--text-muted)]"
+          />
         </div>
         <button
           type="submit"
@@ -274,7 +284,9 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
                 </button>
 
                 <span className="font-medium text-[var(--text-muted)] select-none">
-                  Page <strong className="text-[var(--text-primary)] font-bold">{currentPage}</strong> / <strong className="text-[var(--text-primary)] font-bold">{totalPages}</strong>
+                  Page{' '}
+                  <strong className="text-[var(--text-primary)] font-bold">{currentPage}</strong> /{' '}
+                  <strong className="text-[var(--text-primary)] font-bold">{totalPages}</strong>
                 </span>
 
                 <button
