@@ -3,7 +3,12 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { XIcon as X, KeyIcon as Key, InfoIcon as Info, CheckIcon as Check } from '@phosphor-icons/react';
+import {
+  XIcon as X,
+  KeyIcon as Key,
+  InfoIcon as Info,
+  CheckIcon as Check,
+} from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
 
 interface SettingsModalProps {
@@ -62,11 +67,11 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
           {/* Modal Container */}
           <motion.div
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
-            animate={{ 
-              opacity: 1, 
-              scale: 1, 
+            animate={{
+              opacity: 1,
+              scale: 1,
               y: 0,
-              width: '850px'
+              width: '850px',
             }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
             transition={{ type: 'spring', damping: 25, stiffness: 220 }}
@@ -95,7 +100,7 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
                     <label className="text-xs font-semibold text-[var(--text-secondary)] flex items-center gap-1.5">
                       {t('settings.giphyKeyLabel')}
                     </label>
-                    
+
                     <div className="relative flex items-center">
                       <input
                         ref={inputRef}
@@ -116,7 +121,8 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
                       )}
                     </div>
                     <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
-                      Laissez vide pour désactiver le moteur de recherche et revenir à l&apos;importateur classique.
+                      Laissez vide pour désactiver le moteur de recherche et revenir à
+                      l&apos;importateur classique.
                     </p>
                   </div>
                 </div>
@@ -161,7 +167,7 @@ export function SettingsModal({ isOpen, onClose, onSave }: SettingsModalProps) {
                   <Info size={16} className="text-[var(--emerald-main)]" />
                   {t('settings.helpTitle')}
                 </h3>
-                
+
                 <div className="text-xs text-[var(--text-secondary)] space-y-2.5 leading-relaxed">
                   <p>
                     {t('settings.helpStep1')}{' '}

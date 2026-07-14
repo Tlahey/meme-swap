@@ -15,28 +15,19 @@ export async function GET(
   const { fileName } = await params;
 
   if (!fileName) {
-    return NextResponse.json(
-      { error: 'Nom de fichier manquant' },
-      { status: 404 },
-    );
+    return NextResponse.json({ error: 'Nom de fichier manquant' }, { status: 404 });
   }
 
   // Protection contre le path traversal
   if (fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) {
-    return NextResponse.json(
-      { error: 'Nom de fichier invalide' },
-      { status: 400 },
-    );
+    return NextResponse.json({ error: 'Nom de fichier invalide' }, { status: 400 });
   }
 
   const filePath = path.join(HISTORY_DIR, fileName);
 
   const resolvedPath = path.resolve(filePath);
   if (!resolvedPath.startsWith(path.resolve(HISTORY_DIR))) {
-    return NextResponse.json(
-      { error: 'Accès non autorisé' },
-      { status: 403 },
-    );
+    return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
   }
 
   if (!fs.existsSync(filePath)) {

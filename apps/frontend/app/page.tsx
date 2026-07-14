@@ -175,9 +175,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
   const [isProcessing, setIsProcessing] = useState(false);
   const [result, setResult] = useState<FaceswapResult | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
-  const [faceswapProgress, setFaceswapProgress] = useState<FaceswapProgress | null>(
-    null,
-  );
+  const [faceswapProgress, setFaceswapProgress] = useState<FaceswapProgress | null>(null);
 
   // "Re-check installation" CTA shown on install/environment error results
   // (see the error alert below). isRecheckingInstall drives the button's
@@ -207,9 +205,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
   const [historyList, setHistoryList] = useState<
     { filename: string; url: string; timestamp: number }[]
   >([]);
-  const [selectedHistoryFilename, setSelectedHistoryFilename] = useState<
-    string | null
-  >(null);
+  const [selectedHistoryFilename, setSelectedHistoryFilename] = useState<string | null>(null);
   const [isSavingHistory, setIsSavingHistory] = useState<boolean>(false);
 
   const loadHistory = async () => {
@@ -244,9 +240,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
   // Giphy states
   const [isGiphyConfigured, setIsGiphyConfigured] = useState<boolean>(false);
   const [isSettingsOpen, setIsSettingsOpen] = useState<boolean>(false);
-  const [giphySearchTab, setGiphySearchTab] = useState<'search' | 'upload'>(
-    'search',
-  );
+  const [giphySearchTab, setGiphySearchTab] = useState<'search' | 'upload'>('search');
   const [isGiphyLoading, setIsGiphyLoading] = useState<boolean>(false);
 
   const checkGiphyConfiguration = async () => {
@@ -297,61 +291,49 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
       const response = await fetch(gifUrl);
       if (!response.ok) throw new Error('Fetch failed');
       const blob = await response.blob();
-      const cleanTitle = gif.title
-        ? gif.title.replace(/[^a-zA-Z0-9]/g, '_')
-        : 'giphy';
+      const cleanTitle = gif.title ? gif.title.replace(/[^a-zA-Z0-9]/g, '_') : 'giphy';
       const file = new File([blob], `${cleanTitle}.gif`, { type: 'image/gif' });
       handleTargetChange(file);
     } catch (e) {
-      alert(
-        t('giphySearch.fetchingError') || 'Failed to download selected GIF.',
-      );
+      alert(t('giphySearch.fetchingError') || 'Failed to download selected GIF.');
     } finally {
       setIsGiphyLoading(false);
     }
   };
 
   // Model parameters state
-  const [executionProviders, setExecutionProviders] = useState<
-    ExecutionProvider[]
-  >(['coreml', 'cpu']);
-  const [faceSelectorMode, setFaceSelectorMode] =
-    useState<FaceSelectorMode>('reference');
+  const [executionProviders, setExecutionProviders] = useState<ExecutionProvider[]>([
+    'coreml',
+    'cpu',
+  ]);
+  const [faceSelectorMode, setFaceSelectorMode] = useState<FaceSelectorMode>('reference');
   const [threadCount, setThreadCount] = useState<number>(4);
   const [logLevel, setLogLevel] = useState<LogLevel>('info');
 
   // Strict FaceFusion options
-  const [preset, setPreset] = useState<'low' | 'medium' | 'high' | 'custom'>(
-    'medium',
-  );
+  const [preset, setPreset] = useState<'low' | 'medium' | 'high' | 'custom'>('medium');
   const [faceMaskBlend, setFaceMaskBlend] = useState<number>(80);
   const [faceSwapperModel, setFaceSwapperModel] = useState<string | undefined>(
     'inswapper_128_fp16',
   );
-  const [faceEnhancerModel, setFaceEnhancerModel] = useState<
-    string | undefined
-  >('codeformer');
+  const [faceEnhancerModel, setFaceEnhancerModel] = useState<string | undefined>('codeformer');
   const [faceEnhancerBlend, setFaceEnhancerBlend] = useState<number>(80);
-  const [frameEnhancerModel, setFrameEnhancerModel] = useState<
-    string | undefined
-  >(undefined);
-  const [expressionRestorerModel, setExpressionRestorerModel] = useState<
-    string | undefined
-  >(undefined);
+  const [frameEnhancerModel, setFrameEnhancerModel] = useState<string | undefined>(undefined);
+  const [expressionRestorerModel, setExpressionRestorerModel] = useState<string | undefined>(
+    undefined,
+  );
 
   // Stepper state
   const [currentStepIndex, setCurrentStepIndex] = useState<number>(0);
-  const [stepStatuses, setStepStatuses] = useState<
-    ('idle' | 'running' | 'completed' | 'failed')[]
-  >(['idle', 'idle', 'idle', 'idle']);
+  const [stepStatuses, setStepStatuses] = useState<('idle' | 'running' | 'completed' | 'failed')[]>(
+    ['idle', 'idle', 'idle', 'idle'],
+  );
 
   // Theme state
   const [isDarkMode, setIsDarkMode] = useState<boolean>(false);
 
   // Tabs and MCP state
-  const [activeTab, setActiveTab] = useState<'generation' | 'mcp'>(
-    'generation',
-  );
+  const [activeTab, setActiveTab] = useState<'generation' | 'mcp'>('generation');
   const [isMcpActive, setIsMcpActive] = useState<boolean | null>(null);
   const [mcpPort, setMcpPort] = useState<string>('3001');
 
@@ -473,9 +455,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
           setSourceImage(null);
           // Revoke temporary blob URL and use persistent history URL
           URL.revokeObjectURL(tempBlobUrl);
-          setSourcePreviewUrl(
-            `/api/source-history/${saveResult.savedFilename}`,
-          );
+          setSourcePreviewUrl(`/api/source-history/${saveResult.savedFilename}`);
         } else {
           setSourceImage(file);
           setSelectedHistoryFilename(null);
@@ -664,9 +644,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
     }
 
     if (!finalResult) {
-      throw new Error(
-        'La connexion avec le serveur a été interrompue avant la fin du traitement.',
-      );
+      throw new Error('La connexion avec le serveur a été interrompue avant la fin du traitement.');
     }
 
     return finalResult;
@@ -710,9 +688,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
         sourceName = selectedHistoryFilename;
       } else if (sourceImage) {
         const sourcePath = (sourceImage as any).path;
-        sourceData = sourcePath
-          ? sourcePath
-          : new Uint8Array(await sourceImage.arrayBuffer());
+        sourceData = sourcePath ? sourcePath : new Uint8Array(await sourceImage.arrayBuffer());
         sourceName = sourceImage.name;
       }
 
@@ -720,9 +696,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
         // En mode desktop Electron, on passe par l'IPC (progrès réel déjà
         // reçu via l'effet onFaceswapProgress ci-dessus)
         const targetPath = (targetGif as any).path;
-        const targetData = targetPath
-          ? targetPath
-          : new Uint8Array(await targetGif.arrayBuffer());
+        const targetData = targetPath ? targetPath : new Uint8Array(await targetGif.arrayBuffer());
 
         data = await electronAPI.runFaceswap({
           source: sourceData,
@@ -754,14 +728,11 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
         formData.append('threadCount', threadCount.toString());
         formData.append('logLevel', logLevel);
         formData.append('faceMaskBlend', faceMaskBlend.toString());
-        if (faceSwapperModel)
-          formData.append('faceSwapperModel', faceSwapperModel);
-        if (faceEnhancerModel)
-          formData.append('faceEnhancerModel', faceEnhancerModel);
+        if (faceSwapperModel) formData.append('faceSwapperModel', faceSwapperModel);
+        if (faceEnhancerModel) formData.append('faceEnhancerModel', faceEnhancerModel);
         if (faceEnhancerBlend !== undefined)
           formData.append('faceEnhancerBlend', faceEnhancerBlend.toString());
-        if (frameEnhancerModel)
-          formData.append('frameEnhancerModel', frameEnhancerModel);
+        if (frameEnhancerModel) formData.append('frameEnhancerModel', frameEnhancerModel);
         if (expressionRestorerModel)
           formData.append('expressionRestorerModel', expressionRestorerModel);
 
@@ -797,8 +768,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
       setTimeout(() => {
         setResult({
           success: false,
-          error:
-            error instanceof Error ? error.message : 'Une erreur est survenue',
+          error: error instanceof Error ? error.message : 'Une erreur est survenue',
         });
         setIsProcessing(false);
       }, 400);
@@ -864,9 +834,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
             <div className="p-1.5 bg-[var(--emerald-main)] rounded-md text-white shadow-sm">
               <Lightning size={16} weight="fill" />
             </div>
-            <span className="font-bold tracking-tight text-lg">
-              {t('common.memeSwap')}
-            </span>
+            <span className="font-bold tracking-tight text-lg">{t('common.memeSwap')}</span>
           </div>
 
           <div className="flex items-center gap-4">
@@ -919,9 +887,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
         {/* Title Area */}
         <div className="text-center space-y-4 max-w-2xl mx-auto">
           <motion.h1
-            initial={
-              shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }
-            }
+            initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{
               duration: shouldReduceMotion ? 0 : 0.5,
@@ -930,9 +896,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
             className="text-4xl md:text-5xl font-extrabold tracking-tight text-[var(--text-primary)]"
           >
             {t('page.titlePrefix')}{' '}
-            <span className="text-[var(--emerald-main)]">
-              {t('page.titleSuffix')}
-            </span>
+            <span className="text-[var(--emerald-main)]">{t('page.titleSuffix')}</span>
           </motion.h1>
           <motion.p
             initial={{ opacity: 0 }}
@@ -1068,8 +1032,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                               className="animate-spin text-[var(--emerald-main)]"
                             />
                             <p className="text-xs text-[var(--text-muted)] mt-2 font-medium">
-                              {t('giphySearch.loadingGif') ||
-                                'Téléchargement...'}
+                              {t('giphySearch.loadingGif') || 'Téléchargement...'}
                             </p>
                           </div>
                         ) : (
@@ -1115,19 +1078,11 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
             {/* 2. DYNAMIC WORKSPACE: Centered column or split columns depending on "custom" preset */}
             <div
               className={
-                preset === 'custom'
-                  ? 'grid grid-cols-1 lg:grid-cols-3 gap-8 items-start'
-                  : 'w-full'
+                preset === 'custom' ? 'grid grid-cols-1 lg:grid-cols-3 gap-8 items-start' : 'w-full'
               }
             >
               {/* Left Column (or main column) */}
-              <div
-                className={
-                  preset === 'custom'
-                    ? 'lg:col-span-2 space-y-6'
-                    : 'space-y-6 w-full'
-                }
-              >
+              <div className={preset === 'custom' ? 'lg:col-span-2 space-y-6' : 'space-y-6 w-full'}>
                 {/* Visage source UploadZone */}
                 <div className="bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-2xl p-6 shadow-sm space-y-5">
                   <UploadZone
@@ -1164,8 +1119,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                       {sourcePreviewUrl &&
                         !historyList.some(
                           (item) =>
-                            `/api/source-history/${item.filename}` ===
-                              sourcePreviewUrl ||
+                            `/api/source-history/${item.filename}` === sourcePreviewUrl ||
                             item.filename === selectedHistoryFilename,
                         ) && (
                           <div className="relative aspect-square rounded-xl overflow-hidden border-2 border-[var(--emerald-main)] shadow-[0_0_10px_var(--emerald-bg)] group bg-[var(--bg-secondary)] flex items-center justify-center shrink-0">
@@ -1189,14 +1143,11 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                         historyList.map((item) => {
                           const isSelected =
                             selectedHistoryFilename === item.filename ||
-                            sourcePreviewUrl ===
-                              `/api/source-history/${item.filename}`;
+                            sourcePreviewUrl === `/api/source-history/${item.filename}`;
                           return (
                             <button
                               key={item.filename}
-                              onClick={() =>
-                                handleSelectFromHistory(item.filename)
-                              }
+                              onClick={() => handleSelectFromHistory(item.filename)}
                               type="button"
                               className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 group bg-[var(--bg-secondary)] flex items-center justify-center cursor-pointer hover:scale-[1.03] ${
                                 isSelected
@@ -1276,12 +1227,9 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                           }`}
                         >
                           {p === 'low' && t('model.presets.low').split(' ')[0]}
-                          {p === 'medium' &&
-                            t('model.presets.medium').split(' ')[0]}
-                          {p === 'high' &&
-                            t('model.presets.high').split(' ')[0]}
-                          {p === 'custom' &&
-                            t('model.presets.custom').split(' ')[0]}
+                          {p === 'medium' && t('model.presets.medium').split(' ')[0]}
+                          {p === 'high' && t('model.presets.high').split(' ')[0]}
+                          {p === 'custom' && t('model.presets.custom').split(' ')[0]}
                         </button>
                       );
                     })}
@@ -1292,22 +1240,16 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                 <button
                   onClick={handleSubmit}
                   disabled={
-                    (!sourceImage && !selectedHistoryFilename) ||
-                    !targetGif ||
-                    isProcessing
+                    (!sourceImage && !selectedHistoryFilename) || !targetGif || isProcessing
                   }
                   className={`w-full py-4 rounded-xl text-sm font-bold transition-all flex items-center justify-center gap-2 ${
-                    (!sourceImage && !selectedHistoryFilename) ||
-                    !targetGif ||
-                    isProcessing
+                    (!sourceImage && !selectedHistoryFilename) || !targetGif || isProcessing
                       ? 'bg-[var(--bg-tertiary)] text-[var(--text-muted)] cursor-not-allowed'
                       : 'bg-[var(--emerald-main)] hover:bg-emerald-600 text-white shadow-md active:scale-[0.98]'
                   }`}
                 >
                   <ArrowsLeftRight size={18} weight="bold" />
-                  {isProcessing
-                    ? `${t('page.processing')}`
-                    : t('page.startSwap')}
+                  {isProcessing ? `${t('page.processing')}` : t('page.startSwap')}
                 </button>
 
                 {/* Tips & Welcome Container */}
@@ -1334,9 +1276,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                           ) : (
                             <Sparkle size={14} />
                           )}
-                          {isTestLoading
-                            ? `${t('common.loading')}`
-                            : t('page.tryTestData')}
+                          {isTestLoading ? `${t('common.loading')}` : t('page.tryTestData')}
                         </button>
                       </div>
                     </div>
@@ -1396,13 +1336,9 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
           {(isProcessing || result) && (
             <motion.div
               key="status-section"
-              initial={
-                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }
-              }
+              initial={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={
-                shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -20 }
-              }
+              exit={shouldReduceMotion ? { opacity: 0 } : { opacity: 0, y: -20 }}
               transition={{ duration: 0.4 }}
               className="w-full space-y-6 pt-6 border-t border-[var(--border-subtle)]"
             >
@@ -1419,21 +1355,13 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
               {result && !result.success && (
                 <div className="bg-[var(--danger-bg)] border border-[var(--danger-border)] rounded-2xl p-6 flex flex-col gap-4">
                   <div className="flex gap-3 items-start text-[var(--danger-text)]">
-                    <Warning
-                      size={20}
-                      className="shrink-0 mt-0.5"
-                      weight="fill"
-                    />
+                    <Warning size={20} className="shrink-0 mt-0.5" weight="fill" />
                     <div>
                       <h3 className="text-sm font-bold">
-                        {result.errorCode
-                          ? t('page.installErrorTitle')
-                          : t('page.errorOccurred')}
+                        {result.errorCode ? t('page.installErrorTitle') : t('page.errorOccurred')}
                       </h3>
                       <p className="text-xs mt-1 leading-relaxed opacity-90">
-                        {result.errorCode
-                          ? t('page.installErrorDesc')
-                          : t('page.checkSettings')}
+                        {result.errorCode ? t('page.installErrorDesc') : t('page.checkSettings')}
                       </p>
                     </div>
                   </div>
@@ -1448,9 +1376,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                     </div>
                   )}
                   {recheckMessage && (
-                    <p className="text-xs text-[var(--text-secondary)] -mt-1">
-                      {recheckMessage}
-                    </p>
+                    <p className="text-xs text-[var(--text-secondary)] -mt-1">{recheckMessage}</p>
                   )}
                   <div className="flex justify-end gap-2">
                     {result.errorCode && (
@@ -1459,9 +1385,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                         disabled={isRecheckingInstall}
                         className="px-5 py-2 bg-[var(--emerald-bg)] border border-[var(--emerald-border)] hover:bg-[var(--emerald-border)]/40 text-[var(--emerald-text)] rounded-lg text-xs font-semibold transition-all active:scale-[0.98] disabled:opacity-60 disabled:cursor-not-allowed"
                       >
-                        {isRecheckingInstall
-                          ? t('common.loading')
-                          : t('page.recheckInstallButton')}
+                        {isRecheckingInstall ? t('common.loading') : t('page.recheckInstallButton')}
                       </button>
                     )}
                     <button
@@ -1480,9 +1404,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                   <ResultDisplay
                     originalUrl={targetPreviewUrl}
                     resultUrl={previewUrl!}
-                    isMp4={
-                      targetGif?.name.toLowerCase().endsWith('.mp4') || false
-                    }
+                    isMp4={targetGif?.name.toLowerCase().endsWith('.mp4') || false}
                     onReset={handleReset}
                   />
                 </div>
@@ -1491,9 +1413,7 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
           )}
         </AnimatePresence>
 
-        {activeTab === 'generation' && (
-          <ResultsHistory refreshSignal={resultsHistoryRefreshKey} />
-        )}
+        {activeTab === 'generation' && <ResultsHistory refreshSignal={resultsHistoryRefreshKey} />}
 
         <footer className="text-center text-[var(--text-muted)] text-[10px] font-medium tracking-widest pt-10 pb-4">
           {t('page.footerText')}

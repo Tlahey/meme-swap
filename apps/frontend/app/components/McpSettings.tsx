@@ -7,7 +7,7 @@ import {
   CheckIcon as Check,
   InfoIcon as Info,
   CpuIcon as Cpu,
-  CodeIcon as Code
+  CodeIcon as Code,
 } from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
 
@@ -22,14 +22,18 @@ export function McpSettings({ isMcpActive, mcpPort }: McpSettingsProps) {
   const { t } = useTranslation();
 
   const configPath = '~/Library/Application Support/Claude/claude_desktop_config.json';
-  
-  const mcpConfig = JSON.stringify({
-    mcpServers: {
-      "meme-swap": {
-        "url": `http://127.0.0.1:${mcpPort}/mcp`
-      }
-    }
-  }, null, 2);
+
+  const mcpConfig = JSON.stringify(
+    {
+      mcpServers: {
+        'meme-swap': {
+          url: `http://127.0.0.1:${mcpPort}/mcp`,
+        },
+      },
+    },
+    null,
+    2,
+  );
 
   const handleCopyPath = async () => {
     try {
@@ -60,12 +64,8 @@ export function McpSettings({ isMcpActive, mcpPort }: McpSettingsProps) {
             <Cpu size={18} weight="bold" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-              {t('mcp.title')}
-            </h3>
-            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-              {t('mcp.subtitle')}
-            </p>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">{t('mcp.title')}</h3>
+            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{t('mcp.subtitle')}</p>
           </div>
         </div>
 
@@ -92,9 +92,7 @@ export function McpSettings({ isMcpActive, mcpPort }: McpSettingsProps) {
 
       {/* Description générale */}
       <div className="text-xs text-[var(--text-secondary)] leading-relaxed space-y-2">
-        <p>
-          {t('mcp.desc1')}
-        </p>
+        <p>{t('mcp.desc1')}</p>
         <p className="text-[11px] text-[var(--text-muted)] flex items-start gap-1.5">
           <Info size={14} className="text-[var(--emerald-main)] shrink-0 mt-0.5" />
           <span>{t('mcp.desc2')}</span>
@@ -123,7 +121,11 @@ export function McpSettings({ isMcpActive, mcpPort }: McpSettingsProps) {
                 className="p-1 hover:bg-[var(--bg-tertiary)] hover:text-[var(--text-primary)] rounded transition-colors text-[var(--text-muted)] shrink-0"
                 title={t('mcp.copy')}
               >
-                {copiedPath ? <Check size={14} className="text-[var(--emerald-main)]" /> : <Copy size={14} />}
+                {copiedPath ? (
+                  <Check size={14} className="text-[var(--emerald-main)]" />
+                ) : (
+                  <Copy size={14} />
+                )}
               </button>
             </div>
           </div>
@@ -164,10 +166,10 @@ export function McpSettings({ isMcpActive, mcpPort }: McpSettingsProps) {
             <div className="flex items-start gap-2 text-[10px] text-[var(--text-muted)] leading-relaxed">
               <Code size={14} className="text-[var(--emerald-main)] shrink-0 mt-0.5" />
               <div>
-                <strong className="text-[var(--text-secondary)] font-semibold">{t('mcp.instructionExample')}</strong>
-                <p className="mt-0.5 italic">
-                  {t('mcp.exampleText')}
-                </p>
+                <strong className="text-[var(--text-secondary)] font-semibold">
+                  {t('mcp.instructionExample')}
+                </strong>
+                <p className="mt-0.5 italic">{t('mcp.exampleText')}</p>
               </div>
             </div>
           </div>

@@ -7,7 +7,8 @@
   "scripts": {
     "dev": "tsc && electron .",
     "build": "tsc && copyfiles -u 1 src/**/*.html src/**/*.png build/",
-    "package": "electron-builder"
+    "package": "electron-builder",
+    "lint": "eslint ."
   },
   "dependencies": {
     "@meme-swap/faceswap-core": "workspace:*",
@@ -17,9 +18,11 @@
   "devDependencies": {
     "electron": "^30.0.1",
     "electron-builder": "^24.13.3",
-    "typescript": "^5.3.0",
+    "eslint": "catalog:",
+    "typescript": "catalog:",
+    "typescript-eslint": "catalog:",
     "copyfiles": "^2.4.1",
-    "@types/node": "^20.10.0"
+    "@types/node": "catalog:"
   },
   "build": {
     "appId": "com.memeswap.desktop",
@@ -27,7 +30,9 @@
     "asar": true,
     "mac": {
       "category": "public.app-category.video",
-      "target": ["dmg"],
+      "target": [
+        "dmg"
+      ],
       "icon": "assets/icon.icns",
       "gatekeeperAssess": false,
       "hardenedRuntime": true
@@ -43,24 +48,31 @@
       {
         "from": "../../apps/frontend/out",
         "to": "apps/frontend/out",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "../../apps/mcp-server/bundle",
         "to": "apps/mcp-server/bundle",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "../../packages/faceswap-core/dist",
         "to": "packages/faceswap-core/dist",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       },
       {
         "from": "../../packages/video-processor/dist",
         "to": "packages/video-processor/dist",
-        "filter": ["**/*"]
+        "filter": [
+          "**/*"
+        ]
       }
     ]
   }
 }
-

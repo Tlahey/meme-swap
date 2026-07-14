@@ -42,8 +42,8 @@ if (result1.success) {
 const result2 = await mp4ToGif({
   inputPath: './input.mp4',
   outputPath: './output.gif',
-  fps: 10,           // Frames per second (default: 10)
-  maxWidth: 320,     // Maximum width (default: 320)
+  fps: 10, // Frames per second (default: 10)
+  maxWidth: 320, // Maximum width (default: 320)
 });
 
 if (result2.success) {
@@ -61,7 +61,7 @@ import { gifToMp4, mp4ToGif } from '@meme-swap/video-processor';
 async function convertGifToOptimizedGif(inputPath: string, outputPath: string) {
   // Step 1: Convert GIF to MP4 for processing
   const tempMp4 = inputPath.replace('.gif', '.temp.mp4');
-  
+
   const gifResult = await gifToMp4({
     inputPath,
     outputPath: tempMp4,
@@ -95,25 +95,25 @@ async function convertGifToOptimizedGif(inputPath: string, outputPath: string) {
 
 ### Common Options
 
-| Option | Type | Description |
-|--------|------|-------------|
-| `inputPath` | `string` | Path to the input file (required) |
+| Option       | Type     | Description                         |
+| ------------ | -------- | ----------------------------------- |
+| `inputPath`  | `string` | Path to the input file (required)   |
 | `outputPath` | `string` | Path for the output file (required) |
 
 ### GIF Conversion Options (mp4ToGif)
 
-| Option | Type | Default | Description |
-|--------|------|---------|-------------|
-| `fps` | `number` | `10` | Frames per second for the output GIF |
-| `maxWidth` | `number` | `320` | Maximum width of the output GIF (height is auto-calculated) |
+| Option     | Type     | Default | Description                                                 |
+| ---------- | -------- | ------- | ----------------------------------------------------------- |
+| `fps`      | `number` | `10`    | Frames per second for the output GIF                        |
+| `maxWidth` | `number` | `320`   | Maximum width of the output GIF (height is auto-calculated) |
 
 ## Result Interface
 
 ```typescript
 interface ConversionResult {
   success: boolean;
-  outputPath?: string;  // Present if successful
-  error?: string;       // Present if failed
+  outputPath?: string; // Present if successful
+  error?: string; // Present if failed
 }
 ```
 
@@ -135,6 +135,7 @@ if (!result.success) {
 ### GIF to MP4 Conversion
 
 Uses FFmpeg with the following settings:
+
 - **Codec**: H.264 (`libx264`)
 - **Pixel Format**: `yuv420p` (maximum compatibility)
 - **Optimization**: `faststart` for web streaming
@@ -142,6 +143,7 @@ Uses FFmpeg with the following settings:
 ### MP4 to GIF Conversion
 
 Uses a two-pass palette approach for optimal quality:
+
 1. **Pass 1**: Generate an optimized color palette from the video
 2. **Pass 2**: Apply the palette to create the final GIF
 

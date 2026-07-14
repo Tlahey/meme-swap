@@ -16,7 +16,8 @@ const jetbrainsMono = JetBrains_Mono({
 
 export const metadata: Metadata = {
   title: 'Meme Swap - FaceSwap haute performance via FaceFusion',
-  description: 'Échangez de visages instantanément et localement dans vos GIFs et vidéos grâce au pipeline IA haute performance FaceFusion.',
+  description:
+    'Échangez de visages instantanément et localement dans vos GIFs et vidéos grâce au pipeline IA haute performance FaceFusion.',
 };
 
 export default function RootLayout({

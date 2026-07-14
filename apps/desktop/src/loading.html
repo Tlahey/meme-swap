@@ -1,334 +1,362 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Meme Swap - Démarrage</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #09090b;
-      --card-bg: rgba(20, 20, 25, 0.7);
-      --primary: #6366f1; /* Indigo */
-      --primary-hover: #4f46e5;
-      --text: #fafafa;
-      --text-muted: #a1a1aa;
-      --border: rgba(255, 255, 255, 0.08);
-      --error: #ef4444;
-      --success: #10b981;
-      --glow: rgba(99, 102, 241, 0.15);
-    }
-
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
-
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      user-select: none;
-    }
-
-    .background-glow {
-      position: absolute;
-      width: 450px;
-      height: 450px;
-      background: radial-gradient(circle, var(--glow) 0%, rgba(9,9,11,0) 70%);
-      top: 50%;
-      left: 50%;
-      transform: translate(-50%, -50%);
-      z-index: 0;
-      pointer-events: none;
-    }
-
-    .container {
-      position: relative;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 40px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      gap: 24px;
-      z-index: 1;
-      width: 90%;
-      max-width: 600px;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-      text-align: center;
-      transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
-    }
-
-    /* Spinner */
-    .spinner-container {
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 64px;
-      transition: all 0.3s ease;
-    }
-
-    .spinner-ring {
-      display: inline-block;
-      position: relative;
-      width: 64px;
-      height: 64px;
-    }
-    .spinner-ring div {
-      box-sizing: border-box;
-      display: block;
-      position: absolute;
-      width: 52px;
-      height: 52px;
-      margin: 6px;
-      border: 3px solid var(--primary);
-      border-radius: 50%;
-      animation: spinner-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
-      border-color: var(--primary) transparent transparent transparent;
-      box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
-    }
-    .spinner-ring div:nth-child(1) { animation-delay: -0.45s; }
-    .spinner-ring div:nth-child(2) { animation-delay: -0.3s; }
-    .spinner-ring div:nth-child(3) { animation-delay: -0.15s; }
-    @keyframes spinner-ring {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-
-    .error-icon {
-      display: none;
-      font-size: 48px;
-      color: var(--error);
-      animation: shake 0.5s ease-in-out;
-    }
-
-    @keyframes shake {
-      0%, 100% { transform: translateX(0); }
-      20%, 60% { transform: translateX(-6px); }
-      40%, 80% { transform: translateX(6px); }
-    }
-
-    h1 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 22px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #fafafa 30%, #a1a1aa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
-
-    p {
-      font-size: 13px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
-
-    /* Collapsible log terminal */
-    .details-toggle {
-      font-family: 'Inter', sans-serif;
-      font-size: 11px;
-      background: transparent;
-      border: none;
-      color: var(--text-muted);
-      cursor: pointer;
-      text-decoration: underline;
-      outline: none;
-      margin-top: 8px;
-      transition: color 0.2s ease;
-    }
-
-    .details-toggle:hover {
-      color: var(--text);
-    }
-
-    .terminal-panel {
-      display: none;
-      width: 100%;
-      flex-direction: column;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 14px;
-      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-      font-size: 10px;
-      text-align: left;
-      margin-top: 16px;
-      max-height: 200px;
-    }
-
-    .terminal-header {
-      display: flex;
-      justify-content: space-between;
-      color: var(--text-muted);
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      padding-bottom: 6px;
-      margin-bottom: 8px;
-    }
-
-    .terminal-output {
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: #e4e4e7;
-      line-height: 1.4;
-      height: 150px;
-      user-select: text;
-      -webkit-user-select: text;
-    }
-
-    /* Scrollbar */
-    .terminal-output::-webkit-scrollbar {
-      width: 6px;
-    }
-    .terminal-output::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .terminal-output::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 3px;
-    }
-
-    .btn-quit {
-      display: none;
-      margin-top: 16px;
-      font-family: 'Inter', sans-serif;
-      font-size: 12px;
-      font-weight: 600;
-      color: white;
-      background: var(--error);
-      border: none;
-      padding: 8px 16px;
-      border-radius: 6px;
-      cursor: pointer;
-      transition: background 0.2s ease;
-      outline: none;
-      box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
-    }
-
-    .btn-quit:hover {
-      background: #dc2626;
-    }
-  </style>
-</head>
-<body>
-  <div class="background-glow"></div>
-
-  <div class="container" id="container">
-    <div class="spinner-container" id="spinner-container">
-      <div class="spinner-ring" id="spinner-ring">
-        <div></div>
-        <div></div>
-        <div></div>
-        <div></div>
-      </div>
-      <div class="error-icon" id="error-icon">❌</div>
-    </div>
-    
-    <div>
-      <h1 id="title">Démarrage de Meme Swap</h1>
-      <p id="subtitle" style="margin-top: 10px;">Lancement des services en arrière-plan...</p>
-    </div>
-
-    <button class="details-toggle" id="toggle-btn">Afficher les détails de démarrage</button>
-
-    <div class="terminal-panel" id="terminal-panel">
-      <div class="terminal-header">
-        <span>console logs</span>
-      </div>
-      <pre class="terminal-output" id="log-output" style="margin: 0; font-family: inherit; font-size: inherit;">Initialisation de la console de logs...
-</pre>
-    </div>
-
-    <button class="btn-quit" id="quit-btn">Fermer l'application</button>
-  </div>
-
-  <script>
-    const container = document.getElementById('container');
-    const spinnerRing = document.getElementById('spinner-ring');
-    const errorIcon = document.getElementById('error-icon');
-    const title = document.getElementById('title');
-    const subtitle = document.getElementById('subtitle');
-    const toggleBtn = document.getElementById('toggle-btn');
-    const terminalPanel = document.getElementById('terminal-panel');
-    const logOutput = document.getElementById('log-output');
-    const quitBtn = document.getElementById('quit-btn');
-
-    let logsExpanded = false;
-
-    function appendLog(text) {
-      // Normaliser les retours à la ligne
-      const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-      logOutput.innerText += normalizedText;
-      logOutput.scrollTop = logOutput.scrollHeight;
-    }
-
-    function toggleLogs(forceShow = null) {
-      logsExpanded = forceShow !== null ? forceShow : !logsExpanded;
-      if (logsExpanded) {
-        terminalPanel.style.display = 'flex';
-        toggleBtn.innerText = 'Masquer les détails';
-      } else {
-        terminalPanel.style.display = 'none';
-        toggleBtn.innerText = 'Afficher les détails de démarrage';
+  <head>
+    <meta charset="UTF-8" />
+    <title>Meme Swap - Démarrage</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #09090b;
+        --card-bg: rgba(20, 20, 25, 0.7);
+        --primary: #6366f1; /* Indigo */
+        --primary-hover: #4f46e5;
+        --text: #fafafa;
+        --text-muted: #a1a1aa;
+        --border: rgba(255, 255, 255, 0.08);
+        --error: #ef4444;
+        --success: #10b981;
+        --glow: rgba(99, 102, 241, 0.15);
       }
-    }
 
-    toggleBtn.addEventListener('click', () => toggleLogs());
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    if (window.electronAPI) {
-      // Signaler qu'on est prêt à recevoir les logs et statuts
-      window.electronAPI.loadingReady();
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        user-select: none;
+      }
 
-      // Écouter les logs
-      window.electronAPI.onServerLog((event, text) => {
-        appendLog(text);
-      });
+      .background-glow {
+        position: absolute;
+        width: 450px;
+        height: 450px;
+        background: radial-gradient(circle, var(--glow) 0%, rgba(9, 9, 11, 0) 70%);
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        z-index: 0;
+        pointer-events: none;
+      }
 
-      // Écouter les statuts
-      window.electronAPI.onServerStatus((event, status) => {
-        const { mcp, frontend } = status;
-        
-        if (mcp === 'error' || frontend === 'error') {
-          // Gérer le cas d'erreur
-          spinnerRing.style.display = 'none';
-          errorIcon.style.display = 'block';
-          title.innerText = 'Échec du démarrage';
-          subtitle.innerText = "Une erreur est survenue lors de l'exécution des serveurs en arrière-plan.";
-          subtitle.style.color = 'var(--error)';
-          
-          // Déplier automatiquement la console de logs et afficher le bouton quitter
-          toggleLogs(true);
-          quitBtn.style.display = 'inline-block';
+      .container {
+        position: relative;
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 40px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 24px;
+        z-index: 1;
+        width: 90%;
+        max-width: 600px;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+        text-align: center;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+      }
+
+      /* Spinner */
+      .spinner-container {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 64px;
+        transition: all 0.3s ease;
+      }
+
+      .spinner-ring {
+        display: inline-block;
+        position: relative;
+        width: 64px;
+        height: 64px;
+      }
+      .spinner-ring div {
+        box-sizing: border-box;
+        display: block;
+        position: absolute;
+        width: 52px;
+        height: 52px;
+        margin: 6px;
+        border: 3px solid var(--primary);
+        border-radius: 50%;
+        animation: spinner-ring 1.2s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        border-color: var(--primary) transparent transparent transparent;
+        box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+      }
+      .spinner-ring div:nth-child(1) {
+        animation-delay: -0.45s;
+      }
+      .spinner-ring div:nth-child(2) {
+        animation-delay: -0.3s;
+      }
+      .spinner-ring div:nth-child(3) {
+        animation-delay: -0.15s;
+      }
+      @keyframes spinner-ring {
+        0% {
+          transform: rotate(0deg);
         }
-      });
+        100% {
+          transform: rotate(360deg);
+        }
+      }
 
-      quitBtn.addEventListener('click', () => {
-        window.electronAPI.quitApp();
-      });
-    } else {
-      // Mock dev
-      setTimeout(() => {
-        appendLog('Next.js: loading...\n');
-        appendLog('MCP: loading...\n');
+      .error-icon {
+        display: none;
+        font-size: 48px;
+        color: var(--error);
+        animation: shake 0.5s ease-in-out;
+      }
+
+      @keyframes shake {
+        0%,
+        100% {
+          transform: translateX(0);
+        }
+        20%,
+        60% {
+          transform: translateX(-6px);
+        }
+        40%,
+        80% {
+          transform: translateX(6px);
+        }
+      }
+
+      h1 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 22px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fafafa 30%, #a1a1aa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
+
+      p {
+        font-size: 13px;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
+
+      /* Collapsible log terminal */
+      .details-toggle {
+        font-family: 'Inter', sans-serif;
+        font-size: 11px;
+        background: transparent;
+        border: none;
+        color: var(--text-muted);
+        cursor: pointer;
+        text-decoration: underline;
+        outline: none;
+        margin-top: 8px;
+        transition: color 0.2s ease;
+      }
+
+      .details-toggle:hover {
+        color: var(--text);
+      }
+
+      .terminal-panel {
+        display: none;
+        width: 100%;
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 14px;
+        font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+        font-size: 10px;
+        text-align: left;
+        margin-top: 16px;
+        max-height: 200px;
+      }
+
+      .terminal-header {
+        display: flex;
+        justify-content: space-between;
+        color: var(--text-muted);
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 6px;
+        margin-bottom: 8px;
+      }
+
+      .terminal-output {
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: #e4e4e7;
+        line-height: 1.4;
+        height: 150px;
+        user-select: text;
+        -webkit-user-select: text;
+      }
+
+      /* Scrollbar */
+      .terminal-output::-webkit-scrollbar {
+        width: 6px;
+      }
+      .terminal-output::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .terminal-output::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+
+      .btn-quit {
+        display: none;
+        margin-top: 16px;
+        font-family: 'Inter', sans-serif;
+        font-size: 12px;
+        font-weight: 600;
+        color: white;
+        background: var(--error);
+        border: none;
+        padding: 8px 16px;
+        border-radius: 6px;
+        cursor: pointer;
+        transition: background 0.2s ease;
+        outline: none;
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+      }
+
+      .btn-quit:hover {
+        background: #dc2626;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="background-glow"></div>
+
+    <div class="container" id="container">
+      <div class="spinner-container" id="spinner-container">
+        <div class="spinner-ring" id="spinner-ring">
+          <div></div>
+          <div></div>
+          <div></div>
+          <div></div>
+        </div>
+        <div class="error-icon" id="error-icon">❌</div>
+      </div>
+
+      <div>
+        <h1 id="title">Démarrage de Meme Swap</h1>
+        <p id="subtitle" style="margin-top: 10px">Lancement des services en arrière-plan...</p>
+      </div>
+
+      <button class="details-toggle" id="toggle-btn">Afficher les détails de démarrage</button>
+
+      <div class="terminal-panel" id="terminal-panel">
+        <div class="terminal-header">
+          <span>console logs</span>
+        </div>
+        <pre
+          class="terminal-output"
+          id="log-output"
+          style="margin: 0; font-family: inherit; font-size: inherit"
+        >
+Initialisation de la console de logs...
+</pre>
+      </div>
+
+      <button class="btn-quit" id="quit-btn">Fermer l'application</button>
+    </div>
+
+    <script>
+      const container = document.getElementById('container');
+      const spinnerRing = document.getElementById('spinner-ring');
+      const errorIcon = document.getElementById('error-icon');
+      const title = document.getElementById('title');
+      const subtitle = document.getElementById('subtitle');
+      const toggleBtn = document.getElementById('toggle-btn');
+      const terminalPanel = document.getElementById('terminal-panel');
+      const logOutput = document.getElementById('log-output');
+      const quitBtn = document.getElementById('quit-btn');
+
+      let logsExpanded = false;
+
+      function appendLog(text) {
+        // Normaliser les retours à la ligne
+        const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        logOutput.innerText += normalizedText;
+        logOutput.scrollTop = logOutput.scrollHeight;
+      }
+
+      function toggleLogs(forceShow = null) {
+        logsExpanded = forceShow !== null ? forceShow : !logsExpanded;
+        if (logsExpanded) {
+          terminalPanel.style.display = 'flex';
+          toggleBtn.innerText = 'Masquer les détails';
+        } else {
+          terminalPanel.style.display = 'none';
+          toggleBtn.innerText = 'Afficher les détails de démarrage';
+        }
+      }
+
+      toggleBtn.addEventListener('click', () => toggleLogs());
+
+      if (window.electronAPI) {
+        // Signaler qu'on est prêt à recevoir les logs et statuts
+        window.electronAPI.loadingReady();
+
+        // Écouter les logs
+        window.electronAPI.onServerLog((event, text) => {
+          appendLog(text);
+        });
+
+        // Écouter les statuts
+        window.electronAPI.onServerStatus((event, status) => {
+          const { mcp, frontend } = status;
+
+          if (mcp === 'error' || frontend === 'error') {
+            // Gérer le cas d'erreur
+            spinnerRing.style.display = 'none';
+            errorIcon.style.display = 'block';
+            title.innerText = 'Échec du démarrage';
+            subtitle.innerText =
+              "Une erreur est survenue lors de l'exécution des serveurs en arrière-plan.";
+            subtitle.style.color = 'var(--error)';
+
+            // Déplier automatiquement la console de logs et afficher le bouton quitter
+            toggleLogs(true);
+            quitBtn.style.display = 'inline-block';
+          }
+        });
+
+        quitBtn.addEventListener('click', () => {
+          window.electronAPI.quitApp();
+        });
+      } else {
+        // Mock dev
         setTimeout(() => {
-          appendLog('MCP Server started on http://localhost:3001\n');
-        }, 1000);
-      }, 500);
-    }
-  </script>
-</body>
+          appendLog('Next.js: loading...\n');
+          appendLog('MCP: loading...\n');
+          setTimeout(() => {
+            appendLog('MCP Server started on http://localhost:3001\n');
+          }, 1000);
+        }, 500);
+      }
+    </script>
+  </body>
 </html>

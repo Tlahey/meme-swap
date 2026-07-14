@@ -41,7 +41,10 @@ function pruneResultsFiles(): void {
       try {
         fs.unlinkSync(path.join(RESULTS_DIR, info.name));
       } catch (error) {
-        console.error(`[API Results History] Failed to delete old result file: ${info.name}`, error);
+        console.error(
+          `[API Results History] Failed to delete old result file: ${info.name}`,
+          error,
+        );
       }
     }
   }

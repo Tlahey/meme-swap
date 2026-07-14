@@ -4,7 +4,12 @@ import { contextBridge, ipcRenderer } from 'electron';
 contextBridge.exposeInMainWorld('electronAPI', {
   // Setup APIs
   startSetup: () => ipcRenderer.send('start-setup'),
-  onProgress: (callback: (event: any, data: { step: string; status: 'active' | 'completed' | 'failed'; percent: number }) => void) => {
+  onProgress: (
+    callback: (
+      event: any,
+      data: { step: string; status: 'active' | 'completed' | 'failed'; percent: number },
+    ) => void,
+  ) => {
     ipcRenderer.on('setup-progress', callback);
   },
   onLog: (callback: (event: any, text: string) => void) => {
@@ -39,7 +44,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   searchGiphy: (options: any) => ipcRenderer.invoke('search-giphy', options),
   getTrendingGiphy: (options: any) => ipcRenderer.invoke('get-trending-giphy', options),
   getSourceHistory: () => ipcRenderer.invoke('get-source-history'),
-  saveSourceFace: (options: { path?: string; data?: Uint8Array; name: string }) => ipcRenderer.invoke('save-source-face', options),
+  saveSourceFace: (options: { path?: string; data?: Uint8Array; name: string }) =>
+    ipcRenderer.invoke('save-source-face', options),
   getResultsHistory: () => ipcRenderer.invoke('get-results-history'),
 
   // Update check APIs

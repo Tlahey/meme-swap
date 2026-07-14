@@ -7,7 +7,6 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "test": "turbo run test",
     "lint": "turbo run lint",
     "clean": "turbo run clean && rm -rf node_modules",
     "frontend:dev": "turbo run dev --filter=frontend",
@@ -16,15 +15,21 @@
     "desktop:build": "turbo run build --filter=desktop",
     "desktop:package": "turbo run build && turbo run bundle && turbo run package --filter=desktop",
     "install:facefusion": "pnpm build --filter=@meme-swap/installer-core && node scripts/setup-facefusion.mjs",
-    "release": "node scripts/prepare-release.mjs"
+    "release": "node scripts/prepare-release.mjs",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "dependencies": {
     "@meme-swap/installer-core": "workspace:*"
   },
   "devDependencies": {
-    "turbo": "^2.0.0"
+    "eslint": "catalog:",
+    "eslint-config-prettier": "catalog:",
+    "prettier": "catalog:",
+    "turbo": "^2.0.0",
+    "typescript-eslint": "catalog:"
   },
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.9",
   "engines": {
     "node": ">=18.0.0"
   }

@@ -6,13 +6,13 @@ Static landing page for the project, published at **https://tlahey.github.io/mem
 
 Zero build step, on purpose: plain HTML + CSS + vanilla JS.
 
-| File | Role |
-|---|---|
-| `index.html` | Page structure & content |
-| `styles.css` | Dark Apple-inspired design system (CSS variables at the top) |
-| `main.js` | Scroll/mouse parallax, reveal-on-scroll, nav state |
-| `assets/` | Logo & app icon (cropped from `docs/assets/logo.png`) |
-| `assets/screenshots/` | App screenshots (same files as `docs/assets/screenshots/`) |
+| File                  | Role                                                         |
+| --------------------- | ------------------------------------------------------------ |
+| `index.html`          | Page structure & content                                     |
+| `styles.css`          | Dark Apple-inspired design system (CSS variables at the top) |
+| `main.js`             | Scroll/mouse parallax, reveal-on-scroll, nav state           |
+| `assets/`             | Logo & app icon (cropped from `docs/assets/logo.png`)        |
+| `assets/screenshots/` | App screenshots (same files as `docs/assets/screenshots/`)   |
 
 Parallax and reveal animations are disabled automatically for users with
 `prefers-reduced-motion: reduce`.

@@ -20,7 +20,9 @@ interface ResultDisplayProps {
 }
 
 export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: ResultDisplayProps) {
-  const [layoutMode, setLayoutMode] = useState<'split-slider' | 'side-by-side' | 'single-swapped'>('split-slider');
+  const [layoutMode, setLayoutMode] = useState<'split-slider' | 'side-by-side' | 'single-swapped'>(
+    'split-slider',
+  );
   const [activeTab, setActiveTab] = useState<'original' | 'result'>('result');
   const shouldReduceMotion = useReducedMotion();
   const { t } = useTranslation();
@@ -66,26 +68,11 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
   const renderMediaFill = (src: string, alt: string, dimmed = false) => {
     const cls = `absolute inset-0 w-full h-full object-contain pointer-events-none select-none${dimmed ? ' opacity-55' : ''}`;
     if (isMp4) {
-      return (
-        <video
-          src={src}
-          className={cls}
-          controls={false}
-          muted
-          loop
-          autoPlay
-          playsInline
-        />
-      );
+      return <video src={src} className={cls} controls={false} muted loop autoPlay playsInline />;
     }
     return (
       // eslint-disable-next-line @next/next/no-img-element
-      <img
-        src={src}
-        alt={alt}
-        className={cls}
-        draggable={false}
-      />
+      <img src={src} alt={alt} className={cls} draggable={false} />
     );
   };
 
@@ -121,9 +108,7 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
     <div className="bg-[var(--bg-secondary)] border border-[var(--border-color)] rounded-xl p-5 backdrop-blur-md space-y-5 shadow-sm">
       {/* Header and Controls */}
       <div className="flex items-center justify-between gap-4 flex-wrap">
-        <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-          {t('result.title')}
-        </h3>
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">{t('result.title')}</h3>
 
         {/* Layout Mode selector */}
         <div className="flex bg-[var(--bg-primary)] p-0.5 rounded-lg border border-[var(--border-color)] shrink-0">
@@ -238,7 +223,9 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
                 {originalUrl ? (
                   renderMedia(originalUrl, t('result.mediaOriginal'))
                 ) : (
-                  <span className="text-xs text-[var(--text-muted)]">{t('result.notAvailable')}</span>
+                  <span className="text-xs text-[var(--text-muted)]">
+                    {t('result.notAvailable')}
+                  </span>
                 )}
               </div>
             </div>
@@ -283,11 +270,9 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
 
             {/* Single Display */}
             <div className="relative bg-[var(--bg-primary)] border border-[var(--border-color)] rounded-lg overflow-hidden flex items-center justify-center max-h-[380px] aspect-video">
-              {activeTab === 'original' && originalUrl ? (
-                renderMedia(originalUrl, t('result.mediaOriginal'))
-              ) : (
-                renderMedia(resultUrl, t('result.resultSwapped'))
-              )}
+              {activeTab === 'original' && originalUrl
+                ? renderMedia(originalUrl, t('result.mediaOriginal'))
+                : renderMedia(resultUrl, t('result.resultSwapped'))}
             </div>
           </div>
         )}

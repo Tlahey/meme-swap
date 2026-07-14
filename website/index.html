@@ -1,320 +1,419 @@
 <!doctype html>
 <html lang="en">
-<head>
-  <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>Meme Swap — Put your face in any GIF, 100% locally on your Mac</title>
-  <meta name="description" content="Meme Swap puts your face in any meme. Powered by FaceFusion, inswapper, CodeFormer and Real-ESRGAN — running entirely on your Mac. No cloud. No uploads. Just memes." />
-  <meta property="og:title" content="Meme Swap — Your face. Any meme." />
-  <meta property="og:description" content="AI face swapping for GIFs, running 100% locally on your Mac. Web app, desktop app and MCP server." />
-  <meta property="og:image" content="https://tlahey.github.io/meme-swap/assets/og-image.png" />
-  <meta property="og:image:width" content="1200" />
-  <meta property="og:image:height" content="630" />
-  <meta property="og:url" content="https://tlahey.github.io/meme-swap/" />
-  <meta property="og:type" content="website" />
-  <meta name="twitter:card" content="summary_large_image" />
-  <meta name="twitter:title" content="Meme Swap — Your face. Any meme." />
-  <meta name="twitter:description" content="AI face swapping for GIFs, running 100% locally on your Mac. Web app, desktop app and MCP server." />
-  <meta name="twitter:image" content="https://tlahey.github.io/meme-swap/assets/og-image.png" />
-  <link rel="icon" type="image/png" href="./assets/icon.png" />
-  <link rel="apple-touch-icon" href="./assets/icon.png" />
-  <link rel="stylesheet" href="./styles.css" />
-</head>
-<body>
-
-  <!-- ================= NAV ================= -->
-  <nav class="nav" id="nav">
-    <div class="nav-inner">
-      <a class="nav-brand" href="#top">
-        <img src="./assets/icon.png" alt="" width="28" height="28" />
-        <span>Meme Swap</span>
-      </a>
-      <div class="nav-links">
-        <a href="#how">How it works</a>
-        <a href="#local">Privacy</a>
-        <a href="#tech">Technology</a>
-        <a href="#surfaces">Apps</a>
-        <a href="#install">Install</a>
-      </div>
-      <a class="nav-cta" href="https://github.com/Tlahey/meme-swap" target="_blank" rel="noopener">
-        <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"/></svg>
-        <span>GitHub</span>
-      </a>
-    </div>
-  </nav>
-
-  <!-- ================= HERO ================= -->
-  <header class="hero" id="top">
-    <div class="hero-bg" aria-hidden="true">
-      <div class="orb orb-1" data-depth="0.35"></div>
-      <div class="orb orb-2" data-depth="0.2"></div>
-      <div class="orb orb-3" data-depth="0.5"></div>
-      <div class="grid-overlay"></div>
-    </div>
-
-    <div class="hero-content">
-      <img class="hero-icon reveal" src="./assets/icon.png" alt="Meme Swap app icon" width="112" height="112" data-depth="0.12" />
-      <h1 class="hero-title reveal">
-        Your face.<br /><span class="gradient-text">Any meme.</span>
-      </h1>
-      <p class="hero-sub reveal">
-        AI face swapping for GIFs — running <strong>100% locally on your&nbsp;Mac</strong>.
-        No cloud. No uploads. Just&nbsp;memes.
-      </p>
-      <div class="hero-actions reveal">
-        <a class="btn btn-primary" href="https://github.com/Tlahey/meme-swap/releases/latest" target="_blank" rel="noopener"> Download for Mac</a>
-        <a class="btn btn-ghost" href="#install">Get started&nbsp;→</a>
-      </div>
-      <div class="hero-badges reveal">
-        <span class="pill">🍎 Apple&nbsp;Silicon · CoreML</span>
-        <span class="pill">🔒 On-device only</span>
-        <span class="pill">🆓 Open source</span>
-      </div>
-    </div>
-
-    <div class="hero-scroll-hint" aria-hidden="true">
-      <span></span>
-    </div>
-  </header>
-
-  <main>
-
-    <!-- ================= HOW IT WORKS ================= -->
-    <section class="section" id="how">
-      <div class="section-head reveal">
-        <p class="eyebrow">How it works</p>
-        <h2>Three steps.<br />Zero editing skills.</h2>
-      </div>
-
-      <div class="steps">
-        <div class="step card reveal" data-parallax="0.06">
-          <div class="step-num">1</div>
-          <div class="step-emoji">🤳</div>
-          <h3>Pick a face</h3>
-          <p>Drop in any photo of a face — yours, your friend's, your cat's owner's. One image is all it takes.</p>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Meme Swap — Put your face in any GIF, 100% locally on your Mac</title>
+    <meta
+      name="description"
+      content="Meme Swap puts your face in any meme. Powered by FaceFusion, inswapper, CodeFormer and Real-ESRGAN — running entirely on your Mac. No cloud. No uploads. Just memes."
+    />
+    <meta property="og:title" content="Meme Swap — Your face. Any meme." />
+    <meta
+      property="og:description"
+      content="AI face swapping for GIFs, running 100% locally on your Mac. Web app, desktop app and MCP server."
+    />
+    <meta property="og:image" content="https://tlahey.github.io/meme-swap/assets/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:url" content="https://tlahey.github.io/meme-swap/" />
+    <meta property="og:type" content="website" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Meme Swap — Your face. Any meme." />
+    <meta
+      name="twitter:description"
+      content="AI face swapping for GIFs, running 100% locally on your Mac. Web app, desktop app and MCP server."
+    />
+    <meta name="twitter:image" content="https://tlahey.github.io/meme-swap/assets/og-image.png" />
+    <link rel="icon" type="image/png" href="./assets/icon.png" />
+    <link rel="apple-touch-icon" href="./assets/icon.png" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <!-- ================= NAV ================= -->
+    <nav class="nav" id="nav">
+      <div class="nav-inner">
+        <a class="nav-brand" href="#top">
+          <img src="./assets/icon.png" alt="" width="28" height="28" />
+          <span>Meme Swap</span>
+        </a>
+        <div class="nav-links">
+          <a href="#how">How it works</a>
+          <a href="#local">Privacy</a>
+          <a href="#tech">Technology</a>
+          <a href="#surfaces">Apps</a>
+          <a href="#install">Install</a>
         </div>
-        <div class="step card reveal" data-parallax="-0.04">
-          <div class="step-num">2</div>
-          <div class="step-emoji">🎬</div>
-          <h3>Pick a meme</h3>
-          <p>Choose a target GIF — search Giphy right from the app, or use your own file.</p>
+        <a
+          class="nav-cta"
+          href="https://github.com/Tlahey/meme-swap"
+          target="_blank"
+          rel="noopener"
+        >
+          <svg viewBox="0 0 16 16" width="16" height="16" fill="currentColor" aria-hidden="true">
+            <path
+              d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27s1.36.09 2 .27c1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0 0 16 8c0-4.42-3.58-8-8-8Z"
+            />
+          </svg>
+          <span>GitHub</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- ================= HERO ================= -->
+    <header class="hero" id="top">
+      <div class="hero-bg" aria-hidden="true">
+        <div class="orb orb-1" data-depth="0.35"></div>
+        <div class="orb orb-2" data-depth="0.2"></div>
+        <div class="orb orb-3" data-depth="0.5"></div>
+        <div class="grid-overlay"></div>
+      </div>
+
+      <div class="hero-content">
+        <img
+          class="hero-icon reveal"
+          src="./assets/icon.png"
+          alt="Meme Swap app icon"
+          width="112"
+          height="112"
+          data-depth="0.12"
+        />
+        <h1 class="hero-title reveal">
+          Your face.<br /><span class="gradient-text">Any meme.</span>
+        </h1>
+        <p class="hero-sub reveal">
+          AI face swapping for GIFs — running <strong>100% locally on your&nbsp;Mac</strong>. No
+          cloud. No uploads. Just&nbsp;memes.
+        </p>
+        <div class="hero-actions reveal">
+          <a
+            class="btn btn-primary"
+            href="https://github.com/Tlahey/meme-swap/releases/latest"
+            target="_blank"
+            rel="noopener"
+          >
+            Download for Mac</a
+          >
+          <a class="btn btn-ghost" href="#install">Get started&nbsp;→</a>
         </div>
-        <div class="step card reveal" data-parallax="0.06">
-          <div class="step-num">3</div>
-          <div class="step-emoji">✨</div>
-          <h3>Swap &amp; share</h3>
-          <p>The AI pipeline swaps every frame, restores expressions and enhances the result. Download as GIF or MP4.</p>
+        <div class="hero-badges reveal">
+          <span class="pill">🍎 Apple&nbsp;Silicon · CoreML</span>
+          <span class="pill">🔒 On-device only</span>
+          <span class="pill">🆓 Open source</span>
         </div>
       </div>
 
-      <div class="pipeline reveal" aria-label="Processing pipeline">
-        <span class="chip">GIF in</span>
-        <span class="arrow">→</span>
-        <span class="chip">FFmpeg → MP4</span>
-        <span class="arrow">→</span>
-        <span class="chip chip-hl">FaceFusion swap</span>
-        <span class="arrow">→</span>
-        <span class="chip">Enhance</span>
-        <span class="arrow">→</span>
-        <span class="chip">GIF / MP4 out</span>
+      <div class="hero-scroll-hint" aria-hidden="true">
+        <span></span>
       </div>
-    </section>
+    </header>
 
-    <!-- ================= SHOWCASE ================= -->
-    <section class="section" id="showcase">
-      <div class="section-head reveal">
-        <p class="eyebrow">See it in action</p>
-        <h2>A serious tool,<br />disguised as a toy.</h2>
-      </div>
-
-      <div class="app-window reveal" data-parallax="0.05">
-        <div class="window-bar">
-          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-          <span class="window-title">Meme Swap — localhost:3010</span>
+    <main>
+      <!-- ================= HOW IT WORKS ================= -->
+      <section class="section" id="how">
+        <div class="section-head reveal">
+          <p class="eyebrow">How it works</p>
+          <h2>Three steps.<br />Zero editing skills.</h2>
         </div>
-        <img src="./assets/screenshots/app-overview.png" alt="Meme Swap web app — dark interface with GIF library, search and quality presets" loading="lazy" />
-      </div>
 
-      <div class="split">
-        <div class="split-text reveal">
-          <p class="eyebrow">Giphy, plugged in</p>
-          <h3>The entire Giphy library,<br />one click away.</h3>
-          <p>
-            Search Giphy without ever leaving the app — trending memes, hashtag shortcuts,
-            instant previews. Pick a GIF and Meme Swap downloads and converts it for the
-            AI pipeline automatically.
+        <div class="steps">
+          <div class="step card reveal" data-parallax="0.06">
+            <div class="step-num">1</div>
+            <div class="step-emoji">🤳</div>
+            <h3>Pick a face</h3>
+            <p>
+              Drop in any photo of a face — yours, your friend's, your cat's owner's. One image is
+              all it takes.
+            </p>
+          </div>
+          <div class="step card reveal" data-parallax="-0.04">
+            <div class="step-num">2</div>
+            <div class="step-emoji">🎬</div>
+            <h3>Pick a meme</h3>
+            <p>Choose a target GIF — search Giphy right from the app, or use your own file.</p>
+          </div>
+          <div class="step card reveal" data-parallax="0.06">
+            <div class="step-num">3</div>
+            <div class="step-emoji">✨</div>
+            <h3>Swap &amp; share</h3>
+            <p>
+              The AI pipeline swaps every frame, restores expressions and enhances the result.
+              Download as GIF or MP4.
+            </p>
+          </div>
+        </div>
+
+        <div class="pipeline reveal" aria-label="Processing pipeline">
+          <span class="chip">GIF in</span>
+          <span class="arrow">→</span>
+          <span class="chip">FFmpeg → MP4</span>
+          <span class="arrow">→</span>
+          <span class="chip chip-hl">FaceFusion swap</span>
+          <span class="arrow">→</span>
+          <span class="chip">Enhance</span>
+          <span class="arrow">→</span>
+          <span class="chip">GIF / MP4 out</span>
+        </div>
+      </section>
+
+      <!-- ================= SHOWCASE ================= -->
+      <section class="section" id="showcase">
+        <div class="section-head reveal">
+          <p class="eyebrow">See it in action</p>
+          <h2>A serious tool,<br />disguised as a toy.</h2>
+        </div>
+
+        <div class="app-window reveal" data-parallax="0.05">
+          <div class="window-bar">
+            <span class="dot red"></span><span class="dot yellow"></span
+            ><span class="dot green"></span>
+            <span class="window-title">Meme Swap — localhost:3010</span>
+          </div>
+          <img
+            src="./assets/screenshots/app-overview.png"
+            alt="Meme Swap web app — dark interface with GIF library, search and quality presets"
+            loading="lazy"
+          />
+        </div>
+
+        <div class="split">
+          <div class="split-text reveal">
+            <p class="eyebrow">Giphy, plugged in</p>
+            <h3>The entire Giphy library,<br />one click away.</h3>
+            <p>
+              Search Giphy without ever leaving the app — trending memes, hashtag shortcuts, instant
+              previews. Pick a GIF and Meme Swap downloads and converts it for the AI pipeline
+              automatically.
+            </p>
+            <ul class="check-list">
+              <li>Built-in search with <code>#meme</code> hashtag pills</li>
+              <li>One click: fetch, convert, ready to swap</li>
+              <li>Curated offline library when no API key is set</li>
+              <li>Or just drag &amp; drop your own GIF</li>
+            </ul>
+          </div>
+          <div class="app-window reveal" data-parallax="-0.04">
+            <img
+              src="./assets/screenshots/giphy-library.png"
+              alt="Built-in Giphy search — GIF grid with trending memes and hashtag pills"
+              loading="lazy"
+            />
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= LOCAL / PRIVACY ================= -->
+      <section class="section section-local" id="local">
+        <div class="local-bg" aria-hidden="true">
+          <div class="orb orb-local" data-parallax="0.12"></div>
+        </div>
+        <div class="section-head reveal">
+          <p class="eyebrow">Privacy by design</p>
+          <h2>Your face never<br /><span class="gradient-text-green">leaves your Mac.</span></h2>
+          <p class="lede">
+            Everything — the AI models, the processing, the results — lives in a single folder on
+            your machine. Nothing is ever uploaded, tracked or stored in someone else's cloud.
           </p>
-          <ul class="check-list">
-            <li>Built-in search with <code>#meme</code> hashtag pills</li>
-            <li>One click: fetch, convert, ready to swap</li>
-            <li>Curated offline library when no API key is set</li>
-            <li>Or just drag &amp; drop your own GIF</li>
-          </ul>
         </div>
-        <div class="app-window reveal" data-parallax="-0.04">
-          <img src="./assets/screenshots/giphy-library.png" alt="Built-in Giphy search — GIF grid with trending memes and hashtag pills" loading="lazy" />
-        </div>
-      </div>
-    </section>
 
-    <!-- ================= LOCAL / PRIVACY ================= -->
-    <section class="section section-local" id="local">
-      <div class="local-bg" aria-hidden="true">
-        <div class="orb orb-local" data-parallax="0.12"></div>
-      </div>
-      <div class="section-head reveal">
-        <p class="eyebrow">Privacy by design</p>
-        <h2>Your face never<br /><span class="gradient-text-green">leaves your Mac.</span></h2>
-        <p class="lede">
-          Everything — the AI models, the processing, the results — lives in a single folder
-          on your machine. Nothing is ever uploaded, tracked or stored in someone else's cloud.
+        <div class="local-grid">
+          <div class="card local-card reveal">
+            <div class="folder-line">
+              <span class="folder-icon">📁</span><code>~/.meme-swap/</code>
+            </div>
+            <ul class="tree">
+              <li><code>├── facefusion/</code><span>AI engine + Python venv</span></li>
+              <li><code>├── models/</code><span>Neural networks, downloaded once</span></li>
+              <li><code>└── process/</code><span>Temp files &amp; results</span></li>
+            </ul>
+          </div>
+          <div class="local-points">
+            <div class="point reveal">
+              <div class="point-icon">🛜</div>
+              <div>
+                <h4>Works offline</h4>
+                <p>Once installed, face swapping needs no internet connection at all.</p>
+              </div>
+            </div>
+            <div class="point reveal">
+              <div class="point-icon">⚡️</div>
+              <div>
+                <h4>Apple Silicon fast</h4>
+                <p>
+                  Inference runs through CoreML on the Neural Engine and GPU, with CPU fallback.
+                </p>
+              </div>
+            </div>
+            <div class="point reveal">
+              <div class="point-icon">🧹</div>
+              <div>
+                <h4>Easy to remove</h4>
+                <p>Delete one folder and every model, cache and result is gone. That's it.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= TECHNOLOGY ================= -->
+      <section class="section" id="tech">
+        <div class="section-head reveal">
+          <p class="eyebrow">Under the hood</p>
+          <h2>Serious AI.<br />Silly results.</h2>
+          <p class="lede">
+            Meme Swap orchestrates
+            <a href="https://github.com/facefusion/facefusion" target="_blank" rel="noopener"
+              >FaceFusion</a
+            >, the state-of-the-art open-source face manipulation platform, as a headless engine —
+            wrapped in a fully typed TypeScript pipeline.
+          </p>
+        </div>
+
+        <div class="bento">
+          <div class="card bento-big reveal">
+            <div class="bento-tag">Core engine</div>
+            <h3>FaceFusion</h3>
+            <p>
+              The industry-reference face swapping platform, driven headlessly through its Python
+              CLI. Meme Swap installs it in an isolated virtual environment and streams real-time
+              progress back to the UI — analysing, extracting, processing, merging.
+            </p>
+            <div class="model-chips">
+              <span class="chip">Python 3.11</span>
+              <span class="chip">ONNX Runtime</span>
+              <span class="chip">CoreML · CPU · CUDA</span>
+            </div>
+          </div>
+          <div class="card reveal">
+            <div class="bento-tag">Face swapper</div>
+            <h3>inswapper_128</h3>
+            <p>
+              InsightFace's flagship swap model (with an fp16 variant for speed) transfers identity
+              frame by frame.
+            </p>
+          </div>
+          <div class="card reveal">
+            <div class="bento-tag">Face enhancer</div>
+            <h3>CodeFormer</h3>
+            <p>
+              Transformer-based face restoration sharpens each swapped face with an adjustable
+              blend.
+            </p>
+          </div>
+          <div class="card reveal">
+            <div class="bento-tag">Frame enhancer</div>
+            <h3>Real-ESRGAN ×2</h3>
+            <p>Optional super-resolution upscales the whole frame for crispier final GIFs.</p>
+          </div>
+          <div class="card reveal">
+            <div class="bento-tag">Expression &amp; lips</div>
+            <h3>Expression Restorer + Lip Syncer</h3>
+            <p>
+              Keeps the original grimaces, blinks and mouth movement so the meme stays the meme.
+            </p>
+          </div>
+          <div class="card reveal">
+            <div class="bento-tag">Media pipeline</div>
+            <h3>FFmpeg</h3>
+            <p>Seamless GIF ↔ MP4 conversion with palette-optimized GIF encoding on the way out.</p>
+          </div>
+        </div>
+
+        <div class="stack-strip reveal" aria-label="Application stack">
+          <span>Built with</span>
+          <span class="chip">TypeScript</span>
+          <span class="chip">Turborepo + pnpm</span>
+          <span class="chip">Next.js 14</span>
+          <span class="chip">Electron</span>
+          <span class="chip">Model Context Protocol</span>
+        </div>
+      </section>
+
+      <!-- ================= SURFACES ================= -->
+      <section class="section" id="surfaces">
+        <div class="section-head reveal">
+          <p class="eyebrow">One engine, three apps</p>
+          <h2>Swap from anywhere.</h2>
+        </div>
+
+        <div class="surfaces">
+          <div class="card surface reveal" data-parallax="0.05">
+            <div class="surface-icon">🌐</div>
+            <h3>Web app</h3>
+            <p>
+              A Next.js 14 interface with drag &amp; drop, Giphy search, model settings and live
+              progress. Runs on <code>localhost</code> — the browser is just the UI, processing
+              stays on your machine.
+            </p>
+            <code class="cmd">pnpm frontend:dev</code>
+          </div>
+          <div class="card surface surface-featured reveal">
+            <div class="surface-icon">🖥️</div>
+            <h3>Desktop app</h3>
+            <p>
+              A native macOS Electron app with a guided first-run setup that installs everything for
+              you. Grab the <code>.dmg</code> from the
+              <a
+                href="https://github.com/Tlahey/meme-swap/releases/latest"
+                target="_blank"
+                rel="noopener"
+                >latest release</a
+              >.
+            </p>
+            <code class="cmd">Meme Swap.app</code>
+          </div>
+          <div class="card surface reveal" data-parallax="-0.05">
+            <div class="surface-icon">🤖</div>
+            <h3>MCP server</h3>
+            <p>
+              A Model Context Protocol server that lets AI assistants like Claude or Cursor run face
+              swaps as a tool. "Put my face on the Success Kid meme" — done.
+            </p>
+            <code class="cmd">run_faceswap(...)</code>
+          </div>
+        </div>
+      </section>
+
+      <!-- ================= INSTALL ================= -->
+      <section class="section section-install" id="install">
+        <div class="section-head reveal">
+          <p class="eyebrow">Get started</p>
+          <h2>One download away<br />from meme greatness.</h2>
+        </div>
+
+        <div class="download-card reveal">
+          <img src="./assets/icon.png" alt="" width="64" height="64" />
+          <div class="download-info">
+            <h3>Meme Swap for macOS</h3>
+            <p>
+              Native desktop app · Apple Silicon <code>.dmg</code> · guided first-run setup installs
+              FaceFusion for you
+            </p>
+          </div>
+          <a
+            class="btn btn-primary"
+            href="https://github.com/Tlahey/meme-swap/releases/latest"
+            target="_blank"
+            rel="noopener"
+            >Download latest release</a
+          >
+        </div>
+        <p class="install-note reveal download-note">
+          The app isn't notarized yet — on first launch, right-click
+          <strong>Meme Swap.app</strong> → <strong>Open</strong>.
         </p>
-      </div>
 
-      <div class="local-grid">
-        <div class="card local-card reveal">
-          <div class="folder-line"><span class="folder-icon">📁</span><code>~/.meme-swap/</code></div>
-          <ul class="tree">
-            <li><code>├── facefusion/</code><span>AI engine + Python venv</span></li>
-            <li><code>├── models/</code><span>Neural networks, downloaded once</span></li>
-            <li><code>└── process/</code><span>Temp files &amp; results</span></li>
-          </ul>
-        </div>
-        <div class="local-points">
-          <div class="point reveal">
-            <div class="point-icon">🛜</div>
-            <div><h4>Works offline</h4><p>Once installed, face swapping needs no internet connection at all.</p></div>
+        <div class="or-divider reveal" aria-hidden="true"><span>or build from source</span></div>
+
+        <div class="terminal reveal" data-parallax="0.04">
+          <div class="terminal-bar">
+            <span class="dot red"></span><span class="dot yellow"></span
+            ><span class="dot green"></span>
+            <span class="terminal-title">meme-swap — zsh</span>
           </div>
-          <div class="point reveal">
-            <div class="point-icon">⚡️</div>
-            <div><h4>Apple Silicon fast</h4><p>Inference runs through CoreML on the Neural Engine and GPU, with CPU fallback.</p></div>
-          </div>
-          <div class="point reveal">
-            <div class="point-icon">🧹</div>
-            <div><h4>Easy to remove</h4><p>Delete one folder and every model, cache and result is gone. That's it.</p></div>
-          </div>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= TECHNOLOGY ================= -->
-    <section class="section" id="tech">
-      <div class="section-head reveal">
-        <p class="eyebrow">Under the hood</p>
-        <h2>Serious AI.<br />Silly results.</h2>
-        <p class="lede">
-          Meme Swap orchestrates <a href="https://github.com/facefusion/facefusion" target="_blank" rel="noopener">FaceFusion</a>,
-          the state-of-the-art open-source face manipulation platform, as a headless engine —
-          wrapped in a fully typed TypeScript pipeline.
-        </p>
-      </div>
-
-      <div class="bento">
-        <div class="card bento-big reveal">
-          <div class="bento-tag">Core engine</div>
-          <h3>FaceFusion</h3>
-          <p>The industry-reference face swapping platform, driven headlessly through its Python CLI.
-             Meme Swap installs it in an isolated virtual environment and streams real-time progress
-             back to the UI — analysing, extracting, processing, merging.</p>
-          <div class="model-chips">
-            <span class="chip">Python 3.11</span>
-            <span class="chip">ONNX Runtime</span>
-            <span class="chip">CoreML · CPU · CUDA</span>
-          </div>
-        </div>
-        <div class="card reveal">
-          <div class="bento-tag">Face swapper</div>
-          <h3>inswapper_128</h3>
-          <p>InsightFace's flagship swap model (with an fp16 variant for speed) transfers identity frame by frame.</p>
-        </div>
-        <div class="card reveal">
-          <div class="bento-tag">Face enhancer</div>
-          <h3>CodeFormer</h3>
-          <p>Transformer-based face restoration sharpens each swapped face with an adjustable blend.</p>
-        </div>
-        <div class="card reveal">
-          <div class="bento-tag">Frame enhancer</div>
-          <h3>Real-ESRGAN ×2</h3>
-          <p>Optional super-resolution upscales the whole frame for crispier final GIFs.</p>
-        </div>
-        <div class="card reveal">
-          <div class="bento-tag">Expression &amp; lips</div>
-          <h3>Expression Restorer + Lip Syncer</h3>
-          <p>Keeps the original grimaces, blinks and mouth movement so the meme stays the meme.</p>
-        </div>
-        <div class="card reveal">
-          <div class="bento-tag">Media pipeline</div>
-          <h3>FFmpeg</h3>
-          <p>Seamless GIF ↔ MP4 conversion with palette-optimized GIF encoding on the way out.</p>
-        </div>
-      </div>
-
-      <div class="stack-strip reveal" aria-label="Application stack">
-        <span>Built with</span>
-        <span class="chip">TypeScript</span>
-        <span class="chip">Turborepo + pnpm</span>
-        <span class="chip">Next.js 14</span>
-        <span class="chip">Electron</span>
-        <span class="chip">Model Context Protocol</span>
-      </div>
-    </section>
-
-    <!-- ================= SURFACES ================= -->
-    <section class="section" id="surfaces">
-      <div class="section-head reveal">
-        <p class="eyebrow">One engine, three apps</p>
-        <h2>Swap from anywhere.</h2>
-      </div>
-
-      <div class="surfaces">
-        <div class="card surface reveal" data-parallax="0.05">
-          <div class="surface-icon">🌐</div>
-          <h3>Web app</h3>
-          <p>A Next.js 14 interface with drag &amp; drop, Giphy search, model settings and live progress. Runs on <code>localhost</code> — the browser is just the UI, processing stays on your machine.</p>
-          <code class="cmd">pnpm frontend:dev</code>
-        </div>
-        <div class="card surface surface-featured reveal">
-          <div class="surface-icon">🖥️</div>
-          <h3>Desktop app</h3>
-          <p>A native macOS Electron app with a guided first-run setup that installs everything for you. Grab the <code>.dmg</code> from the <a href="https://github.com/Tlahey/meme-swap/releases/latest" target="_blank" rel="noopener">latest release</a>.</p>
-          <code class="cmd">Meme Swap.app</code>
-        </div>
-        <div class="card surface reveal" data-parallax="-0.05">
-          <div class="surface-icon">🤖</div>
-          <h3>MCP server</h3>
-          <p>A Model Context Protocol server that lets AI assistants like Claude or Cursor run face swaps as a tool. "Put my face on the Success Kid meme" — done.</p>
-          <code class="cmd">run_faceswap(...)</code>
-        </div>
-      </div>
-    </section>
-
-    <!-- ================= INSTALL ================= -->
-    <section class="section section-install" id="install">
-      <div class="section-head reveal">
-        <p class="eyebrow">Get started</p>
-        <h2>One download away<br />from meme greatness.</h2>
-      </div>
-
-      <div class="download-card reveal">
-        <img src="./assets/icon.png" alt="" width="64" height="64" />
-        <div class="download-info">
-          <h3>Meme Swap for macOS</h3>
-          <p>Native desktop app · Apple Silicon <code>.dmg</code> · guided first-run setup installs FaceFusion for you</p>
-        </div>
-        <a class="btn btn-primary" href="https://github.com/Tlahey/meme-swap/releases/latest" target="_blank" rel="noopener">Download latest release</a>
-      </div>
-      <p class="install-note reveal download-note">
-        The app isn't notarized yet — on first launch, right-click <strong>Meme Swap.app</strong> → <strong>Open</strong>.
-      </p>
-
-      <div class="or-divider reveal" aria-hidden="true"><span>or build from source</span></div>
-
-      <div class="terminal reveal" data-parallax="0.04">
-        <div class="terminal-bar">
-          <span class="dot red"></span><span class="dot yellow"></span><span class="dot green"></span>
-          <span class="terminal-title">meme-swap — zsh</span>
-        </div>
-        <pre class="terminal-body"><code><span class="t-comment"># 1. Clone &amp; install the monorepo</span>
+          <pre
+            class="terminal-body"
+          ><code><span class="t-comment"># 1. Clone &amp; install the monorepo</span>
 <span class="t-prompt">$</span> git clone https://github.com/Tlahey/meme-swap.git &amp;&amp; cd meme-swap
 <span class="t-prompt">$</span> pnpm install
 
@@ -324,53 +423,87 @@
 <span class="t-comment"># 3. Build &amp; launch</span>
 <span class="t-prompt">$</span> pnpm build &amp;&amp; pnpm frontend:dev
 <span class="t-out">▲ Next.js ready on http://localhost:3010 ✨</span></code></pre>
-      </div>
+        </div>
 
-      <p class="install-note reveal">
-        Requires macOS with Node.js ≥ 18, pnpm ≥ 9, Python ≥ 3.9 and FFmpeg
-        (<code>brew install ffmpeg</code>). Full guide in the
-        <a href="https://github.com/Tlahey/meme-swap#installation" target="_blank" rel="noopener">README</a>.
-      </p>
-    </section>
+        <p class="install-note reveal">
+          Requires macOS with Node.js ≥ 18, pnpm ≥ 9, Python ≥ 3.9 and FFmpeg (<code
+            >brew install ffmpeg</code
+          >). Full guide in the
+          <a href="https://github.com/Tlahey/meme-swap#installation" target="_blank" rel="noopener"
+            >README</a
+          >.
+        </p>
+      </section>
 
-    <!-- ================= FINAL CTA ================= -->
-    <section class="section section-cta">
-      <div class="cta-box reveal">
-        <img src="./assets/icon.png" alt="" width="72" height="72" />
-        <h2>Make your friends<br />the meme they deserve to be.</h2>
-        <div class="hero-actions">
-          <a class="btn btn-primary" href="https://github.com/Tlahey/meme-swap/releases/latest" target="_blank" rel="noopener"> Download for Mac</a>
-          <a class="btn btn-ghost" href="https://github.com/Tlahey/meme-swap" target="_blank" rel="noopener">View on GitHub →</a>
+      <!-- ================= FINAL CTA ================= -->
+      <section class="section section-cta">
+        <div class="cta-box reveal">
+          <img src="./assets/icon.png" alt="" width="72" height="72" />
+          <h2>Make your friends<br />the meme they deserve to be.</h2>
+          <div class="hero-actions">
+            <a
+              class="btn btn-primary"
+              href="https://github.com/Tlahey/meme-swap/releases/latest"
+              target="_blank"
+              rel="noopener"
+            >
+              Download for Mac</a
+            >
+            <a
+              class="btn btn-ghost"
+              href="https://github.com/Tlahey/meme-swap"
+              target="_blank"
+              rel="noopener"
+              >View on GitHub →</a
+            >
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- ================= FOOTER ================= -->
+    <footer class="footer">
+      <div class="footer-inner">
+        <div class="footer-brand">
+          <img src="./assets/icon.png" alt="" width="24" height="24" />
+          <span>Meme Swap</span>
+        </div>
+        <p class="footer-disclaimer">
+          Meme Swap is an open-source project for entertainment and creative use. Always get consent
+          before swapping someone's face, and never use it to deceive, impersonate or harm. Powered
+          by
+          <a href="https://github.com/facefusion/facefusion" target="_blank" rel="noopener"
+            >FaceFusion</a
+          >
+          and <a href="https://ffmpeg.org" target="_blank" rel="noopener">FFmpeg</a>.
+        </p>
+        <div class="footer-links">
+          <a href="https://github.com/Tlahey/meme-swap" target="_blank" rel="noopener">GitHub</a>
+          <a
+            href="https://github.com/Tlahey/meme-swap/releases/latest"
+            target="_blank"
+            rel="noopener"
+            >Download</a
+          >
+          <a
+            href="https://github.com/Tlahey/meme-swap/blob/main/CONTRIBUTING.md"
+            target="_blank"
+            rel="noopener"
+            >Contributing</a
+          >
+          <a href="https://github.com/Tlahey/meme-swap/issues" target="_blank" rel="noopener"
+            >Issues</a
+          >
+          <a
+            href="https://github.com/Tlahey/meme-swap/blob/main/LICENSE"
+            target="_blank"
+            rel="noopener"
+            >MIT License</a
+          >
         </div>
       </div>
-    </section>
+    </footer>
 
-  </main>
-
-  <!-- ================= FOOTER ================= -->
-  <footer class="footer">
-    <div class="footer-inner">
-      <div class="footer-brand">
-        <img src="./assets/icon.png" alt="" width="24" height="24" />
-        <span>Meme Swap</span>
-      </div>
-      <p class="footer-disclaimer">
-        Meme Swap is an open-source project for entertainment and creative use.
-        Always get consent before swapping someone's face, and never use it to deceive,
-        impersonate or harm. Powered by
-        <a href="https://github.com/facefusion/facefusion" target="_blank" rel="noopener">FaceFusion</a>
-        and <a href="https://ffmpeg.org" target="_blank" rel="noopener">FFmpeg</a>.
-      </p>
-      <div class="footer-links">
-        <a href="https://github.com/Tlahey/meme-swap" target="_blank" rel="noopener">GitHub</a>
-        <a href="https://github.com/Tlahey/meme-swap/releases/latest" target="_blank" rel="noopener">Download</a>
-        <a href="https://github.com/Tlahey/meme-swap/blob/main/CONTRIBUTING.md" target="_blank" rel="noopener">Contributing</a>
-        <a href="https://github.com/Tlahey/meme-swap/issues" target="_blank" rel="noopener">Issues</a>
-        <a href="https://github.com/Tlahey/meme-swap/blob/main/LICENSE" target="_blank" rel="noopener">MIT License</a>
-      </div>
-    </div>
-  </footer>
-
-  <script src="./main.js"></script>
-</body>
+    <script src="./main.js"></script>
+  </body>
 </html>

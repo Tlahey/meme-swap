@@ -27,16 +27,16 @@ This document contains rules and guidelines for AI development agents working on
 
 ### Core Technologies
 
-| Component | Technology |
-|-----------|------------|
-| Package Manager | pnpm |
-| Monorepo Tool | Turborepo |
-| Language | TypeScript |
-| Frontend | Next.js 14+ (App Router) |
-| Styling | TailwindCSS |
-| State Management | React Hooks / Zustand |
-| Faceswap Engine | FaceFusion (Python) |
-| Video Processing | FFmpeg (GIF ↔ MP4) |
+| Component        | Technology               |
+| ---------------- | ------------------------ |
+| Package Manager  | pnpm                     |
+| Monorepo Tool    | Turborepo                |
+| Language         | TypeScript               |
+| Frontend         | Next.js 14+ (App Router) |
+| Styling          | TailwindCSS              |
+| State Management | React Hooks / Zustand    |
+| Faceswap Engine  | FaceFusion (Python)      |
+| Video Processing | FFmpeg (GIF ↔ MP4)       |
 
 ---
 
@@ -61,11 +61,11 @@ This document contains rules and guidelines for AI development agents working on
 
 ### Shared Packages
 
-| Package | Description | Location |
-|---------|-------------|----------|
-| **@meme-swap/faceswap-core** | TypeScript wrapper for FaceFusion Python execution | `packages/faceswap-core/` |
-| **@meme-swap/video-processor** | FFmpeg wrapper for GIF/MP4 conversions | `packages/video-processor/` |
-| **api-client** | Giphy API client (placeholder) | `packages/api-client/` |
+| Package                        | Description                                        | Location                    |
+| ------------------------------ | -------------------------------------------------- | --------------------------- |
+| **@meme-swap/faceswap-core**   | TypeScript wrapper for FaceFusion Python execution | `packages/faceswap-core/`   |
+| **@meme-swap/video-processor** | FFmpeg wrapper for GIF/MP4 conversions             | `packages/video-processor/` |
+| **api-client**                 | Giphy API client (placeholder)                     | `packages/api-client/`      |
 
 ### Package Exports
 
@@ -123,21 +123,21 @@ export async function mp4ToGif(options: ConversionOptions): Promise<ConversionRe
 
 ### Backend/Processing Stack
 
-| Component | Purpose | Location |
-|-----------|---------|----------|
-| **FaceFusion** | AI-powered face swapping engine | `vendor/facefusion/` (dev) / `~/.meme-swap/facefusion/` (user global) |
-| **FFmpeg** | Media format conversion (GIF ↔ MP4) | System installation |
-| **ONNX Runtime** | Neural network inference for FaceFusion | Python package |
-| **OpenCV** | Image/video processing | Python package |
-| **NumPy** | Numerical computations | Python package |
+| Component        | Purpose                                 | Location                                                              |
+| ---------------- | --------------------------------------- | --------------------------------------------------------------------- |
+| **FaceFusion**   | AI-powered face swapping engine         | `vendor/facefusion/` (dev) / `~/.meme-swap/facefusion/` (user global) |
+| **FFmpeg**       | Media format conversion (GIF ↔ MP4)     | System installation                                                   |
+| **ONNX Runtime** | Neural network inference for FaceFusion | Python package                                                        |
+| **OpenCV**       | Image/video processing                  | Python package                                                        |
+| **NumPy**        | Numerical computations                  | Python package                                                        |
 
 ### Working Directories
 
-| Directory | Purpose | Gitignored |
-|-----------|---------|------------|
-| `.process/temp/` | Temporary files during media processing | ✅ Yes |
-| `.process/results/` | Generated output files | ✅ Yes |
-| `apps/frontend/public/test-images/` | Test images for development | ✅ Yes |
+| Directory                           | Purpose                                 | Gitignored |
+| ----------------------------------- | --------------------------------------- | ---------- |
+| `.process/temp/`                    | Temporary files during media processing | ✅ Yes     |
+| `.process/results/`                 | Generated output files                  | ✅ Yes     |
+| `apps/frontend/public/test-images/` | Test images for development             | ✅ Yes     |
 
 ---
 
@@ -237,7 +237,7 @@ yarn add lodash
 ```typescript
 // ✅ CORRECT - Named exports
 export const fetchData = async () => {};
-export interface Data { }
+export interface Data {}
 export type Result = {};
 
 // ❌ WRONG - Default exports (avoid unless necessary)
@@ -261,8 +261,8 @@ async function fetchData() {
 // ❌ WRONG - .then() chains
 function fetchData() {
   return fetch('/api/data')
-    .then(response => response.json())
-    .catch(error => {
+    .then((response) => response.json())
+    .catch((error) => {
       console.error('Failed to fetch:', error);
       throw error;
     });
@@ -434,13 +434,10 @@ export async function POST(request: NextRequest) {
   try {
     const formData = await request.formData();
     // Process files...
-    
+
     return NextResponse.json({ success: true });
   } catch (error) {
-    return NextResponse.json(
-      { error: 'Processing failed' },
-      { status: 500 }
-    );
+    return NextResponse.json({ error: 'Processing failed' }, { status: 500 });
   }
 }
 
@@ -455,17 +452,14 @@ Use FormData for file uploads in API routes:
 ```typescript
 export async function POST(request: NextRequest) {
   const formData = await request.formData();
-  
+
   const sourceFile = formData.get('source') as File | null;
   const targetFile = formData.get('target') as File | null;
-  
+
   if (!sourceFile || !targetFile) {
-    return NextResponse.json(
-      { error: 'Missing files' },
-      { status: 400 }
-    );
+    return NextResponse.json({ error: 'Missing files' }, { status: 400 });
   }
-  
+
   // Convert to buffer and save
   const buffer = Buffer.from(await sourceFile.arrayBuffer());
   fs.writeFileSync(path, buffer);
@@ -496,26 +490,26 @@ function ensureDirectories(): void {
 
 ### Naming Conventions
 
-| Element | Convention | Example |
-|---------|------------|---------|
-| Interfaces | PascalCase | `MediaInput`, `FaceResult` |
-| Types | PascalCase | `MediaType`, `Callback` |
-| Variables | camelCase | `mediaList`, `isLoading` |
-| Functions | camelCase | `fetchMedia`, `processFrames` |
-| Components | PascalCase | `MediaSearch`, `FaceUploader` |
-| Constants | UPPER_SNAKE_CASE | `MAX_RETRIES`, `API_URL` |
-| Private members | underscore prefix | `_cache`, `_process()` |
+| Element         | Convention        | Example                       |
+| --------------- | ----------------- | ----------------------------- |
+| Interfaces      | PascalCase        | `MediaInput`, `FaceResult`    |
+| Types           | PascalCase        | `MediaType`, `Callback`       |
+| Variables       | camelCase         | `mediaList`, `isLoading`      |
+| Functions       | camelCase         | `fetchMedia`, `processFrames` |
+| Components      | PascalCase        | `MediaSearch`, `FaceUploader` |
+| Constants       | UPPER_SNAKE_CASE  | `MAX_RETRIES`, `API_URL`      |
+| Private members | underscore prefix | `_cache`, `_process()`        |
 
 ### File Naming
 
-| Type | Convention | Example |
-|------|------------|---------|
-| Components | PascalCase.tsx | `MediaCard.tsx` |
-| Hooks | camelCase.ts | `useMediaSearch.ts` |
-| Utilities | camelCase.ts | `formatDate.ts` |
-| Types | PascalCase.ts | `MediaTypes.ts` |
-| Tests | *.test.ts | `utils.test.ts` |
-| Stories | *.stories.tsx | `Button.stories.tsx` |
+| Type       | Convention     | Example              |
+| ---------- | -------------- | -------------------- |
+| Components | PascalCase.tsx | `MediaCard.tsx`      |
+| Hooks      | camelCase.ts   | `useMediaSearch.ts`  |
+| Utilities  | camelCase.ts   | `formatDate.ts`      |
+| Types      | PascalCase.ts  | `MediaTypes.ts`      |
+| Tests      | *.test.ts      | `utils.test.ts`      |
+| Stories    | *.stories.tsx  | `Button.stories.tsx` |
 
 ### Comment Style
 
@@ -532,7 +526,7 @@ function ensureDirectories(): void {
  */
 export async function searchMedia(
   query: string,
-  options: SearchOptions = {}
+  options: SearchOptions = {},
 ): Promise<MediaSearchResult> {
   // Implementation
 }
@@ -691,6 +685,7 @@ src/
 See `packages/faceswap-core/src/index.ts` for the complete implementation.
 
 **Key Points:**
+
 - Use `spawn()` from `child_process` for non-blocking execution
 - Path to Python: resolved via `getFaceFusionDir()` + `venv/bin/python3` (macOS)
 - Script path: resolved via `getFaceFusionDir()` + `facefusion.py`
@@ -710,14 +705,18 @@ function runFaceSwap(options: FaceswapOptions): Promise<FaceswapResult> {
       scriptPath,
       'run',
       '--headless',
-      '--source', options.sourcePath,
-      '--target', options.targetPath,
-      '--output', options.outputPath,
-      '--execution-providers', ...options.executionProviders,
+      '--source',
+      options.sourcePath,
+      '--target',
+      options.targetPath,
+      '--output',
+      options.outputPath,
+      '--execution-providers',
+      ...options.executionProviders,
     ];
 
     const process = spawn(pythonPath, args);
-    
+
     // Handle output and errors...
   });
 }
@@ -728,6 +727,7 @@ function runFaceSwap(options: FaceswapOptions): Promise<FaceswapResult> {
 See `packages/video-processor/src/index.ts` for the complete implementation.
 
 **Key Points:**
+
 - GIF → MP4: Single pass with `faststart` optimization
 - MP4 → GIF: Two-pass palette approach for quality
 - Default FPS: 10, Max width: 320px
@@ -736,13 +736,17 @@ See `packages/video-processor/src/index.ts` for the complete implementation.
 // ✅ CORRECT - GIF to MP4 conversion
 export async function gifToMp4(options: ConversionOptions): Promise<ConversionResult> {
   const args = [
-    '-i', options.inputPath,
-    '-movflags', 'faststart',
-    '-c:v', 'libx264',
-    '-pix_fmt', 'yuv420p',
+    '-i',
+    options.inputPath,
+    '-movflags',
+    'faststart',
+    '-c:v',
+    'libx264',
+    '-pix_fmt',
+    'yuv420p',
     options.outputPath,
   ];
-  
+
   return new Promise((resolve) => {
     const process = spawn('ffmpeg', args);
     // Handle output and errors...
@@ -753,19 +757,26 @@ export async function gifToMp4(options: ConversionOptions): Promise<ConversionRe
 export async function mp4ToGif(options: ConversionOptions): Promise<ConversionResult> {
   // Pass 1: Generate palette
   const pass1Args = [
-    '-i', options.inputPath,
-    '-vf', `fps=${options.fps},scale=${options.maxWidth}:-1:flags=lanczos,palettegen`,
-    '-y', tempPalette,
+    '-i',
+    options.inputPath,
+    '-vf',
+    `fps=${options.fps},scale=${options.maxWidth}:-1:flags=lanczos,palettegen`,
+    '-y',
+    tempPalette,
   ];
-  
+
   // Pass 2: Apply palette
   const pass2Args = [
-    '-i', options.inputPath,
-    '-i', tempPalette,
-    '-vf', `fps=${options.fps},scale=${options.maxWidth}:-1:flags=lanczos,paletteuse`,
-    '-y', options.outputPath,
+    '-i',
+    options.inputPath,
+    '-i',
+    tempPalette,
+    '-vf',
+    `fps=${options.fps},scale=${options.maxWidth}:-1:flags=lanczos,paletteuse`,
+    '-y',
+    options.outputPath,
   ];
-  
+
   // Execute both passes sequentially...
 }
 ```
@@ -796,6 +807,7 @@ docs/<description>          # Documentation
 ```
 
 **Types:**
+
 - `feat`: New feature
 - `fix`: Bug fix
 - `docs`: Documentation
@@ -872,7 +884,7 @@ Each package must have a README.md with:
 
 ### Code Examples
 
-```typescript
+````typescript
 /**
  * @example
  * ```typescript
@@ -883,7 +895,7 @@ Each package must have a README.md with:
 export function searchMedia(query: string, options?: SearchOptions) {
   // Implementation
 }
-```
+````
 
 ---
 
@@ -948,14 +960,14 @@ The complete face swap pipeline in the API route:
 export async function POST(request: NextRequest) {
   // 1. Parse and save uploaded files
   const formData = await request.formData();
-  
+
   // 2. Convert GIF to MP4 if necessary
   let targetForFaceswap = targetPath;
   if (targetFile.name.endsWith('.gif')) {
     await gifToMp4({ inputPath: targetPath, outputPath: tempMp4Path });
     targetForFaceswap = tempMp4Path;
   }
-  
+
   // 3. Run FaceFusion
   const result = await runFaceSwap({
     sourcePath,
@@ -963,10 +975,10 @@ export async function POST(request: NextRequest) {
     outputPath: outputMp4Path,
     executionProviders: ['coreml', 'cpu'],
   });
-  
+
   // 4. Convert back to GIF for preview
   await mp4ToGif({ inputPath: outputMp4Path, outputPath: outputGifPath });
-  
+
   // 5. Return result URL
   return NextResponse.json({ outputPath: `/api/results/${filename}` });
 }
@@ -1000,4 +1012,4 @@ For questions or clarifications:
 
 ---
 
-*This document is maintained by the development team and should be updated whenever project guidelines change.*
+_This document is maintained by the development team and should be updated whenever project guidelines change._

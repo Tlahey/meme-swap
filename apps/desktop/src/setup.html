@@ -1,577 +1,605 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="fr">
-<head>
-  <meta charset="UTF-8">
-  <title>Configuration de Meme Swap</title>
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap" rel="stylesheet">
-  <style>
-    :root {
-      --bg: #09090b;
-      --card-bg: rgba(20, 20, 25, 0.7);
-      --primary: #6366f1; /* Indigo */
-      --primary-hover: #4f46e5;
-      --text: #fafafa;
-      --text-muted: #a1a1aa;
-      --border: rgba(255, 255, 255, 0.08);
-      --success: #10b981;
-      --error: #ef4444;
-      --warning: #f59e0b;
-      --warning-bg: rgba(245, 158, 11, 0.08);
-      --warning-border: rgba(245, 158, 11, 0.3);
-      --glow: rgba(99, 102, 241, 0.15);
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <title>Configuration de Meme Swap</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Outfit:wght@400;600;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      :root {
+        --bg: #09090b;
+        --card-bg: rgba(20, 20, 25, 0.7);
+        --primary: #6366f1; /* Indigo */
+        --primary-hover: #4f46e5;
+        --text: #fafafa;
+        --text-muted: #a1a1aa;
+        --border: rgba(255, 255, 255, 0.08);
+        --success: #10b981;
+        --error: #ef4444;
+        --warning: #f59e0b;
+        --warning-bg: rgba(245, 158, 11, 0.08);
+        --warning-border: rgba(245, 158, 11, 0.3);
+        --glow: rgba(99, 102, 241, 0.15);
+      }
 
-    * {
-      box-sizing: border-box;
-      margin: 0;
-      padding: 0;
-    }
+      * {
+        box-sizing: border-box;
+        margin: 0;
+        padding: 0;
+      }
 
-    body {
-      font-family: 'Inter', sans-serif;
-      background-color: var(--bg);
-      color: var(--text);
-      overflow: hidden;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      user-select: none;
-    }
+      body {
+        font-family: 'Inter', sans-serif;
+        background-color: var(--bg);
+        color: var(--text);
+        overflow: hidden;
+        width: 100vw;
+        height: 100vh;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        user-select: none;
+      }
 
-    /* Background decorative glow */
-    .background-glow {
-      position: absolute;
-      width: 400px;
-      height: 400px;
-      background: radial-gradient(circle, var(--glow) 0%, rgba(9,9,11,0) 70%);
-      top: -100px;
-      left: -100px;
-      z-index: 0;
-      pointer-events: none;
-    }
+      /* Background decorative glow */
+      .background-glow {
+        position: absolute;
+        width: 400px;
+        height: 400px;
+        background: radial-gradient(circle, var(--glow) 0%, rgba(9, 9, 11, 0) 70%);
+        top: -100px;
+        left: -100px;
+        z-index: 0;
+        pointer-events: none;
+      }
 
-    .background-glow-2 {
-      position: absolute;
-      width: 500px;
-      height: 500px;
-      background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, rgba(9,9,11,0) 70%);
-      bottom: -150px;
-      right: -150px;
-      z-index: 0;
-      pointer-events: none;
-    }
+      .background-glow-2 {
+        position: absolute;
+        width: 500px;
+        height: 500px;
+        background: radial-gradient(circle, rgba(168, 85, 247, 0.1) 0%, rgba(9, 9, 11, 0) 70%);
+        bottom: -150px;
+        right: -150px;
+        z-index: 0;
+        pointer-events: none;
+      }
 
-    .container {
-      position: relative;
-      width: 100%;
-      height: 100%;
-      max-width: 800px;
-      max-height: 580px;
-      background: var(--card-bg);
-      backdrop-filter: blur(20px);
-      -webkit-backdrop-filter: blur(20px);
-      border: 1px solid var(--border);
-      border-radius: 16px;
-      padding: 32px;
-      display: flex;
-      flex-direction: column;
-      gap: 24px;
-      z-index: 1;
-      box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-    }
+      .container {
+        position: relative;
+        width: 100%;
+        height: 100%;
+        max-width: 800px;
+        max-height: 580px;
+        background: var(--card-bg);
+        backdrop-filter: blur(20px);
+        -webkit-backdrop-filter: blur(20px);
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        padding: 32px;
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+        z-index: 1;
+        box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+      }
 
-    header {
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
+      header {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
 
-    h1 {
-      font-family: 'Outfit', sans-serif;
-      font-size: 26px;
-      font-weight: 700;
-      letter-spacing: -0.5px;
-      background: linear-gradient(135deg, #fafafa 30%, #a1a1aa 100%);
-      -webkit-background-clip: text;
-      -webkit-text-fill-color: transparent;
-    }
+      h1 {
+        font-family: 'Outfit', sans-serif;
+        font-size: 26px;
+        font-weight: 700;
+        letter-spacing: -0.5px;
+        background: linear-gradient(135deg, #fafafa 30%, #a1a1aa 100%);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+      }
 
-    .subtitle {
-      font-size: 14px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
+      .subtitle {
+        font-size: 14px;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
 
-    .content-layout {
-      display: grid;
-      grid-template-columns: 280px 1fr;
-      gap: 24px;
-      flex: 1;
-      min-height: 0; /* Important to make scroll work inside columns */
-    }
+      .content-layout {
+        display: grid;
+        grid-template-columns: 280px 1fr;
+        gap: 24px;
+        flex: 1;
+        min-height: 0; /* Important to make scroll work inside columns */
+      }
 
-    /* Left Panel: Step list */
-    .steps-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 16px;
-      padding-right: 12px;
-      border-right: 1px solid var(--border);
-    }
+      /* Left Panel: Step list */
+      .steps-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        padding-right: 12px;
+        border-right: 1px solid var(--border);
+      }
 
-    .step-item {
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: rgba(255, 255, 255, 0.02);
-      border: 1px solid transparent;
-      transition: all 0.2s ease;
-    }
+      .step-item {
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.02);
+        border: 1px solid transparent;
+        transition: all 0.2s ease;
+      }
 
-    .step-item.active {
-      background: rgba(99, 102, 241, 0.08);
-      border-color: rgba(99, 102, 241, 0.2);
-    }
+      .step-item.active {
+        background: rgba(99, 102, 241, 0.08);
+        border-color: rgba(99, 102, 241, 0.2);
+      }
 
-    .step-item.completed {
-      background: rgba(16, 185, 129, 0.04);
-    }
+      .step-item.completed {
+        background: rgba(16, 185, 129, 0.04);
+      }
 
-    .step-icon {
-      width: 20px;
-      height: 20px;
-      border-radius: 50%;
-      border: 2px solid var(--text-muted);
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      font-size: 10px;
-      font-weight: bold;
-      transition: all 0.2s ease;
-      flex-shrink: 0;
-    }
+      .step-icon {
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        border: 2px solid var(--text-muted);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 10px;
+        font-weight: bold;
+        transition: all 0.2s ease;
+        flex-shrink: 0;
+      }
 
-    .step-item.active .step-icon {
-      border-color: var(--primary);
-      box-shadow: 0 0 8px var(--primary);
-      border-top-color: transparent;
-      animation: spin 1s linear infinite;
-    }
+      .step-item.active .step-icon {
+        border-color: var(--primary);
+        box-shadow: 0 0 8px var(--primary);
+        border-top-color: transparent;
+        animation: spin 1s linear infinite;
+      }
 
-    .step-item.completed .step-icon {
-      border-color: var(--success);
-      background-color: var(--success);
-      color: white;
-    }
+      .step-item.completed .step-icon {
+        border-color: var(--success);
+        background-color: var(--success);
+        color: white;
+      }
 
-    .step-item.failed .step-icon {
-      border-color: var(--error);
-      background-color: var(--error);
-      color: white;
-    }
+      .step-item.failed .step-icon {
+        border-color: var(--error);
+        background-color: var(--error);
+        color: white;
+      }
 
-    .step-label {
-      font-size: 13px;
-      font-weight: 500;
-      color: var(--text-muted);
-      transition: color 0.2s ease;
-    }
+      .step-label {
+        font-size: 13px;
+        font-weight: 500;
+        color: var(--text-muted);
+        transition: color 0.2s ease;
+      }
 
-    .step-item.active .step-label {
-      color: var(--text);
-    }
+      .step-item.active .step-label {
+        color: var(--text);
+      }
 
-    .step-item.completed .step-label {
-      color: var(--text-muted);
-      text-decoration: line-through rgba(255, 255, 255, 0.2);
-    }
+      .step-item.completed .step-label {
+        color: var(--text-muted);
+        text-decoration: line-through rgba(255, 255, 255, 0.2);
+      }
 
-    /* Right Panel: Terminal logs */
-    .terminal-panel {
-      display: flex;
-      flex-direction: column;
-      background: rgba(0, 0, 0, 0.6);
-      border: 1px solid var(--border);
-      border-radius: 10px;
-      padding: 16px;
-      font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
-      font-size: 12px;
-      min-height: 0; /* important for flex scroll */
-    }
+      /* Right Panel: Terminal logs */
+      .terminal-panel {
+        display: flex;
+        flex-direction: column;
+        background: rgba(0, 0, 0, 0.6);
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 16px;
+        font-family: 'Menlo', 'Monaco', 'Courier New', monospace;
+        font-size: 12px;
+        min-height: 0; /* important for flex scroll */
+      }
 
-    .terminal-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      border-bottom: 1px solid rgba(255, 255, 255, 0.05);
-      padding-bottom: 8px;
-      margin-bottom: 12px;
-      color: var(--text-muted);
-      font-size: 11px;
-    }
+      .terminal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+        padding-bottom: 8px;
+        margin-bottom: 12px;
+        color: var(--text-muted);
+        font-size: 11px;
+      }
 
-    .terminal-dots {
-      display: flex;
-      gap: 6px;
-    }
+      .terminal-dots {
+        display: flex;
+        gap: 6px;
+      }
 
-    .dot {
-      width: 8px;
-      height: 8px;
-      border-radius: 50%;
-    }
-    .dot.red { background: var(--error); }
-    .dot.yellow { background: #f59e0b; }
-    .dot.green { background: var(--success); }
+      .dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 50%;
+      }
+      .dot.red {
+        background: var(--error);
+      }
+      .dot.yellow {
+        background: #f59e0b;
+      }
+      .dot.green {
+        background: var(--success);
+      }
 
-    .terminal-output {
-      flex: 1;
-      overflow-y: auto;
-      white-space: pre-wrap;
-      word-break: break-all;
-      color: #e4e4e7;
-      line-height: 1.6;
-      padding-right: 6px;
-      user-select: text;
-      -webkit-user-select: text;
-    }
+      .terminal-output {
+        flex: 1;
+        overflow-y: auto;
+        white-space: pre-wrap;
+        word-break: break-all;
+        color: #e4e4e7;
+        line-height: 1.6;
+        padding-right: 6px;
+        user-select: text;
+        -webkit-user-select: text;
+      }
 
-    /* Custom Scrollbar */
-    .terminal-output::-webkit-scrollbar {
-      width: 6px;
-    }
-    .terminal-output::-webkit-scrollbar-track {
-      background: transparent;
-    }
-    .terminal-output::-webkit-scrollbar-thumb {
-      background: rgba(255, 255, 255, 0.1);
-      border-radius: 3px;
-    }
-    .terminal-output::-webkit-scrollbar-thumb:hover {
-      background: rgba(255, 255, 255, 0.2);
-    }
+      /* Custom Scrollbar */
+      .terminal-output::-webkit-scrollbar {
+        width: 6px;
+      }
+      .terminal-output::-webkit-scrollbar-track {
+        background: transparent;
+      }
+      .terminal-output::-webkit-scrollbar-thumb {
+        background: rgba(255, 255, 255, 0.1);
+        border-radius: 3px;
+      }
+      .terminal-output::-webkit-scrollbar-thumb:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
 
-    /* Footer: Action button / progress bar */
-    footer {
-      display: flex;
-      flex-direction: column;
-      gap: 12px;
-      border-top: 1px solid var(--border);
-      padding-top: 20px;
-    }
+      /* Footer: Action button / progress bar */
+      footer {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        border-top: 1px solid var(--border);
+        padding-top: 20px;
+      }
 
-    .progress-bar-container {
-      width: 100%;
-      height: 6px;
-      background: rgba(255, 255, 255, 0.05);
-      border-radius: 3px;
-      overflow: hidden;
-    }
+      .progress-bar-container {
+        width: 100%;
+        height: 6px;
+        background: rgba(255, 255, 255, 0.05);
+        border-radius: 3px;
+        overflow: hidden;
+      }
 
-    .progress-bar {
-      width: 0%;
-      height: 100%;
-      background: linear-gradient(90deg, var(--primary) 0%, #a855f7 100%);
-      border-radius: 3px;
-      transition: width 0.3s ease;
-    }
+      .progress-bar {
+        width: 0%;
+        height: 100%;
+        background: linear-gradient(90deg, var(--primary) 0%, #a855f7 100%);
+        border-radius: 3px;
+        transition: width 0.3s ease;
+      }
 
-    .footer-actions {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-    }
+      .footer-actions {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
 
-    .status-text {
-      font-size: 13px;
-      color: var(--text-muted);
-    }
+      .status-text {
+        font-size: 13px;
+        color: var(--text-muted);
+      }
 
-    .btn {
-      font-family: 'Inter', sans-serif;
-      font-size: 13px;
-      font-weight: 600;
-      color: white;
-      background: var(--primary);
-      border: none;
-      padding: 10px 20px;
-      border-radius: 8px;
-      cursor: pointer;
-      transition: all 0.2s ease;
-      outline: none;
-      box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
-    }
+      .btn {
+        font-family: 'Inter', sans-serif;
+        font-size: 13px;
+        font-weight: 600;
+        color: white;
+        background: var(--primary);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        outline: none;
+        box-shadow: 0 4px 12px rgba(99, 102, 241, 0.2);
+      }
 
-    .btn:hover {
-      background: var(--primary-hover);
-      transform: translateY(-1px);
-    }
+      .btn:hover {
+        background: var(--primary-hover);
+        transform: translateY(-1px);
+      }
 
-    .btn:active {
-      transform: translateY(0);
-    }
+      .btn:active {
+        transform: translateY(0);
+      }
 
-    .btn:disabled {
-      background: rgba(255, 255, 255, 0.05);
-      color: rgba(255, 255, 255, 0.3);
-      cursor: not-allowed;
-      box-shadow: none;
-      transform: none;
-    }
+      .btn:disabled {
+        background: rgba(255, 255, 255, 0.05);
+        color: rgba(255, 255, 255, 0.3);
+        cursor: not-allowed;
+        box-shadow: none;
+        transform: none;
+      }
 
-    .size-estimate {
-      font-size: 11px;
-      color: var(--text-muted);
-      line-height: 1.5;
-    }
+      .size-estimate {
+        font-size: 11px;
+        color: var(--text-muted);
+        line-height: 1.5;
+      }
 
-    .disk-warning {
-      display: none;
-      align-items: flex-start;
-      gap: 8px;
-      padding: 10px 12px;
-      border-radius: 8px;
-      background: var(--warning-bg);
-      border: 1px solid var(--warning-border);
-      font-size: 11px;
-      color: var(--warning);
-      line-height: 1.5;
-    }
+      .disk-warning {
+        display: none;
+        align-items: flex-start;
+        gap: 8px;
+        padding: 10px 12px;
+        border-radius: 8px;
+        background: var(--warning-bg);
+        border: 1px solid var(--warning-border);
+        font-size: 11px;
+        color: var(--warning);
+        line-height: 1.5;
+      }
 
-    .disk-warning.visible {
-      display: flex;
-    }
+      .disk-warning.visible {
+        display: flex;
+      }
 
-    @keyframes spin {
-      0% { transform: rotate(0deg); }
-      100% { transform: rotate(360deg); }
-    }
-  </style>
-</head>
-<body>
-  <div class="background-glow"></div>
-  <div class="background-glow-2"></div>
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="background-glow"></div>
+    <div class="background-glow-2"></div>
 
-  <div class="container">
-    <header>
-      <h1>Configuration de Meme Swap</h1>
-      <div class="subtitle">Nous préparons l'environnement d'exécution natif (FFmpeg, FaceFusion et dépendances ONNX Silicon) pour des performances de faceswap optimales sur macOS.</div>
-    </header>
-
-    <div class="content-layout">
-      <div class="steps-panel">
-        <div class="step-item" id="step-system-checks">
-          <div class="step-icon">1</div>
-          <div class="step-label">Vérification système (Homebrew, Python, FFmpeg)</div>
+    <div class="container">
+      <header>
+        <h1>Configuration de Meme Swap</h1>
+        <div class="subtitle">
+          Nous préparons l'environnement d'exécution natif (FFmpeg, FaceFusion et dépendances ONNX
+          Silicon) pour des performances de faceswap optimales sur macOS.
         </div>
-        <div class="step-item" id="step-clone-repo">
-          <div class="step-icon">2</div>
-          <div class="step-label">Téléchargement de FaceFusion</div>
-        </div>
-        <div class="step-item" id="step-setup-venv">
-          <div class="step-icon">3</div>
-          <div class="step-label">Configuration de l'environnement venv</div>
-        </div>
-        <div class="step-item" id="step-install-deps">
-          <div class="step-icon">4</div>
-          <div class="step-label">Installation d'ONNX CoreML & Deps</div>
-        </div>
-        <div class="step-item" id="step-verify-install">
-          <div class="step-icon">5</div>
-          <div class="step-label">Vérification finale (test de swap)</div>
-        </div>
-        <div class="step-item" id="step-build-monorepo">
-          <div class="step-icon">6</div>
-          <div class="step-label">Compilation du monorepo</div>
-        </div>
-      </div>
+      </header>
 
-      <div class="terminal-panel">
-        <div class="terminal-header">
-          <div class="terminal-dots">
-            <div class="dot red"></div>
-            <div class="dot yellow"></div>
-            <div class="dot green"></div>
+      <div class="content-layout">
+        <div class="steps-panel">
+          <div class="step-item" id="step-system-checks">
+            <div class="step-icon">1</div>
+            <div class="step-label">Vérification système (Homebrew, Python, FFmpeg)</div>
           </div>
-          <span>console logs</span>
+          <div class="step-item" id="step-clone-repo">
+            <div class="step-icon">2</div>
+            <div class="step-label">Téléchargement de FaceFusion</div>
+          </div>
+          <div class="step-item" id="step-setup-venv">
+            <div class="step-icon">3</div>
+            <div class="step-label">Configuration de l'environnement venv</div>
+          </div>
+          <div class="step-item" id="step-install-deps">
+            <div class="step-icon">4</div>
+            <div class="step-label">Installation d'ONNX CoreML & Deps</div>
+          </div>
+          <div class="step-item" id="step-verify-install">
+            <div class="step-icon">5</div>
+            <div class="step-label">Vérification finale (test de swap)</div>
+          </div>
+          <div class="step-item" id="step-build-monorepo">
+            <div class="step-icon">6</div>
+            <div class="step-label">Compilation du monorepo</div>
+          </div>
         </div>
-        <pre class="terminal-output" id="log-output" style="margin: 0; font-family: inherit; font-size: inherit;">Initialisation de l'assistant d'installation...
+
+        <div class="terminal-panel">
+          <div class="terminal-header">
+            <div class="terminal-dots">
+              <div class="dot red"></div>
+              <div class="dot yellow"></div>
+              <div class="dot green"></div>
+            </div>
+            <span>console logs</span>
+          </div>
+          <pre
+            class="terminal-output"
+            id="log-output"
+            style="margin: 0; font-family: inherit; font-size: inherit"
+          >
+Initialisation de l'assistant d'installation...
 En attente du démarrage de la configuration.
 </pre>
+        </div>
       </div>
+
+      <footer>
+        <div class="progress-bar-container">
+          <div class="progress-bar" id="progress-bar"></div>
+        </div>
+        <div class="footer-actions">
+          <div class="status-text" id="status-text">Prêt à démarrer l'installation</div>
+          <button class="btn" id="start-btn">Démarrer</button>
+        </div>
+        <div class="size-estimate">
+          Télécharge environ 4 Go de modèles IA au total. Compte généralement 5 à 10 minutes selon
+          votre connexion.
+        </div>
+        <div class="disk-warning" id="disk-warning">
+          <span>⚠</span>
+          <span id="disk-warning-text"></span>
+        </div>
+      </footer>
     </div>
 
-    <footer>
-      <div class="progress-bar-container">
-        <div class="progress-bar" id="progress-bar"></div>
-      </div>
-      <div class="footer-actions">
-        <div class="status-text" id="status-text">Prêt à démarrer l'installation</div>
-        <button class="btn" id="start-btn">Démarrer</button>
-      </div>
-      <div class="size-estimate">Télécharge environ 4 Go de modèles IA au total. Compte généralement 5 à 10 minutes selon votre connexion.</div>
-      <div class="disk-warning" id="disk-warning">
-        <span>⚠</span>
-        <span id="disk-warning-text"></span>
-      </div>
-    </footer>
-  </div>
+    <script>
+      const startBtn = document.getElementById('start-btn');
+      const statusText = document.getElementById('status-text');
+      const logOutput = document.getElementById('log-output');
+      const progressBar = document.getElementById('progress-bar');
 
-  <script>
-    const startBtn = document.getElementById('start-btn');
-    const statusText = document.getElementById('status-text');
-    const logOutput = document.getElementById('log-output');
-    const progressBar = document.getElementById('progress-bar');
+      // List of steps
+      const steps = [
+        'system-checks',
+        'clone-repo',
+        'setup-venv',
+        'install-deps',
+        'verify-install',
+        'build-monorepo',
+      ];
 
-    // List of steps
-    const steps = [
-      'system-checks',
-      'clone-repo',
-      'setup-venv',
-      'install-deps',
-      'verify-install',
-      'build-monorepo'
-    ];
+      function updateStepUI(stepId, status) {
+        const item = document.getElementById(`step-${stepId}`);
+        if (!item) return;
 
-    function updateStepUI(stepId, status) {
-      const item = document.getElementById(`step-${stepId}`);
-      if (!item) return;
+        item.className = 'step-item'; // Reset class
 
-      item.className = 'step-item'; // Reset class
-      
-      const icon = item.querySelector('.step-icon');
+        const icon = item.querySelector('.step-icon');
 
-      if (status === 'active') {
-        item.classList.add('active');
-        icon.innerText = '';
-      } else if (status === 'completed') {
-        item.classList.add('completed');
-        icon.innerHTML = '✓';
-      } else if (status === 'failed') {
-        item.classList.add('failed');
-        icon.innerHTML = '✗';
-      } else {
-        // Pending
-        const stepNum = steps.indexOf(stepId) + 1;
-        icon.innerText = stepNum.toString();
-      }
-    }
-
-    function appendLog(text) {
-      // Normaliser les retours à la ligne
-      const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-      logOutput.innerText += normalizedText;
-      logOutput.scrollTop = logOutput.scrollHeight;
-    }
-
-    function bytesToGb(bytes) {
-      return (bytes / (1024 ** 3)).toFixed(1);
-    }
-
-    // Vérification préalable (espace disque) : on ne bloque jamais le bouton
-    // "Démarrer" avec ça, on rend juste le risque visible si l'espace est faible.
-    async function runPreflightCheck() {
-      if (!window.electronAPI || !window.electronAPI.getSetupPreflight) return;
-      try {
-        const diskSpace = await window.electronAPI.getSetupPreflight();
-        const warningEl = document.getElementById('disk-warning');
-        const warningTextEl = document.getElementById('disk-warning-text');
-        if (diskSpace && diskSpace.meetsMinimum === false) {
-          warningTextEl.innerText = `Espace disque faible : seulement ${bytesToGb(diskSpace.freeBytes)} Go disponibles. Cette installation peut nécessiter jusqu'à ~8 Go — vous pouvez continuer, mais pensez à libérer de l'espace au préalable.`;
-          warningEl.classList.add('visible');
-        }
-      } catch (err) {
-        // Non bloquant : on n'affiche rien si la vérification échoue.
-        console.error('Échec de la vérification préalable (espace disque) :', err);
-      }
-    }
-
-    runPreflightCheck();
-
-    // Connect to Electron APIs exposed via contextBridge
-    if (window.electronAPI) {
-      startBtn.addEventListener('click', () => {
-        startBtn.disabled = true;
-        logOutput.innerText = ''; // Clear initial message
-        statusText.innerText = "Installation en cours...";
-        window.electronAPI.startSetup();
-      });
-
-      window.electronAPI.onProgress((event, data) => {
-        const { step, status, percent } = data;
-        
         if (status === 'active') {
-          statusText.innerText = `Étape : ${step}...`;
-          updateStepUI(step, 'active');
+          item.classList.add('active');
+          icon.innerText = '';
         } else if (status === 'completed') {
-          updateStepUI(step, 'completed');
+          item.classList.add('completed');
+          icon.innerHTML = '✓';
         } else if (status === 'failed') {
-          updateStepUI(step, 'failed');
-          statusText.innerText = "Erreur lors de l'installation !";
-          startBtn.disabled = false;
-          startBtn.innerText = "Réessayer";
-        }
-
-        if (percent !== undefined) {
-          progressBar.style.width = `${percent}%`;
-        }
-      });
-
-      window.electronAPI.onLog((event, text) => {
-        appendLog(text);
-      });
-
-      window.electronAPI.onFinished((event, success) => {
-        if (success) {
-          progressBar.style.width = '100%';
-          statusText.innerText = "Installation terminée avec succès ! Lancement...";
-          appendLog("\n[SUCCESS] Configuration terminée avec succès !\nFermeture de l'assistant de configuration...");
+          item.classList.add('failed');
+          icon.innerHTML = '✗';
         } else {
-          statusText.innerText = "Échec de l'installation.";
-          appendLog("\n[ERROR] Une erreur est survenue lors de l'installation. Veuillez consulter les logs ci-dessus.");
-          startBtn.disabled = false;
-          startBtn.innerText = "Réessayer";
+          // Pending
+          const stepNum = steps.indexOf(stepId) + 1;
+          icon.innerText = stepNum.toString();
         }
-      });
-    } else {
-      // Fallback/Mock for test in standard browser
-      startBtn.addEventListener('click', () => {
-        startBtn.disabled = true;
-        logOutput.innerText = '';
-        mockSetup(0);
-      });
-
-      function mockSetup(index) {
-        if (index >= steps.length) {
-          progressBar.style.width = '100%';
-          statusText.innerText = "Installation terminée !";
-          appendLog("\n[SUCCESS] Terminé !");
-          return;
-        }
-
-        const step = steps[index];
-        updateStepUI(step, 'active');
-        statusText.innerText = `Étape: ${step}...`;
-        appendLog(`\n[INFO] Démarrage de l'étape : ${step}\n`);
-        
-        let percent = ((index + 0.5) / steps.length) * 100;
-        progressBar.style.width = `${percent}%`;
-
-        setTimeout(() => {
-          updateStepUI(step, 'completed');
-          appendLog(`[OK] Étape ${step} validée.\n`);
-          let completedPercent = ((index + 1) / steps.length) * 100;
-          progressBar.style.width = `${completedPercent}%`;
-          setTimeout(() => mockSetup(index + 1), 600);
-        }, 1500);
       }
-    }
-  </script>
-</body>
+
+      function appendLog(text) {
+        // Normaliser les retours à la ligne
+        const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
+        logOutput.innerText += normalizedText;
+        logOutput.scrollTop = logOutput.scrollHeight;
+      }
+
+      function bytesToGb(bytes) {
+        return (bytes / 1024 ** 3).toFixed(1);
+      }
+
+      // Vérification préalable (espace disque) : on ne bloque jamais le bouton
+      // "Démarrer" avec ça, on rend juste le risque visible si l'espace est faible.
+      async function runPreflightCheck() {
+        if (!window.electronAPI || !window.electronAPI.getSetupPreflight) return;
+        try {
+          const diskSpace = await window.electronAPI.getSetupPreflight();
+          const warningEl = document.getElementById('disk-warning');
+          const warningTextEl = document.getElementById('disk-warning-text');
+          if (diskSpace && diskSpace.meetsMinimum === false) {
+            warningTextEl.innerText = `Espace disque faible : seulement ${bytesToGb(diskSpace.freeBytes)} Go disponibles. Cette installation peut nécessiter jusqu'à ~8 Go — vous pouvez continuer, mais pensez à libérer de l'espace au préalable.`;
+            warningEl.classList.add('visible');
+          }
+        } catch (err) {
+          // Non bloquant : on n'affiche rien si la vérification échoue.
+          console.error('Échec de la vérification préalable (espace disque) :', err);
+        }
+      }
+
+      runPreflightCheck();
+
+      // Connect to Electron APIs exposed via contextBridge
+      if (window.electronAPI) {
+        startBtn.addEventListener('click', () => {
+          startBtn.disabled = true;
+          logOutput.innerText = ''; // Clear initial message
+          statusText.innerText = 'Installation en cours...';
+          window.electronAPI.startSetup();
+        });
+
+        window.electronAPI.onProgress((event, data) => {
+          const { step, status, percent } = data;
+
+          if (status === 'active') {
+            statusText.innerText = `Étape : ${step}...`;
+            updateStepUI(step, 'active');
+          } else if (status === 'completed') {
+            updateStepUI(step, 'completed');
+          } else if (status === 'failed') {
+            updateStepUI(step, 'failed');
+            statusText.innerText = "Erreur lors de l'installation !";
+            startBtn.disabled = false;
+            startBtn.innerText = 'Réessayer';
+          }
+
+          if (percent !== undefined) {
+            progressBar.style.width = `${percent}%`;
+          }
+        });
+
+        window.electronAPI.onLog((event, text) => {
+          appendLog(text);
+        });
+
+        window.electronAPI.onFinished((event, success) => {
+          if (success) {
+            progressBar.style.width = '100%';
+            statusText.innerText = 'Installation terminée avec succès ! Lancement...';
+            appendLog(
+              "\n[SUCCESS] Configuration terminée avec succès !\nFermeture de l'assistant de configuration...",
+            );
+          } else {
+            statusText.innerText = "Échec de l'installation.";
+            appendLog(
+              "\n[ERROR] Une erreur est survenue lors de l'installation. Veuillez consulter les logs ci-dessus.",
+            );
+            startBtn.disabled = false;
+            startBtn.innerText = 'Réessayer';
+          }
+        });
+      } else {
+        // Fallback/Mock for test in standard browser
+        startBtn.addEventListener('click', () => {
+          startBtn.disabled = true;
+          logOutput.innerText = '';
+          mockSetup(0);
+        });
+
+        function mockSetup(index) {
+          if (index >= steps.length) {
+            progressBar.style.width = '100%';
+            statusText.innerText = 'Installation terminée !';
+            appendLog('\n[SUCCESS] Terminé !');
+            return;
+          }
+
+          const step = steps[index];
+          updateStepUI(step, 'active');
+          statusText.innerText = `Étape: ${step}...`;
+          appendLog(`\n[INFO] Démarrage de l'étape : ${step}\n`);
+
+          let percent = ((index + 0.5) / steps.length) * 100;
+          progressBar.style.width = `${percent}%`;
+
+          setTimeout(() => {
+            updateStepUI(step, 'completed');
+            appendLog(`[OK] Étape ${step} validée.\n`);
+            let completedPercent = ((index + 1) / steps.length) * 100;
+            progressBar.style.width = `${completedPercent}%`;
+            setTimeout(() => mockSetup(index + 1), 600);
+          }, 1500);
+        }
+      }
+    </script>
+  </body>
 </html>

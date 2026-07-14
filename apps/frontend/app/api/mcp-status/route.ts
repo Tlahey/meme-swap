@@ -8,7 +8,7 @@ export async function GET() {
 
     const response = await fetch(`http://127.0.0.1:${mcpPort}/health`, {
       signal: controller.signal,
-      cache: 'no-store'
+      cache: 'no-store',
     });
 
     clearTimeout(timeoutId);

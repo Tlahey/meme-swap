@@ -8,9 +8,7 @@ import os from 'node:os';
 const FaceswapToolSchema = z.object({
   sourceImagePath: z
     .string()
-    .describe(
-      'Path to the source image containing the face to swap (the source / face / visage)',
-    ),
+    .describe('Path to the source image containing the face to swap (the source / face / visage)'),
   targetMediaPath: z
     .string()
     .describe(
@@ -21,30 +19,15 @@ const FaceswapToolSchema = z.object({
     .array(z.string())
     .default(['coreml', 'cpu'])
     .describe('Execution providers for FaceFusion (coreml, cpu, cuda)'),
-  threadCount: z
-    .number()
-    .default(4)
-    .describe('Number of threads for processing'),
-  faceSelectorMode: z
-    .string()
-    .optional()
-    .describe('Face selector mode (reference, many, one)'),
-  faceMaskBlend: z
-    .number()
-    .optional()
-    .describe('Blend ratio for the face mask (0-100)'),
+  threadCount: z.number().default(4).describe('Number of threads for processing'),
+  faceSelectorMode: z.string().optional().describe('Face selector mode (reference, many, one)'),
+  faceMaskBlend: z.number().optional().describe('Blend ratio for the face mask (0-100)'),
   faceSwapperModel: z
     .string()
     .optional()
     .describe('Face swapper model to use (e.g. inswapper_128_fp16)'),
-  faceEnhancerModel: z
-    .string()
-    .optional()
-    .describe('Face enhancer model to use (e.g. codeformer)'),
-  faceEnhancerBlend: z
-    .number()
-    .optional()
-    .describe('Blend ratio for the face enhancer (0-100)'),
+  faceEnhancerModel: z.string().optional().describe('Face enhancer model to use (e.g. codeformer)'),
+  faceEnhancerBlend: z.number().optional().describe('Blend ratio for the face enhancer (0-100)'),
   frameEnhancerModel: z
     .string()
     .optional()
@@ -59,8 +42,6 @@ const FaceswapToolSchema = z.object({
     .default('info')
     .describe('Log level (debug, info, warning, error)'),
 });
-
-type FaceswapToolArgs = z.infer<typeof FaceswapToolSchema>;
 
 // Working directory for temporary files
 const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
@@ -79,7 +60,7 @@ function cleanupTempDir(): void {
   if (fs.existsSync(TEMP_DIR)) {
     try {
       fs.rmSync(TEMP_DIR, { recursive: true, force: true });
-      console.log('MCP: Temp directory cleared');
+      console.info('MCP: Temp directory cleared');
     } catch (error) {
       console.error('MCP: Failed to clear temp directory:', error);
     }
@@ -98,7 +79,7 @@ function cleanupTempFiles(pattern?: string): void {
       const filePath = path.join(TEMP_DIR, file);
       try {
         fs.rmSync(filePath, { recursive: true, force: true });
-        console.log(`Cleaned up temp file: ${filePath}`);
+        console.info(`Cleaned up temp file: ${filePath}`);
       } catch (error) {
         console.error(`Failed to clean up ${filePath}:`, error);
       }
@@ -162,10 +143,10 @@ export async function runFaceswapTool(args: unknown): Promise<{
       logLevel,
     } = validatedArgs;
 
-    console.log('Starting face swap operation...');
-    console.log(`Source: ${sourceImagePath}`);
-    console.log(`Target: ${targetMediaPath}`);
-    console.log(`Output: ${outputPath}`);
+    console.info('Starting face swap operation...');
+    console.info(`Source: ${sourceImagePath}`);
+    console.info(`Target: ${targetMediaPath}`);
+    console.info(`Output: ${outputPath}`);
 
     // Check if files exist
     if (!fs.existsSync(sourceImagePath)) {
@@ -176,10 +157,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
     }
 
     // Create temp directory for intermediate files
-    const filename = path.basename(
-      targetMediaPath,
-      path.extname(targetMediaPath),
-    );
+    const filename = path.basename(targetMediaPath, path.extname(targetMediaPath));
     const tempMp4Path = path.join(TEMP_DIR, `${filename}_temp.mp4`);
     const tempOutputMp4Path = path.join(TEMP_DIR, `${filename}_output.mp4`);
 
@@ -188,12 +166,8 @@ export async function runFaceswapTool(args: unknown): Promise<{
 
     // Convert GIF to MP4 if necessary
     if (targetMediaPath.toLowerCase().endsWith('.gif')) {
-      console.log('Converting GIF to MP4 for face swap...');
-      targetForFaceswap = await convertIfNecessary(
-        targetMediaPath,
-        tempMp4Path,
-        'gifToMp4',
-      );
+      console.info('Converting GIF to MP4 for face swap...');
+      targetForFaceswap = await convertIfNecessary(targetMediaPath, tempMp4Path, 'gifToMp4');
     }
 
     // Run face swap
@@ -214,7 +188,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
       logLevel,
     };
 
-    console.log('Running FaceFusion...');
+    console.info('Running FaceFusion...');
     const result = await runFaceSwap(faceswapOptions);
 
     if (!result.success) {
@@ -223,7 +197,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
 
     // Convert back to GIF if original was GIF
     if (targetMediaPath.toLowerCase().endsWith('.gif')) {
-      console.log('Converting result back to GIF...');
+      console.info('Converting result back to GIF...');
       const gifOutputPath = outputPath.replace(/\.mp4$/i, '.gif');
       finalOutputPath = gifOutputPath;
 
@@ -233,17 +207,15 @@ export async function runFaceswapTool(args: unknown): Promise<{
       });
 
       if (!conversionResult.success) {
-        throw new Error(
-          `Failed to convert result to GIF: ${conversionResult.error}`,
-        );
+        throw new Error(`Failed to convert result to GIF: ${conversionResult.error}`);
       }
     }
 
     // Cleanup temporary files
     cleanupTempFiles(filename);
 
-    console.log('Face swap completed successfully!');
-    console.log(`Output saved to: ${finalOutputPath}`);
+    console.info('Face swap completed successfully!');
+    console.info(`Output saved to: ${finalOutputPath}`);
 
     return {
       content: [
@@ -270,8 +242,7 @@ export async function runFaceswapTool(args: unknown): Promise<{
     };
   } catch (error) {
     console.error('Face swap error:', error);
-    const errorMessage =
-      error instanceof Error ? error.message : 'Unknown error';
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
 
     // Cleanup on error
     cleanupTempFiles();

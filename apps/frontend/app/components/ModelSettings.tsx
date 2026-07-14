@@ -81,18 +81,14 @@ function SettingsSection({
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="text-xs font-semibold text-[var(--text-primary)]">
-                {title}
-              </span>
+              <span className="text-xs font-semibold text-[var(--text-primary)]">{title}</span>
               {badge && (
                 <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-[var(--emerald-bg)] border border-[var(--emerald-border)] text-[var(--emerald-text)] font-bold uppercase tracking-wide">
                   {badge}
                 </span>
               )}
             </div>
-            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">
-              {subtitle}
-            </p>
+            <p className="text-[10px] text-[var(--text-muted)] mt-0.5">{subtitle}</p>
           </div>
         </div>
         <motion.div
@@ -230,11 +226,9 @@ export function ModelSettings({
     })
     .join(', ');
 
-  const activeModulesCount = [
-    faceSwapperModel,
-    faceEnhancerModel,
-    frameEnhancerModel,
-  ].filter(Boolean).length;
+  const activeModulesCount = [faceSwapperModel, faceEnhancerModel, frameEnhancerModel].filter(
+    Boolean,
+  ).length;
 
   const settingsContent = (
     <div className="space-y-3">
@@ -255,10 +249,7 @@ export function ModelSettings({
           {/* Face Swapper */}
           <div className="flex items-start justify-between p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
             <div className="flex gap-3">
-              <User
-                size={16}
-                className="text-[var(--text-secondary)] mt-0.5 shrink-0"
-              />
+              <User size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
               <div>
                 <h4 className="text-xs font-semibold text-[var(--text-primary)]">
                   {t('model.faceSwapper')}
@@ -278,9 +269,7 @@ export function ModelSettings({
                 checked={faceSwapperModel !== undefined}
                 onChange={(e) => {
                   setPreset('custom');
-                  setFaceSwapperModel(
-                    e.target.checked ? 'inswapper_128_fp16' : undefined,
-                  );
+                  setFaceSwapperModel(e.target.checked ? 'inswapper_128_fp16' : undefined);
                 }}
               />
               <div className="w-9 h-5 bg-[var(--border-color)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--emerald-main)]"></div>
@@ -290,10 +279,7 @@ export function ModelSettings({
           {/* Face Enhancer */}
           <div className="flex items-start justify-between p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
             <div className="flex gap-3">
-              <Sparkle
-                size={16}
-                className="text-[var(--text-secondary)] mt-0.5 shrink-0"
-              />
+              <Sparkle size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
               <div>
                 <h4 className="text-xs font-semibold text-[var(--text-primary)]">
                   {t('model.faceEnhancer')}
@@ -313,9 +299,7 @@ export function ModelSettings({
                 checked={faceEnhancerModel !== undefined}
                 onChange={(e) => {
                   setPreset('custom');
-                  setFaceEnhancerModel(
-                    e.target.checked ? 'codeformer' : undefined,
-                  );
+                  setFaceEnhancerModel(e.target.checked ? 'codeformer' : undefined);
                 }}
               />
               <div className="w-9 h-5 bg-[var(--border-color)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--emerald-main)]"></div>
@@ -354,10 +338,7 @@ export function ModelSettings({
           {/* Frame Enhancer (Amélioration globale) */}
           <div className="flex items-start justify-between p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
             <div className="flex gap-3">
-              <Sparkle
-                size={16}
-                className="text-[var(--text-secondary)] mt-0.5 shrink-0"
-              />
+              <Sparkle size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
               <div>
                 <h4 className="text-xs font-semibold text-[var(--text-primary)]">
                   {t('model.frameEnhancer')}
@@ -377,9 +358,7 @@ export function ModelSettings({
                 checked={frameEnhancerModel !== undefined}
                 onChange={(e) => {
                   setPreset('custom');
-                  setFrameEnhancerModel(
-                    e.target.checked ? 'real_esrgan_x2' : undefined,
-                  );
+                  setFrameEnhancerModel(e.target.checked ? 'real_esrgan_x2' : undefined);
                 }}
               />
               <div className="w-9 h-5 bg-[var(--border-color)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--emerald-main)]"></div>
@@ -389,10 +368,7 @@ export function ModelSettings({
           {/* Expression Restorer (Restauration des expressions) */}
           <div className="flex items-start justify-between p-3 rounded-lg border border-[var(--border-color)] bg-[var(--bg-primary)]">
             <div className="flex gap-3">
-              <Waveform
-                size={16}
-                className="text-[var(--text-secondary)] mt-0.5 shrink-0"
-              />
+              <Waveform size={16} className="text-[var(--text-secondary)] mt-0.5 shrink-0" />
               <div>
                 <h4 className="text-xs font-semibold text-[var(--text-primary)]">
                   Expression Restorer
@@ -412,9 +388,7 @@ export function ModelSettings({
                 checked={expressionRestorerModel !== undefined}
                 onChange={(e) => {
                   setPreset('custom');
-                  setExpressionRestorerModel(
-                    e.target.checked ? 'expression_restorer' : undefined,
-                  );
+                  setExpressionRestorerModel(e.target.checked ? 'expression_restorer' : undefined);
                 }}
               />
               <div className="w-9 h-5 bg-[var(--border-color)] peer-focus:outline-none rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-4 after:w-4 after:transition-all peer-checked:bg-[var(--emerald-main)]"></div>
@@ -428,9 +402,7 @@ export function ModelSettings({
                 <Drop size={12} className="text-[var(--emerald-main)]" />
                 {t('model.faceMaskBlend')}
               </span>
-              <span className="text-[var(--emerald-main)] font-mono text-xs">
-                {faceMaskBlend}%
-              </span>
+              <span className="text-[var(--emerald-main)] font-mono text-xs">{faceMaskBlend}%</span>
             </div>
             <input
               type="range"
@@ -443,9 +415,7 @@ export function ModelSettings({
               }}
               className="w-full h-1.5 bg-[var(--bg-tertiary)] rounded-lg appearance-none cursor-pointer accent-[var(--emerald-main)]"
             />
-            <p className="text-[10px] text-[var(--text-muted)]">
-              {t('model.faceMaskBlendDesc')}
-            </p>
+            <p className="text-[10px] text-[var(--text-muted)]">{t('model.faceMaskBlendDesc')}</p>
           </div>
         </div>
       </SettingsSection>
@@ -481,9 +451,7 @@ export function ModelSettings({
                         : 'bg-[var(--border-color)]'
                     }`}
                   />
-                  <span className="font-medium text-xs">
-                    {getProviderLabel(prov)}
-                  </span>
+                  <span className="font-medium text-xs">{getProviderLabel(prov)}</span>
                 </div>
                 {badge && (
                   <span
@@ -513,38 +481,30 @@ export function ModelSettings({
       >
         <div className="space-y-3">
           <div className="grid grid-cols-3 gap-2">
-            {(['reference', 'many', 'one'] as FaceSelectorMode[]).map(
-              (mode) => {
-                const isActive = faceSelectorMode === mode;
-                return (
-                  <button
-                    key={mode}
-                    onClick={() => setFaceSelectorMode(mode)}
-                    className={`flex flex-col items-center justify-center py-3 rounded-xl border text-center gap-1.5 transition-all ${
-                      isActive
-                        ? 'bg-[var(--emerald-bg)] border-[var(--emerald-border)] text-[var(--emerald-text)]'
-                        : 'bg-[var(--bg-primary)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]/50 hover:text-[var(--text-primary)]'
-                    }`}
-                  >
-                    {mode === 'reference' && <User size={16} />}
-                    {mode === 'many' && <Users size={16} />}
-                    {mode === 'one' && <User size={16} weight="light" />}
-                    <span className="text-[10px] font-bold capitalize">
-                      {mode}
-                    </span>
-                  </button>
-                );
-              },
-            )}
+            {(['reference', 'many', 'one'] as FaceSelectorMode[]).map((mode) => {
+              const isActive = faceSelectorMode === mode;
+              return (
+                <button
+                  key={mode}
+                  onClick={() => setFaceSelectorMode(mode)}
+                  className={`flex flex-col items-center justify-center py-3 rounded-xl border text-center gap-1.5 transition-all ${
+                    isActive
+                      ? 'bg-[var(--emerald-bg)] border-[var(--emerald-border)] text-[var(--emerald-text)]'
+                      : 'bg-[var(--bg-primary)] border-[var(--border-color)] text-[var(--text-secondary)] hover:bg-[var(--bg-secondary)]/50 hover:text-[var(--text-primary)]'
+                  }`}
+                >
+                  {mode === 'reference' && <User size={16} />}
+                  {mode === 'many' && <Users size={16} />}
+                  {mode === 'one' && <User size={16} weight="light" />}
+                  <span className="text-[10px] font-bold capitalize">{mode}</span>
+                </button>
+              );
+            })}
           </div>
           <div className="bg-[var(--bg-primary)] rounded-xl p-3 border border-[var(--border-color)] flex items-start gap-2">
-            <Info
-              size={14}
-              className="text-[var(--text-muted)] shrink-0 mt-0.5"
-            />
+            <Info size={14} className="text-[var(--text-muted)] shrink-0 mt-0.5" />
             <p className="text-[10px] text-[var(--text-secondary)] leading-relaxed">
-              {faceSelectorMode === 'reference' &&
-                t('model.selectorModes.reference')}
+              {faceSelectorMode === 'reference' && t('model.selectorModes.reference')}
               {faceSelectorMode === 'many' && t('model.selectorModes.many')}
               {faceSelectorMode === 'one' && t('model.selectorModes.one')}
             </p>
@@ -593,21 +553,19 @@ export function ModelSettings({
               {t('model.logLevel')}
             </span>
             <div className="grid grid-cols-4 gap-1.5">
-              {(['debug', 'info', 'warning', 'error'] as LogLevel[]).map(
-                (level) => (
-                  <button
-                    key={level}
-                    onClick={() => setLogLevel(level)}
-                    className={`py-1.5 rounded-lg border text-[9px] font-bold uppercase tracking-wide transition-all ${
-                      logLevel === level
-                        ? 'bg-[var(--emerald-bg)] border-[var(--emerald-border)] text-[var(--emerald-text)]'
-                        : 'bg-[var(--bg-primary)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
-                    }`}
-                  >
-                    {level}
-                  </button>
-                ),
-              )}
+              {(['debug', 'info', 'warning', 'error'] as LogLevel[]).map((level) => (
+                <button
+                  key={level}
+                  onClick={() => setLogLevel(level)}
+                  className={`py-1.5 rounded-lg border text-[9px] font-bold uppercase tracking-wide transition-all ${
+                    logLevel === level
+                      ? 'bg-[var(--emerald-bg)] border-[var(--emerald-border)] text-[var(--emerald-text)]'
+                      : 'bg-[var(--bg-primary)] border-[var(--border-color)] text-[var(--text-muted)] hover:text-[var(--text-secondary)]'
+                  }`}
+                >
+                  {level}
+                </button>
+              ))}
             </div>
           </div>
         </div>
@@ -631,9 +589,7 @@ export function ModelSettings({
             <Sliders size={18} weight="bold" />
           </div>
           <div>
-            <h3 className="text-sm font-semibold text-[var(--text-primary)]">
-              {t('model.title')}
-            </h3>
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">{t('model.title')}</h3>
             {!isPanelOpen ? (
               <p className="text-xs text-[var(--text-muted)] mt-0.5 flex items-center gap-2">
                 <span>
@@ -645,9 +601,7 @@ export function ModelSettings({
                 <span>{activeProviders}</span>
               </p>
             ) : (
-              <p className="text-xs text-[var(--text-muted)] mt-0.5">
-                {t('model.subtitle')}
-              </p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">{t('model.subtitle')}</p>
             )}
           </div>
         </div>
@@ -701,11 +655,9 @@ export function ModelSettings({
                         }`}
                       >
                         {p === 'low' && t('model.presets.low').split(' ')[0]}
-                        {p === 'medium' &&
-                          t('model.presets.medium').split(' ')[0]}
+                        {p === 'medium' && t('model.presets.medium').split(' ')[0]}
                         {p === 'high' && t('model.presets.high').split(' ')[0]}
-                        {p === 'custom' &&
-                          t('model.presets.custom').split(' ')[0]}
+                        {p === 'custom' && t('model.presets.custom').split(' ')[0]}
                       </button>
                     );
                   })}

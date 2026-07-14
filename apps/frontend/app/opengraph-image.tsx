@@ -20,56 +20,54 @@ export default async function Image() {
   const iconSrc = `data:image/png;base64,${iconData.toString('base64')}`;
 
   return new ImageResponse(
-    (
+    <div
+      style={{
+        height: '100%',
+        width: '100%',
+        display: 'flex',
+        flexDirection: 'column',
+        alignItems: 'center',
+        justifyContent: 'center',
+        backgroundColor: '#09090b',
+        backgroundImage:
+          'radial-gradient(circle at 50% 32%, rgba(16, 185, 129, 0.22), rgba(9, 9, 11, 0) 60%)',
+        fontFamily: 'sans-serif',
+      }}
+    >
+      <img
+        src={iconSrc}
+        alt=""
+        width={168}
+        height={168}
+        style={{
+          borderRadius: 37,
+          boxShadow: '0 0 0 1px rgba(250, 250, 250, 0.08)',
+          marginBottom: 44,
+        }}
+      />
       <div
         style={{
-          height: '100%',
-          width: '100%',
           display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          backgroundColor: '#09090b',
-          backgroundImage:
-            'radial-gradient(circle at 50% 32%, rgba(16, 185, 129, 0.22), rgba(9, 9, 11, 0) 60%)',
-          fontFamily: 'sans-serif',
+          color: '#fafafa',
+          fontSize: 96,
+          fontWeight: 700,
+          letterSpacing: '-0.03em',
         }}
       >
-        <img
-          src={iconSrc}
-          alt=""
-          width={168}
-          height={168}
-          style={{
-            borderRadius: 37,
-            boxShadow: '0 0 0 1px rgba(250, 250, 250, 0.08)',
-            marginBottom: 44,
-          }}
-        />
-        <div
-          style={{
-            display: 'flex',
-            color: '#fafafa',
-            fontSize: 96,
-            fontWeight: 700,
-            letterSpacing: '-0.03em',
-          }}
-        >
-          Meme Swap
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            color: '#10b981',
-            fontSize: 44,
-            fontWeight: 600,
-            marginTop: 22,
-          }}
-        >
-          Your face. Any meme.
-        </div>
+        Meme Swap
       </div>
-    ),
-    { ...size }
+      <div
+        style={{
+          display: 'flex',
+          color: '#10b981',
+          fontSize: 44,
+          fontWeight: 600,
+          marginTop: 22,
+        }}
+      >
+        Your face. Any meme.
+      </div>
+    </div>,
+    { ...size },
   );
 }

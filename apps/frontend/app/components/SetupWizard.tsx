@@ -12,7 +12,8 @@ import {
 } from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
 
-type SetupStepId = 'system-checks' | 'clone-repo' | 'setup-venv' | 'install-deps' | 'verify-install';
+type SetupStepId =
+  'system-checks' | 'clone-repo' | 'setup-venv' | 'install-deps' | 'verify-install';
 type SetupStepStatus = 'idle' | 'active' | 'completed' | 'failed';
 
 interface ProgressEventData {
@@ -48,7 +49,8 @@ export function SetupWizard({ onComplete, diskSpace }: SetupWizardProps) {
   const { t } = useTranslation();
   const shouldReduceMotion = useReducedMotion();
 
-  const [stepStatuses, setStepStatuses] = useState<Record<SetupStepId, SetupStepStatus>>(IDLE_STATUSES);
+  const [stepStatuses, setStepStatuses] =
+    useState<Record<SetupStepId, SetupStepStatus>>(IDLE_STATUSES);
   const [percent, setPercent] = useState(0);
   const [logs, setLogs] = useState('');
   const [hasStarted, setHasStarted] = useState(false);
@@ -167,7 +169,9 @@ export function SetupWizard({ onComplete, diskSpace }: SetupWizardProps) {
           </div>
           <div>
             <h1 className="text-lg font-bold text-[var(--text-primary)]">{t('setup.title')}</h1>
-            <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">{t('setup.subtitle')}</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1 leading-relaxed">
+              {t('setup.subtitle')}
+            </p>
           </div>
         </div>
 
@@ -204,7 +208,9 @@ export function SetupWizard({ onComplete, diskSpace }: SetupWizardProps) {
                       <motion.div
                         animate={shouldReduceMotion ? {} : { rotate: 360 }}
                         transition={
-                          shouldReduceMotion ? {} : { repeat: Infinity, duration: 1, ease: 'linear' }
+                          shouldReduceMotion
+                            ? {}
+                            : { repeat: Infinity, duration: 1, ease: 'linear' }
                         }
                       >
                         <CircleNotch size={12} weight="bold" />
@@ -282,7 +288,9 @@ export function SetupWizard({ onComplete, diskSpace }: SetupWizardProps) {
               {hasFailed ? t('setup.retryButton') : t('setup.startButton')}
             </button>
           </div>
-          <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{t('setup.sizeEstimate')}</p>
+          <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+            {t('setup.sizeEstimate')}
+          </p>
           {diskSpace && !diskSpace.meetsMinimum && (
             <div className="flex items-start gap-2 p-2.5 rounded-lg bg-amber-500/10 border border-amber-500/30">
               <Warning size={14} weight="fill" className="text-amber-500 shrink-0 mt-0.5" />
@@ -291,7 +299,9 @@ export function SetupWizard({ onComplete, diskSpace }: SetupWizardProps) {
               </p>
             </div>
           )}
-          <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">{t('setup.footerNote')}</p>
+          <p className="text-[10px] text-[var(--text-muted)] leading-relaxed">
+            {t('setup.footerNote')}
+          </p>
         </div>
       </motion.div>
     </main>

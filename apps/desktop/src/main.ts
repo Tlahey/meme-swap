@@ -23,7 +23,7 @@ if (!gotTheLock) {
 
 // Enregistrer le protocole personnalisé 'app' comme privilégié avant le démarrage de l'application
 protocol.registerSchemesAsPrivileged([
-  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } }
+  { scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true } },
 ]);
 
 let mainWindow: BrowserWindow | null = null;
@@ -62,8 +62,8 @@ async function findFreePort(preferred: number, maxTries = 20): Promise<number> {
       return port;
     }
     // writeToLogFile n'est pas encore disponible ici (défini plus bas),
-    // on utilise console.log comme fallback de log bas niveau.
-    console.log(`[findFreePort] Port ${port} occupé, essai du port ${port + 1}...`);
+    // on utilise console.info comme fallback de log bas niveau.
+    console.info(`[findFreePort] Port ${port} occupé, essai du port ${port + 1}...`);
   }
   throw new Error(`Aucun port libre trouvé entre ${preferred} et ${preferred + maxTries - 1}`);
 }
@@ -114,7 +114,7 @@ function writeToLogFile(text: string) {
   const formattedText = text.endsWith('\n') ? text : `${text}\n`;
   const logMsg = `[${timestamp}] ${formattedText}`;
   fs.appendFileSync(logFilePath, logMsg);
-  
+
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('server-log', logMsg);
   }
@@ -127,7 +127,7 @@ function sendServerStatus() {
   if (mainWindow && !mainWindow.isDestroyed()) {
     mainWindow.webContents.send('server-status', {
       mcp: mcpStatus,
-      frontend: frontendStatus
+      frontend: frontendStatus,
     });
   }
 }
@@ -191,7 +191,9 @@ async function checkForUpdate(): Promise<void> {
     const currentVersion = app.getVersion();
 
     if (compareVersions(remoteVersion, currentVersion) > 0) {
-      writeToLogFile(`[UpdateCheck] Nouvelle version disponible : ${remoteVersion} (actuelle : ${currentVersion})\n`);
+      writeToLogFile(
+        `[UpdateCheck] Nouvelle version disponible : ${remoteVersion} (actuelle : ${currentVersion})\n`,
+      );
       mainWindow?.webContents.send('update-available', { version: remoteVersion, url: releaseUrl });
     }
   } catch (error) {
@@ -205,7 +207,7 @@ async function checkForUpdate(): Promise<void> {
 function waitForPort(port: number, callback: () => void) {
   let called = false;
   const interval = setInterval(() => {
-    const req = http.get(`http://127.0.0.1:${port}/`, (res) => {
+    const req = http.get(`http://127.0.0.1:${port}/`, () => {
       if (called) return;
       called = true;
       clearInterval(interval);
@@ -276,7 +278,9 @@ async function startServers() {
 
     const resolvedFrontend = await findFreePort(parseInt(frontendPort));
     if (resolvedFrontend !== parseInt(frontendPort)) {
-      writeToLogFile(`⚠️  Port Frontend ${frontendPort} occupé → utilisation du port ${resolvedFrontend}\n`);
+      writeToLogFile(
+        `⚠️  Port Frontend ${frontendPort} occupé → utilisation du port ${resolvedFrontend}\n`,
+      );
     }
     frontendPort = resolvedFrontend.toString();
   } catch (err) {
@@ -294,7 +298,7 @@ async function startServers() {
   // on injecte ELECTRON_RUN_AS_NODE=1 dans l'environnement des processus enfants.
   const nodeBin = process.execPath;
   const childEnvBase: Record<string, string> = {
-    ...process.env as Record<string, string>,
+    ...(process.env as Record<string, string>),
     ELECTRON_RUN_AS_NODE: '1',
   };
 
@@ -303,24 +307,28 @@ async function startServers() {
   const mcpPath = app.isPackaged
     ? path.join(root, 'apps', 'mcp-server', 'bundle', 'index.js')
     : path.join(root, 'apps', 'mcp-server', 'build', 'index.js');
-  
+
   if (app.isPackaged) {
     mcpProcess = fork(mcpPath, [], {
       cwd: path.join(root, 'apps', 'mcp-server', 'bundle'),
       env: { ...childEnvBase, PORT: mcpPort },
-      silent: true
+      silent: true,
     });
   } else {
     mcpProcess = spawn(nodeBin, [mcpPath], {
       cwd: path.join(root, 'apps', 'mcp-server'),
-      env: { ...childEnvBase, PORT: mcpPort }
+      env: { ...childEnvBase, PORT: mcpPort },
     });
   }
 
   mcpProcess.stdout?.on('data', (data) => {
     const text = data.toString();
     writeToLogFile(`[MCP Server] ${text}`);
-    if (text.includes('started') || text.includes('Server started') || text.includes('MCP Server started')) {
+    if (
+      text.includes('started') ||
+      text.includes('Server started') ||
+      text.includes('MCP Server started')
+    ) {
       mcpStatus = 'ready';
       sendServerStatus();
     }
@@ -345,10 +353,11 @@ async function startServers() {
   // directement au binaire Node embarqué d'Electron (qui attend du JS).
   // On utilise donc `shell: true` + `next dev` en dev.
   // En mode packagé, Next.js est un export statique servi via protocole app://.
-  const frontendDir = path.join(root, 'apps', 'frontend');
 
   if (app.isPackaged) {
-    writeToLogFile("[Next.js] Mode packagé. Chargement direct de l'IHM statique via protocole app://\n");
+    writeToLogFile(
+      "[Next.js] Mode packagé. Chargement direct de l'IHM statique via protocole app://\n",
+    );
     frontendStatus = 'ready';
     sendServerStatus();
     if (mainWindow && !mainWindow.isDestroyed()) {
@@ -356,7 +365,9 @@ async function startServers() {
     }
   } else {
     // Mode dev : on utilise le shell système pour exécuter `next dev`
-    writeToLogFile(`Démarrage du frontend Next.js sur le port ${frontendPort} (next dev, shell)...\n`);
+    writeToLogFile(
+      `Démarrage du frontend Next.js sur le port ${frontendPort} (next dev, shell)...\n`,
+    );
     // `detached: true` place le process (et ses enfants next dev) dans son propre
     // groupe de processus, ce qui permet à stopServers() de tous les tuer via
     // process.kill(-pid, ...). Sans ça, les sous-process de next dev survivent.
@@ -364,13 +375,17 @@ async function startServers() {
       cwd: root,
       shell: true,
       detached: true,
-      env: { ...process.env, PORT: frontendPort, MCP_PORT: mcpPort }
+      env: { ...process.env, PORT: frontendPort, MCP_PORT: mcpPort },
     });
 
     frontendProcess.stdout?.on('data', (data) => {
       const text = data.toString();
       writeToLogFile(`[Next.js] ${text}`);
-      if (text.includes('Ready in') || text.includes('ready - started') || text.includes('Local:')) {
+      if (
+        text.includes('Ready in') ||
+        text.includes('ready - started') ||
+        text.includes('Local:')
+      ) {
         // Nous gardons aussi la détection par logs en secours
         if (frontendStatus !== 'ready') {
           frontendStatus = 'ready';
@@ -395,10 +410,12 @@ async function startServers() {
 
     // 3. Surveiller l'ouverture du port Next.js pour charger l'IHM
     waitForPort(parseInt(frontendPort), () => {
-      writeToLogFile(`[Next.js] Le port ${frontendPort} est actif. Chargement de l'IHM dans Electron.\n`);
+      writeToLogFile(
+        `[Next.js] Le port ${frontendPort} est actif. Chargement de l'IHM dans Electron.\n`,
+      );
       frontendStatus = 'ready';
       sendServerStatus();
-      
+
       if (mainWindow && !mainWindow.isDestroyed()) {
         mainWindow.loadURL(`http://localhost:${frontendPort}`);
       }
@@ -411,19 +428,19 @@ async function startServers() {
  */
 function stopServers() {
   writeToLogFile("\n=== Arrêt des serveurs d'arrière-plan ===\n");
-  
+
   if (mcpProcess) {
-    writeToLogFile("Arrêt du serveur MCP...\n");
+    writeToLogFile('Arrêt du serveur MCP...\n');
     mcpProcess.kill('SIGTERM');
     mcpProcess = null;
   }
-  
+
   if (frontendProcess) {
-    writeToLogFile("Arrêt du frontend Next.js...\n");
+    writeToLogFile('Arrêt du frontend Next.js...\n');
     if (frontendProcess.pid) {
       try {
         process.kill(-frontendProcess.pid, 'SIGTERM');
-      } catch (e) {
+      } catch {
         frontendProcess.kill('SIGTERM');
       }
     }
@@ -431,7 +448,7 @@ function stopServers() {
   }
 
   if (faceswapProcess) {
-    writeToLogFile("Arrêt du processus FaceFusion en cours...\n");
+    writeToLogFile('Arrêt du processus FaceFusion en cours...\n');
     faceswapProcess.kill('SIGTERM');
     faceswapProcess = null;
   }
@@ -440,12 +457,10 @@ function stopServers() {
   frontendStatus = 'stopped';
 }
 
-
-
 // IPC : Écouteur pour démarrer le processus d'installation
-ipcMain.on('start-setup', async (event) => {
+ipcMain.on('start-setup', async () => {
   writeToLogFile("Démarrage de l'assistant d'installation graphique...\n");
-  
+
   const success = await runInstallation(
     (progressData) => {
       mainWindow?.webContents.send('setup-progress', progressData);
@@ -453,7 +468,7 @@ ipcMain.on('start-setup', async (event) => {
     (logText) => {
       mainWindow?.webContents.send('setup-log', logText);
       writeToLogFile(logText);
-    }
+    },
   );
 
   mainWindow?.webContents.send('setup-finished', success);
@@ -519,12 +534,12 @@ function pruneHistoryFiles(): void {
   }
   const files = fs.readdirSync(HISTORY_DIR);
   const fileInfos = files
-    .map(name => {
+    .map((name) => {
       const filePath = path.join(HISTORY_DIR, name);
       try {
         const stats = fs.statSync(filePath);
         return { name, mtime: stats.mtimeMs };
-      } catch (e) {
+      } catch {
         return null;
       }
     })
@@ -644,12 +659,12 @@ function pruneResultsFiles(): void {
   }
   const files = fs.readdirSync(RESULTS_DIR);
   const fileInfos = files
-    .map(name => {
+    .map((name) => {
       const filePath = path.join(RESULTS_DIR, name);
       try {
         const stats = fs.statSync(filePath);
         return { name, mtime: stats.mtimeMs };
-      } catch (e) {
+      } catch {
         return null;
       }
     })
@@ -680,7 +695,7 @@ function generateFileName(extension: string): string {
 ipcMain.handle('get-mcp-status', async () => {
   return {
     active: mcpStatus === 'ready',
-    port: mcpPort
+    port: mcpPort,
   };
 });
 
@@ -707,7 +722,7 @@ ipcMain.handle('is-giphy-configured', async () => {
 ipcMain.handle('search-giphy', async (event, options) => {
   const key = process.env.GIPHY_API_KEY;
   if (!key) {
-    throw new Error('GIPHY_API_KEY n\'est pas configurée dans le processus principal.');
+    throw new Error("GIPHY_API_KEY n'est pas configurée dans le processus principal.");
   }
   const { query, limit = 8, offset = 0 } = options || {};
   const url = `https://api.giphy.com/v1/gifs/search?api_key=${encodeURIComponent(key)}&q=${encodeURIComponent(query)}&limit=${limit}&offset=${offset}&rating=g`;
@@ -721,7 +736,7 @@ ipcMain.handle('search-giphy', async (event, options) => {
 ipcMain.handle('get-trending-giphy', async (event, options) => {
   const key = process.env.GIPHY_API_KEY;
   if (!key) {
-    throw new Error('GIPHY_API_KEY n\'est pas configurée dans le processus principal.');
+    throw new Error("GIPHY_API_KEY n'est pas configurée dans le processus principal.");
   }
   const { limit = 8, offset = 0 } = options || {};
   const url = `https://api.giphy.com/v1/gifs/trending?api_key=${encodeURIComponent(key)}&limit=${limit}&offset=${offset}&rating=g`;
@@ -740,16 +755,16 @@ ipcMain.handle('get-source-history', async () => {
   pruneHistoryFiles();
   const files = fs.readdirSync(HISTORY_DIR);
   const fileInfos = files
-    .map(name => {
+    .map((name) => {
       const filePath = path.join(HISTORY_DIR, name);
       try {
         const stats = fs.statSync(filePath);
         return {
           filename: name,
           url: `/api/source-history/${name}`,
-          timestamp: stats.mtimeMs
+          timestamp: stats.mtimeMs,
         };
-      } catch (e) {
+      } catch {
         return null;
       }
     })
@@ -767,16 +782,16 @@ ipcMain.handle('get-results-history', async () => {
   pruneResultsFiles();
   const files = fs.readdirSync(RESULTS_DIR);
   const fileInfos = files
-    .map(name => {
+    .map((name) => {
       const filePath = path.join(RESULTS_DIR, name);
       try {
         const stats = fs.statSync(filePath);
         return {
           filename: name,
           url: `/api/results/${name}`,
-          timestamp: stats.mtimeMs
+          timestamp: stats.mtimeMs,
         };
-      } catch (e) {
+      } catch {
         return null;
       }
     })
@@ -816,20 +831,22 @@ ipcMain.handle('save-source-face', async (event, options) => {
 
     const files = fs.readdirSync(HISTORY_DIR);
     const fileInfos = files
-      .map(name => {
+      .map((name) => {
         const filePath = path.join(HISTORY_DIR, name);
         try {
           const stats = fs.statSync(filePath);
           return {
             filename: name,
             url: `/api/source-history/${name}`,
-            timestamp: stats.mtimeMs
+            timestamp: stats.mtimeMs,
           };
-        } catch (e) {
+        } catch {
           return null;
         }
       })
-      .filter((info): info is { filename: string; url: string; timestamp: number } => info !== null);
+      .filter(
+        (info): info is { filename: string; url: string; timestamp: number } => info !== null,
+      );
 
     fileInfos.sort((a, b) => b.timestamp - a.timestamp);
     return { success: true, savedFilename: newFileName, history: fileInfos };
@@ -842,8 +859,8 @@ ipcMain.handle('save-source-face', async (event, options) => {
 
 // IPC : Lancer l'exécution du FaceSwap
 ipcMain.handle('run-faceswap', async (event, options) => {
-  writeToLogFile("\n=== Lancement du FaceSwap par IPC Electron ===\n");
-  
+  writeToLogFile('\n=== Lancement du FaceSwap par IPC Electron ===\n');
+
   try {
     ensureDirectories();
     cleanupProcessDirs();
@@ -881,7 +898,9 @@ ipcMain.handle('run-faceswap', async (event, options) => {
 
     // 1. Convertir GIF en MP4 si nécessaire
     let targetForFaceswap = targetPath;
-    const isTargetGif = (options.targetName && options.targetName.toLowerCase().endsWith('.gif')) || targetPath.toLowerCase().endsWith('.gif');
+    const isTargetGif =
+      (options.targetName && options.targetName.toLowerCase().endsWith('.gif')) ||
+      targetPath.toLowerCase().endsWith('.gif');
 
     if (isTargetGif) {
       writeToLogFile('[IPC] Conversion GIF → MP4...\n');
@@ -948,7 +967,7 @@ ipcMain.handle('run-faceswap', async (event, options) => {
     if (isTargetGif) {
       writeToLogFile('[IPC] Conversion MP4 → GIF...\n');
       const outputGifPath = path.join(RESULTS_DIR, generateFileName('gif'));
-      
+
       const mp4ToGifResult = await mp4ToGif({
         inputPath: outputMp4Path,
         outputPath: outputGifPath,
@@ -976,7 +995,6 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       outputPath: resultUrl,
       message: 'Face swap réussi',
     };
-
   } catch (error: any) {
     const errorMsg = error instanceof Error ? error.message : 'Erreur inconnue';
     const errorCode = error?.errorCode as 'missing-install' | 'broken-install' | undefined;
@@ -1013,7 +1031,8 @@ app.whenReady().then(() => {
   // Créer un fichier icône vide temporaire pour éviter une erreur de chargement
   const placeholderPath = path.join(__dirname, 'icon_placeholder.png');
   if (!fs.existsSync(placeholderPath) || fs.statSync(placeholderPath).size === 0) {
-    const base64Png = 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    const base64Png =
+      'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
     fs.writeFileSync(placeholderPath, Buffer.from(base64Png, 'base64'));
   }
 
@@ -1041,7 +1060,7 @@ app.whenReady().then(() => {
     if (pathname === '/' || pathname === '') {
       pathname = '/index.html';
     }
-    
+
     // Le dossier out est copié dans les extraResources sous apps/frontend/out
     const staticDir = path.join(root, 'apps', 'frontend', 'out');
     const filePath = path.join(staticDir, pathname);
@@ -1051,11 +1070,13 @@ app.whenReady().then(() => {
   createMainWindow();
 
   if (isInstalled() && !process.argv.includes('--force-setup')) {
-    writeToLogFile("FaceFusion est déjà installé. Démarrage des serveurs en arrière-plan.\n");
+    writeToLogFile('FaceFusion est déjà installé. Démarrage des serveurs en arrière-plan.\n');
     mainWindow?.loadFile(path.join(__dirname, 'loading.html'));
     startServers();
   } else {
-    writeToLogFile("FaceFusion n'est pas détecté ou setup forcé. Lancement de l'assistant d'installation.\n");
+    writeToLogFile(
+      "FaceFusion n'est pas détecté ou setup forcé. Lancement de l'assistant d'installation.\n",
+    );
     mainWindow?.loadFile(path.join(__dirname, 'setup.html'));
   }
 

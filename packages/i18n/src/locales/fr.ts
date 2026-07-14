@@ -25,7 +25,7 @@ export const fr = {
       "Ce n'est pas un problème de paramètres ou de média : une partie de votre installation locale (FaceFusion, Python ou FFmpeg) semble manquante ou cassée. Vérifiez votre installation ci-dessous, ou relancez la configuration pour la réparer.",
     recheckInstallButton: "Vérifier l'installation",
     recheckInstallOk:
-      'Votre installation semble correcte — il pourrait s\'agir d\'un problème temporaire. Vous pouvez réessayer le swap.',
+      "Votre installation semble correcte — il pourrait s'agir d'un problème temporaire. Vous pouvez réessayer le swap.",
     technicalDetails: 'Détails Techniques',
     tipsTitle: 'Conseils pour un meilleur rendu',
     tipsDesc:
@@ -68,13 +68,11 @@ export const fr = {
     faceEnhancerBlendDesc:
       'Mélange le visage brut et amélioré pour un aspect plus naturel. (Défaut: 80%)',
     frameEnhancer: 'Amélioration globale (Frame)',
-    frameEnhancerDesc:
-      'Améliore toute la vidéo pour accorder sa netteté avec le visage inséré.',
+    frameEnhancerDesc: 'Améliore toute la vidéo pour accorder sa netteté avec le visage inséré.',
     expressionRestorer: 'Restauration des expressions',
     expressionRestorerDesc: 'Restaure les expressions faciales et les détails.',
     faceMaskBlend: 'Face Mask Blend',
-    faceMaskBlendDesc:
-      'Lissage des bords du masque sur le visage cible. (Défaut: 80)',
+    faceMaskBlendDesc: 'Lissage des bords du masque sur le visage cible. (Défaut: 80)',
     acceleration: 'Accélération Matérielle',
     providers: {
       coreml: 'Apple Neural Engine (CoreML)',
@@ -154,8 +152,7 @@ export const fr = {
     notAvailable: 'Non disponible',
     swapped: 'Swapped',
     original: 'Original',
-    sliderTip:
-      "Faites glisser le curseur pour comparer l'original et le résultat.",
+    sliderTip: "Faites glisser le curseur pour comparer l'original et le résultat.",
     mediaOriginal: 'Média original',
     resultSwapped: 'Résultat face-swappé',
     tabOriginal: 'Original',
@@ -177,10 +174,8 @@ export const fr = {
     helpTitle: "Comment récupérer une clé d'API Giphy ?",
     helpStep1: '1. Rendez-vous sur le portail développeur Giphy :',
     helpStep2: '2. Connectez-vous ou créez un compte gratuitement.',
-    helpStep3:
-      "3. Cliquez sur 'Create an App' (Créer une application) dans le tableau de bord.",
-    helpStep4:
-      "4. Sélectionnez l'option 'API' (et non SDK) puis cliquez sur 'Next Step'.",
+    helpStep3: "3. Cliquez sur 'Create an App' (Créer une application) dans le tableau de bord.",
+    helpStep4: "4. Sélectionnez l'option 'API' (et non SDK) puis cliquez sur 'Next Step'.",
     helpStep5:
       "5. Donnez un nom à votre application (ex: 'Meme Swap') et écrivez une courte description.",
     helpStep6: "6. Cliquez sur 'Create App' pour générer votre clé d'API.",
@@ -220,22 +215,22 @@ export const fr = {
       },
       setupVenv: {
         label: 'Environnement Python',
-        desc: 'Création d\'un environnement virtuel isolé.',
+        desc: "Création d'un environnement virtuel isolé.",
       },
       installDeps: {
         label: 'Installation des dépendances',
-        desc: 'Installation d\'ONNX CoreML et des paquets Python.',
+        desc: "Installation d'ONNX CoreML et des paquets Python.",
       },
       verifyInstall: {
         label: 'Vérification finale',
-        desc: 'Exécution d\'un échange de visages test pour confirmer que CoreML/onnxruntime fonctionne.',
+        desc: "Exécution d'un échange de visages test pour confirmer que CoreML/onnxruntime fonctionne.",
       },
     },
     logsTitle: "Journal d'installation",
     waitingLogs: "En attente du démarrage de l'installation...",
     readyStatus: "Prêt à démarrer l'installation",
     runningStatus: 'Installation en cours...',
-    successStatus: 'Configuration terminée ! Chargement de l\'application...',
+    successStatus: "Configuration terminée ! Chargement de l'application...",
     failedStatus: "Échec de l'installation. Consultez les journaux ci-dessus.",
     startButton: "Démarrer l'installation",
     retryButton: 'Réessayer',
