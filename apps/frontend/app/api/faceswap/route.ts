@@ -60,29 +60,12 @@ function generateFileName(extension: string): string {
 }
 
 /**
- * Timeout wrapper pour éviter que le traitement ne bloque indéfiniment
- * (FaceFusion peut prendre 2-5 min sur Mac Silicon)
- */
-async function withTimeout<T>(ms: number, promise: Promise<T>): Promise<T> {
-  const controller = new AbortController();
-  const timeoutId = setTimeout(() => controller.abort(), ms);
-  try {
-    return await promise;
-  } finally {
-    clearTimeout(timeoutId);
-  }
-}
-
-/**
  * API Route pour effectuer un face swap
  *
  * POST /api/faceswap
  * Body: FormData avec 'source' (image) et 'target' (GIF/MP4)
  */
 export async function POST(request: NextRequest) {
-  // Timeout de 10 minutes pour le traitement FaceFusion
-  const TIMEOUT_MS = 10 * 60 * 1000;
-
   try {
     ensureDirectories();
     cleanupProcessDirs();

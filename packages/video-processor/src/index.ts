@@ -196,8 +196,12 @@ export async function mp4ToGif(
   return new Promise((resolve) => {
     const ffmpegPath = getFfmpegPath();
 
-    // Nom temporaire pour la palette
-    const tempPalette = path.join(path.dirname(outputPath), 'palette.png');
+    // Nom temporaire unique pour la palette (évite les collisions entre
+    // conversions simultanées écrivant dans le même dossier de sortie)
+    const paletteName = `palette-${Date.now()}-${Math.random()
+      .toString(36)
+      .substring(2, 8)}.png`;
+    const tempPalette = path.join(path.dirname(outputPath), paletteName);
 
     console.log(`[FFmpeg] Conversion MP4 → GIF: ${inputPath} → ${outputPath}`);
 
