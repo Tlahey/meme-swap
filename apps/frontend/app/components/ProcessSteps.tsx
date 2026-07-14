@@ -1,6 +1,6 @@
 'use client';
 
-import React from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence, useReducedMotion } from 'motion/react';
 import { CheckIcon as Check, CpuIcon as Cpu } from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
@@ -17,15 +17,89 @@ export interface Step {
   }>;
 }
 
+/** Progression fine remontée par FaceFusion pendant l'étape d'inférence (index 2). */
+export interface FaceswapProgress {
+  step: string;
+  percent: number;
+}
+
 interface ProcessStepsProps {
   steps: Step[];
   currentStepIndex: number;
-  faceswapProgress?: { step: string; percent: number } | null;
+  faceswapProgress?: FaceswapProgress | null;
+}
+
+/**
+ * FaceFusion expose une barre tqdm distincte par phase (analysing,
+ * extracting, processing, merging) : `percent` repart donc à 0 à chaque
+ * changement de `step`. On ancre le calcul d'ETA sur le début de la phase
+ * courante plutôt que sur le début de l'inférence entière, sinon
+ * l'extrapolation linéaire explose à chaque transition de phase.
+ */
+function formatRemainingTime(remainingMs: number): string | null {
+  if (!Number.isFinite(remainingMs) || remainingMs < 4000) {
+    return null;
+  }
+  const totalSeconds = Math.round(remainingMs / 1000);
+  if (totalSeconds < 60) {
+    return `${totalSeconds}s`;
+  }
+  const totalMinutes = Math.round(totalSeconds / 60);
+  return `${totalMinutes}m`;
+}
+
+/**
+ * Derives a "~Ns/~Nm remaining" label from FaceFusion's progress events.
+ * `Date.now()` and the phase-start anchor are impure/mutable, so (per the
+ * React Compiler's purity rules) that work has to live inside an Effect
+ * callback rather than directly in the component's render body — the render
+ * body only ever reads the resulting `etaLabel` state.
+ */
+function useEtaLabel(
+  currentStepIndex: number,
+  faceswapProgress: FaceswapProgress | null | undefined,
+): string | null {
+  const [etaLabel, setEtaLabel] = useState<string | null>(null);
+  const phaseAnchorRef = useRef<{ step: string; startedAt: number } | null>(null);
+
+  useEffect(() => {
+    if (currentStepIndex !== 2 || !faceswapProgress) {
+      phaseAnchorRef.current = null;
+      const timeoutId = setTimeout(() => setEtaLabel(null), 0);
+      return () => clearTimeout(timeoutId);
+    }
+
+    const { step, percent } = faceswapProgress;
+    if (!phaseAnchorRef.current || phaseAnchorRef.current.step !== step) {
+      phaseAnchorRef.current = { step, startedAt: Date.now() };
+    }
+    const startedAt = phaseAnchorRef.current.startedAt;
+
+    const timeoutId = setTimeout(() => {
+      if (percent <= 0 || percent >= 100) {
+        setEtaLabel(null);
+        return;
+      }
+      const elapsedMs = Date.now() - startedAt;
+      const remainingMs = (elapsedMs / percent) * (100 - percent);
+      setEtaLabel(formatRemainingTime(remainingMs));
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+    // Depend on the primitive fields, not the `faceswapProgress` object
+    // reference (a new object arrives on every progress tick even when
+    // step/percent are unchanged, which would otherwise re-run this
+    // effect — and reset the ETA anchor — needlessly).
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentStepIndex, faceswapProgress?.step, faceswapProgress?.percent]);
+
+  return etaLabel;
 }
 
 export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: ProcessStepsProps) {
   const shouldReduceMotion = useReducedMotion();
   const { t } = useTranslation();
+  const etaLabel = useEtaLabel(currentStepIndex, faceswapProgress);
 
   const inferencePercent = (currentStepIndex === 2 && faceswapProgress) ? faceswapProgress.percent : 0;
   const progressPercent = Math.min(
@@ -68,11 +142,15 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
           />
 
           {steps.map((step, idx) => {
-            const isCompleted =
-              step.status === 'completed' || idx < currentStepIndex;
-            const isRunning =
-              step.status === 'running' || idx === currentStepIndex;
+            // `isFailed` must win over the other two: a failed step's index
+            // still equals `currentStepIndex` (nothing advances it past a
+            // failure), so checking status ahead of the index-based fallback
+            // keeps a failed step from rendering as if it were still running.
             const isFailed = step.status === 'failed';
+            const isCompleted =
+              !isFailed && (step.status === 'completed' || idx < currentStepIndex);
+            const isRunning =
+              !isFailed && (step.status === 'running' || idx === currentStepIndex);
             const Icon = step.icon;
 
             return (
@@ -145,6 +223,11 @@ export function ProcessSteps({ steps, currentStepIndex, faceswapProgress }: Proc
                     {idx === 2 && faceswapProgress && isRunning ? (
                       <span className="font-semibold text-[var(--emerald-main)]">
                         {t(`process.progress.${faceswapProgress.step}`)} : {faceswapProgress.percent}%
+                        {etaLabel && (
+                          <span className="ml-2 font-normal text-[var(--text-muted)]">
+                            {t('process.etaRemaining', { time: etaLabel })}
+                          </span>
+                        )}
                       </span>
                     ) : (
                       step.description

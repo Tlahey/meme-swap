@@ -11,8 +11,8 @@ Backlog of ideas to triage/prioritize before implementation. No date commitment,
 
 ## Core product UX
 
-- [ ] Check/improve `ProcessSteps` to show a remaining-time estimate during the swap, not just a percentage.
-- [ ] Before/after preview as a side-by-side or slider instead of two separate previews.
+- [x] Check/improve `ProcessSteps` to show a remaining-time estimate during the swap, not just a percentage. Turned out to require wiring real progress into the web app first: `apps/frontend/app/api/faceswap/route.ts` now streams SSE progress (mirroring `apps/frontend/app/api/setup/install/route.ts`'s pattern) instead of a fake timed simulation, consumed client-side via `fetch` + manual stream reading (native `EventSource` can't carry the POST body). `ProcessSteps.tsx` derives a "~Ns/~Nm remaining" ETA from FaceFusion's real per-phase tqdm progress (the anchor resets each phase — analysing/extracting/processing/merging — since FaceFusion's percent resets to 0 at each). Desktop needed no changes (already had real progress via IPC, and the ETA logic lives in the shared component). Also fixed a pre-existing bug found while testing the error path: a failed step rendered as "still running" because nothing advanced `currentStepIndex` past a failure.
+- [x] Before/after preview as a side-by-side or slider instead of two separate previews. Already implemented (`apps/frontend/app/components/ResultDisplay.tsx` has slider/side-by-side/focus modes) — this was already in the app when this backlog was written, not something this session did.
 - [ ] Queue / batch processing: apply the same source face to multiple GIFs in a row.
 - [ ] History of generated results (not just sources) with re-download without redoing the swap.
 

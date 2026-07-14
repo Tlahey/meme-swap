@@ -136,6 +136,7 @@ export const fr = {
       processing: 'Remplacement des visages',
       merging: 'Fusion finale de la vidéo',
     },
+    etaRemaining: '~{time} restant',
   },
   result: {
     title: 'Résultat final',
