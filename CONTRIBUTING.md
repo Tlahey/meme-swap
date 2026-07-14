@@ -130,6 +130,29 @@ packages/
 
 ---
 
+## Releasing
+
+This is a maintainer-only process (requires push access to `main` and tags). It's two separate steps — nothing here happens automatically end-to-end, and each step that has a real-world effect (making a tag public, publishing a release) requires a deliberate action.
+
+1. **Bump the version, locally**: from `main`, with a clean working tree, run:
+   ```bash
+   pnpm release 0.3.0
+   ```
+   This runs [`scripts/prepare-release.mjs`](./scripts/prepare-release.mjs), which bumps every workspace `package.json` to `0.3.0`, runs `pnpm install` to keep the lockfile in sync, and creates a `chore: bump version to 0.3.0` commit plus an annotated `v0.3.0` tag on that exact commit — all locally, nothing pushed yet. It refuses to run on a dirty tree, off `main`, or if the tag already exists.
+
+2. **Review, then push**:
+   ```bash
+   git show          # sanity-check the version-bump commit
+   git push origin main v0.3.0
+   ```
+   Pushing the tag triggers [`.github/workflows/release.yml`](./.github/workflows/release.yml) on GitHub Actions: it checks out that exact commit, runs `pnpm desktop:package` on a pinned Apple-Silicon runner to build the `.dmg`, and opens a **draft** GitHub Release with the `.dmg` attached and auto-generated release notes. The CI does **not** run `pnpm release` and does **not** bump any versions — it only reacts to a tag that already exists.
+
+3. **Publish**: review the draft release on GitHub (edit the notes if needed, confirm the `.dmg` is attached) and click **Publish** yourself. It stays invisible to the public until this step.
+
+Note: the `.dmg` version baked into the app (`app.getVersion()`, also what the desktop app's update-check banner compares against release tags) comes from `apps/desktop/package.json` specifically, not from the tag string — this is exactly why step 1 exists, so the tag and the `package.json` versions can never drift apart.
+
+---
+
 ## Reporting Issues
 
 Please open a GitHub issue with:
