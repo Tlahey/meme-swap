@@ -1,4 +1,4 @@
-import { spawn, SpawnOptions } from 'node:child_process';
+import { spawn, SpawnOptions, ChildProcess } from 'node:child_process';
 import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
@@ -39,6 +39,8 @@ export interface FaceswapOptions {
   expressionRestorerModel?: string;
   /** Callback triggered when a progress update is parsed from stdout/stderr */
   onProgress?: (progress: { step: string; percent: number }) => void;
+  /** Callback triggered with the spawned child process, so the caller can track/kill it (e.g. on app quit) */
+  onProcessStart?: (process: ChildProcess) => void;
 }
 
 /**
@@ -288,6 +290,8 @@ export async function runFaceSwap(
         PATH: `${binDir}:${process.env.PATH || '/usr/bin:/bin:/usr/sbin:/sbin'}`,
       },
     });
+
+    options.onProcessStart?.(childProcess);
 
     let stdout = '';
     let stderr = '';

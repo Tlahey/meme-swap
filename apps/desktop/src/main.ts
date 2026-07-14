@@ -29,6 +29,7 @@ let mainWindow: BrowserWindow | null = null;
 
 let mcpProcess: ChildProcess | null = null;
 let frontendProcess: ChildProcess | null = null;
+let faceswapProcess: ChildProcess | null = null;
 
 // Ces ports sont résolus dynamiquement au démarrage (voir findFreePort)
 let frontendPort: string = process.env.MEME_SWAP_PORT || process.env.PORT || '3010';
@@ -360,7 +361,13 @@ function stopServers() {
     }
     frontendProcess = null;
   }
-  
+
+  if (faceswapProcess) {
+    writeToLogFile("Arrêt du processus FaceFusion en cours...\n");
+    faceswapProcess.kill('SIGTERM');
+    faceswapProcess = null;
+  }
+
   mcpStatus = 'stopped';
   frontendStatus = 'stopped';
 }
@@ -686,7 +693,12 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       onProgress: (progress) => {
         event.sender.send('faceswap-progress', progress);
       },
+      onProcessStart: (proc) => {
+        faceswapProcess = proc;
+      },
     });
+
+    faceswapProcess = null;
 
     if (!faceswapResult.success) {
       throw new Error(`Face swap échoué: ${faceswapResult.error}`);
