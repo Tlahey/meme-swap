@@ -1,26 +1,26 @@
-# Images de Test
+# Test Images
 
-Ce dossier contient les images de test pour l'application Meme Swap.
+This folder contains test images for the Meme Swap application.
 
-## Fichiers requis
+## Required files
 
-Pour tester le face swap, placez les fichiers suivants dans ce dossier :
+To test face swapping, place the following files in this folder:
 
-1. **source.jpg** - L'image du visage à transférer (format JPEG ou PNG)
-2. **target.gif** - Le GIF cible où le visage sera remplacé
+1. **source.jpg** - The face image to transfer (JPEG or PNG format)
+2. **target.gif** - The target GIF where the face will be replaced
 
-## Exemple d'utilisation
+## Usage example
 
-Une fois les fichiers placés ici, vous pouvez les utiliser pour tester l'application en lançant :
+Once the files are placed here, you can use them to test the application by running:
 
 ```bash
 pnpm frontend:dev
 ```
 
-Puis accédez à `http://localhost:3000` dans votre navigateur.
+Then go to `http://localhost:3000` in your browser.
 
 ## Notes
 
-- Les images doivent être de bonne qualité pour un meilleur résultat
-- Le visage source doit être clairement visible et face à la caméra
-- Les GIFs courts fonctionnent mieux pour le test
+- Images should be good quality for the best result
+- The source face should be clearly visible and facing the camera
+- Short GIFs work best for testing

@@ -1,71 +1,73 @@
-# ADR 0001: Choix d'architecture pour la portabilité de FaceFusion et du serveur MCP sur macOS
+# ADR 0001: Architecture choice for FaceFusion and MCP server portability on macOS
 
-* **Statut** : Proposé
-* **Auteur** : Antigravity (AI Agent)
-* **Date** : 2026-06-22
-* **Décision demandée par** : USER (Antoine)
+* **Status**: Accepted (core decision: no Docker, Electron desktop app)
+* **Author**: Antigravity (AI Agent)
+* **Date**: 2026-06-22
+* **Decision requested by**: USER (Antoine)
 
----
-
-## 1. Contexte et Problématique
-
-L'application **meme-swap** utilise le moteur Python **FaceFusion** (dossier utilisateur `~/.meme-swap/facefusion`) pour effectuer du faceswap haute performance. Pour fonctionner sur macOS, elle nécessite :
-1. **Python 3.11** avec les dépendances spécifiées dans `requirements.txt`.
-2. Le binaire d'exécution ONNX adapté à l'architecture Apple Silicon (`onnxruntime-silicon`).
-3. **FFmpeg** installé sur le système hôte pour les conversions GIF ↔ MP4.
-4. Le serveur MCP (`apps/mcp-server`) exécuté via Node.js pour exposer les outils de faceswap.
-
-### Nouveaux pré-requis de l'utilisateur :
-* **Visibilité en temps réel** : Pouvoir suivre l'état d'exécution de l'application (serveur MCP et frontend) à tout moment.
-* **Non-pollution active** : Lancer l'application facilement, mais s'assurer que lorsqu'on la quitte, tous les processus d'arrière-plan (Node.js, Express, FaceFusion) s'éteignent proprement sans laisser de processus fantômes ou orphelins.
-* **Packaging unifié et léger** : Distribuer l'ensemble sous la forme d'un bundle d'application macOS unique (`.app`) léger pour simplifier le déploiement sur d'autres Macs.
+> **Update note (2026-06-23)**: the "Electron instead of Docker" choice described below was indeed implemented and remains accurate — `apps/desktop` is the Electron application. However, the "menu bar icon (tray icon)" UI detail described in Option 3 was later removed (commit `7f67713`, "feat(desktop): remove tray icon and quit app on window close"): closing the window now quits the application, with no tray icon. See `apps/desktop/src/main.ts`.
 
 ---
 
-## 2. Options de Solution Envisagées
+## 1. Context and Problem Statement
 
-### Option 1 : Service macOS Natif (Launch Agent) + Installateur Automatisé
-* **Description** : Un script shell automatise l'installation système. Le serveur MCP tourne via un Launch Agent (`plist`) en tâche de fond au démarrage du système.
-* **Limites par rapport aux nouveaux besoins** :
-  * Difficile de suivre l'état en temps réel sans ouvrir un terminal pour lire les logs.
-  * Pas de notion d'arrêt propre en "quittant" une application graphique (il faut lancer des commandes en terminal comme `pnpm run service:stop`).
-  * Les composants ne sont pas packagés dans un bundle `.app` unique.
+The **meme-swap** application uses the Python engine **FaceFusion** (user folder `~/.meme-swap/facefusion`) to perform high-performance face swapping. To run on macOS, it requires:
+1. **Python 3.11** with the dependencies specified in `requirements.txt`.
+2. The ONNX runtime binary suited to the Apple Silicon architecture (`onnxruntime-silicon`).
+3. **FFmpeg** installed on the host system for GIF ↔ MP4 conversions.
+4. The MCP server (`apps/mcp-server`) running via Node.js to expose the faceswap tools.
 
-### Option 2 : Docker-Compose avec Démarrage Automatique (CPU Uniquement)
-* **Description** : Exécution via Docker avec redémarrage automatique.
-* **Limites par rapport aux nouveaux besoins** :
-  * Pas d'accélération CoreML (CPU uniquement, 10x à 20x plus lent).
-  * L'utilisateur doit lancer et gérer Docker Desktop.
-  * Pas d'interface de contrôle intégrée dans la barre des menus macOS.
-
-### Option 3 : Application Menu Bar native macOS (via Electron ou Tauri) - RECOMMANDÉE
-* **Description** : Créer une application de bureau légère qui s'installe dans la **Barre des Menus (Tray Icon)** de macOS et supervise en tâche de fond le serveur MCP et le frontend Next.js sur un port unique (port 3010, avec le protocole MCP accessible sur `/mcp`).
-* **Avantages généraux** :
-  * Parfaite visibilité du statut en temps réel (icône dans la barre des menus).
-  * Zéro pollution : quand on ferme l'appli, tous les serveurs s'arrêtent.
-  * Utilise l'accélération matérielle macOS native (CoreML).
-  * Package final sous forme de fichier `.app`.
+### New user requirements:
+* **Real-time visibility**: Be able to monitor the application's running state (MCP server and frontend) at any time.
+* **No lingering processes**: Launch the application easily, but ensure that when it's quit, all background processes (Node.js, Express, FaceFusion) shut down cleanly without leaving ghost or orphaned processes.
+* **Unified, lightweight packaging**: Distribute the whole thing as a single, lightweight macOS application bundle (`.app`) to simplify deployment to other Macs.
 
 ---
 
-## 3. Comparatif Technique : Electron vs Tauri pour le Superviseur
+## 2. Solution Options Considered
 
-| Critère | Electron | Tauri |
+### Option 1: Native macOS Service (Launch Agent) + Automated Installer
+* **Description**: A shell script automates the system installation. The MCP server runs via a Launch Agent (`plist`) as a background task at system startup.
+* **Limits relative to the new requirements**:
+  * Hard to monitor the state in real time without opening a terminal to read the logs.
+  * No notion of cleanly stopping via "quitting" a graphical application (you have to run terminal commands like `pnpm run service:stop`).
+  * The components are not packaged into a single `.app` bundle.
+
+### Option 2: Docker Compose with Automatic Startup (CPU Only)
+* **Description**: Runs via Docker with automatic restart.
+* **Limits relative to the new requirements**:
+  * No CoreML acceleration (CPU only, 10x to 20x slower).
+  * The user has to launch and manage Docker Desktop.
+  * No control interface integrated into the macOS menu bar.
+
+### Option 3: Native macOS Menu Bar Application (via Electron or Tauri) — RECOMMENDED
+* **Description**: Build a lightweight desktop application that installs itself in the macOS **Menu Bar (Tray Icon)** and supervises the MCP server and the Next.js frontend in the background on a single port (port 3010, with the MCP protocol available at `/mcp`).
+* **General advantages**:
+  * Perfect real-time status visibility (menu bar icon).
+  * Zero lingering processes: closing the app stops all servers.
+  * Uses native macOS hardware acceleration (CoreML).
+  * Final package as a `.app` file.
+
+---
+
+## 3. Technical Comparison: Electron vs Tauri for the Supervisor
+
+| Criterion | Electron | Tauri |
 | :--- | :--- | :--- |
-| **Taille du bundle (.app)** | 🐌 **Lourd** (~120 - 150 Mo)<br>Embarque Chromium et Node.js. | ⚡ **Très léger** (~10 - 20 Mo)<br>Utilise le moteur WebKit (Safari) de macOS. |
-| **Complexité de développement**| 🟢 **Simple**<br>Backend en JavaScript/Node.js.<br>Intégration directe des processus Node (MCP & Next.js). | 🟡 **Moyenne/Élevée**<br>Backend en **Rust**.<br>Nécessite d'écrire l'orchestration en Rust. |
-| **Dépendances de build** | 🟢 **Node.js uniquement**<br>Rien à installer de plus sur le Mac de build. | 🔴 **Rust & Cargo requis**<br>Nécessite d'avoir la toolchain Rust installée pour compiler. |
-| **Gestion de Node.js** | 🟢 **Natif**<br>Electron intègre Node.js, ce qui permet de lancer le serveur MCP sans pré-requis système Node. | 🟡 **Externe**<br>Tauri a besoin de Node.js sur le système hôte pour lancer le serveur MCP / Next.js. |
-| **Impact si Python est inclus** | ⚪ **Négligeable**<br>Si le dossier Python de 4 Go est inclus dans l'app, le total fait ~4.15 Go. | ⚪ **Négligeable**<br>Si le dossier Python de 4 Go est inclus dans l'app, le total fait ~4.02 Go. |
+| **Bundle size (.app)** | 🐌 **Heavy** (~120–150 MB)<br>Bundles Chromium and Node.js. | ⚡ **Very lightweight** (~10–20 MB)<br>Uses macOS's WebKit (Safari) engine. |
+| **Development complexity** | 🟢 **Simple**<br>Backend in JavaScript/Node.js.<br>Direct integration of Node processes (MCP & Next.js). | 🟡 **Medium/High**<br>Backend in **Rust**.<br>Requires writing the orchestration in Rust. |
+| **Build dependencies** | 🟢 **Node.js only**<br>Nothing extra to install on the build Mac. | 🔴 **Rust & Cargo required**<br>Requires the Rust toolchain installed to compile. |
+| **Node.js handling** | 🟢 **Native**<br>Electron bundles Node.js, allowing the MCP server to launch with no system Node prerequisite. | 🟡 **External**<br>Tauri needs Node.js on the host system to launch the MCP server / Next.js. |
+| **Impact if Python is included** | ⚪ **Negligible**<br>If the 4 GB Python folder is included in the app, the total comes to ~4.15 GB. | ⚪ **Negligible**<br>If the 4 GB Python folder is included in the app, the total comes to ~4.02 GB. |
 
-### Analyse
-* Si l'objectif principal est d'obtenir le **bundle le plus léger possible** (sans embarquer Chromium et Node.js), **Tauri** est le meilleur choix (gain de ~130 Mo). Cependant, cela oblige à installer la toolchain Rust pour compiler et complexifie l'orchestration des scripts de démarrage qui devront être gérés en Rust.
-* Si l'objectif est la **simplicité d'intégration** (100% JS/TS dans le monorepo, sans dépendance à Rust), **Electron** est le choix naturel et robuste pour orchestrer des sous-processus Node (Next.js, serveur MCP).
+### Analysis
+* If the main goal is the **lightest possible bundle** (without bundling Chromium and Node.js), **Tauri** is the better choice (~130 MB saved). However, this requires installing the Rust toolchain to compile and adds complexity to orchestrating the startup scripts, which would need to be handled in Rust.
+* If the goal is **integration simplicity** (100% JS/TS within the monorepo, no dependency on Rust), **Electron** is the natural, robust choice for orchestrating Node subprocesses (Next.js, MCP server).
 
 ---
 
-## 4. Décision Proposée
+## 4. Proposed Decision
 
-Nous recommandons **l'Option 3 (Application Menu Bar via Electron)** pour sa simplicité et sa robustesse d'intégration avec le serveur MCP et Next.js, tous deux écrits en JavaScript/TypeScript.
+We recommend **Option 3 (Menu Bar Application via Electron)** for its simplicity and robust integration with the MCP server and Next.js, both written in JavaScript/TypeScript.
 
-*Cependant, si l'utilisateur insiste sur l'importance cruciale de la taille du bundle (~15 Mo vs ~150 Mo), nous pouvons partir sur **Tauri** en écrivant le code d'orchestration en Rust.*
+*However, if the user considers bundle size critically important (~15 MB vs ~150 MB), we can go with **Tauri** and write the orchestration code in Rust.*

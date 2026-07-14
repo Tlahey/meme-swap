@@ -70,7 +70,7 @@ pnpm frontend:dev
 
 Opens on **http://localhost:3010**.
 
-The frontend is a Next.js 14 App Router application. Hot-reload is enabled. Changes to `apps/frontend/app/` are reflected immediately.
+The frontend is a Next.js 16 App Router application. Hot-reload is enabled. Changes to `apps/frontend/app/` are reflected immediately.
 
 > If you change code in `packages/faceswap-core` or `packages/video-processor`, rebuild them first:
 > ```bash
@@ -167,7 +167,7 @@ All variables are optional unless marked **required**.
 
 | Variable | Default | Description |
 |---|---|---|
-| `GIPHY_API_KEY` | — | Giphy API key (for `@meme-swap/api-client`, not yet active) |
+| `GIPHY_API_KEY` | — | Giphy API key for `@meme-swap/api-client`'s GIF search/trending; falls back to a curated GIF list if unset |
 | `FACEFUSION_EXECUTION_PROVIDERS` | `coreml,cpu` | Comma-separated list of providers: `coreml`, `cpu`, `cuda` |
 | `FACEFUSION_THREAD_COUNT` | auto | Number of parallel threads for FaceFusion |
 | `PORT` | `3010` | Port for the web frontend dev server |

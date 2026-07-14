@@ -117,14 +117,14 @@ See [docs/architecture.md](./docs/architecture.md) for the full system diagram a
 
 ```
 apps/
-├── frontend/         → Next.js 14 web app
+├── frontend/         → Next.js 16 web app
 ├── desktop/          → Electron desktop app
 └── mcp-server/       → MCP server
 
 packages/
 ├── faceswap-core/    → FaceFusion Python wrapper
 ├── video-processor/  → FFmpeg wrapper
-├── api-client/       → Giphy API client (placeholder)
+├── api-client/       → Giphy API client (search + trending)
 └── i18n/             → Shared translations
 ```
 
