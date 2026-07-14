@@ -1,0 +1,58 @@
+name: Cut Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: 'Version to release (e.g. 0.3.0)'
+        required: true
+
+permissions:
+  contents: write
+
+jobs:
+  bump-tag-and-release:
+    runs-on: macos-15
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          ref: main
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'pnpm'
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+      # Bumps every workspace package.json, commits, and tags locally —
+      # see scripts/prepare-release.mjs for the single source of truth.
+      - name: Bump version, commit, and tag
+        run: node scripts/prepare-release.mjs "${{ inputs.version }}"
+
+      # Pushed with GITHUB_TOKEN, so this deliberately does NOT cascade into
+      # release.yml's `push: tags` trigger (GitHub blocks that to prevent
+      # workflow loops) — the remaining steps below do that job inline instead.
+      - name: Push commit and tag
+        run: git push origin main "v${{ inputs.version }}"
+
+      - name: Build and package desktop app
+        run: pnpm desktop:package
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: false
+
+      - name: Create draft release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ inputs.version }}
+          draft: true
+          generate_release_notes: true
+          files: apps/desktop/dist/*.dmg
