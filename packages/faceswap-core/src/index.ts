@@ -235,13 +235,13 @@ function buildArgs(options: FaceswapOptions): string[] {
  * ```typescript
  * const result = await runFaceSwap({
  *   sourcePath: './test-images/source.jpg',
- *   targetPath: './.process/temp/target.mp4',
- *   outputPath: './.process/results/output.mp4',
+ *   targetPath: '~/.meme-swap/process/temp/target.mp4',
+ *   outputPath: '~/.meme-swap/process/results/output.mp4',
  *   executionProviders: ['coreml', 'cpu']
  * });
  *
  * if (result.success) {
- *   console.log('Face swap réussi:', result.outputPath);
+ *   console.info('Face swap réussi:', result.outputPath);
  * }
  * ```
  */
@@ -328,15 +328,17 @@ export async function runFaceSwap(options: FaceswapOptions): Promise<FaceswapRes
     // Gestion des erreurs de spawn. pythonPath a déjà été validé plus haut ;
     // un ENOENT ici signifierait une suppression concurrente du binaire entre
     // la vérification et le spawn — rare, mais on le classe quand même comme
-    // 'missing-install' plutôt que comme une erreur générique.
+    // 'missing-install' plutôt que comme une erreur générique. Toute autre
+    // erreur de spawn (permissions, binaire corrompu, etc.) indique une
+    // installation présente mais cassée : 'broken-install'.
     childProcess.on('error', (err: Error) => {
       const isMissingBinary = err.message.includes('ENOENT');
       resolve({
         success: false,
         error: isMissingBinary
           ? `FaceFusion's Python environment appears to have disappeared (${err.message}). Run the setup wizard again to (re)install FaceFusion.`
-          : `Failed to launch FaceFusion: ${err.message}`,
-        errorCode: isMissingBinary ? 'missing-install' : undefined,
+          : `Failed to launch FaceFusion (installation may be broken): ${err.message}. Run the setup wizard again to reinstall FaceFusion.`,
+        errorCode: isMissingBinary ? 'missing-install' : 'broken-install',
       });
     });
   });
