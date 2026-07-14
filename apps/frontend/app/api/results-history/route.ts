@@ -6,9 +6,9 @@ import os from 'node:os';
 const RESULTS_DIR = path.join(os.homedir(), '.meme-swap', 'process', 'results');
 
 /**
- * Doit rester cohérent avec RESULTS_HISTORY_LIMIT dans app/api/faceswap/route.ts
- * (la purge y est déclenchée après chaque swap réussi ; celle-ci n'est qu'un
- * filet de sécurité si des fichiers s'accumulent en dehors de ce flux).
+ * Must stay in sync with RESULTS_HISTORY_LIMIT in app/api/faceswap/route.ts
+ * (the prune there runs after every successful swap; this one is just a
+ * safety net in case files pile up outside that flow).
  */
 const RESULTS_HISTORY_LIMIT = 20;
 
@@ -80,6 +80,30 @@ export async function GET() {
     return NextResponse.json({ success: true, history });
   } catch (error) {
     console.error('[API Results History] GET Error:', error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' },
+      { status: 500 },
+    );
+  }
+}
+
+/**
+ * Clears the entire results history (DELETE /api/results-history)
+ */
+export async function DELETE() {
+  try {
+    ensureResultsDirectory();
+    const files = fs.readdirSync(RESULTS_DIR);
+    for (const name of files) {
+      try {
+        fs.unlinkSync(path.join(RESULTS_DIR, name));
+      } catch (error) {
+        console.error(`[API Results History] Failed to delete result file: ${name}`, error);
+      }
+    }
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error('[API Results History] DELETE Error:', error);
     return NextResponse.json(
       { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' },
       { status: 500 },

@@ -3,31 +3,28 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 
-// Configuration des chemins
+// Path configuration
 const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
 const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
 
 /**
- * Serve les fichiers de résultat (GET /api/results/:fileName)
+ * Resolves and validates a result file's path from its name.
+ * Returns the absolute path, or an error NextResponse if the name is
+ * missing/invalid, attempts a path traversal, or the file doesn't exist.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ fileName: string }> },
-) {
-  const { fileName } = await params;
-
+function resolveResultFilePath(fileName: string | undefined): string | NextResponse {
   if (!fileName) {
     return NextResponse.json({ error: 'Nom de fichier manquant' }, { status: 404 });
   }
 
-  // Protection contre le path traversal : interdire les caractères de navigation
+  // Path traversal protection: forbid navigation characters
   if (fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) {
     return NextResponse.json({ error: 'Nom de fichier invalide' }, { status: 400 });
   }
 
   const filePath = path.join(RESULTS_DIR, fileName);
 
-  // Vérification supplémentaire : le chemin résolu doit rester dans RESULTS_DIR
+  // Extra check: the resolved path must stay inside RESULTS_DIR
   const resolvedPath = path.resolve(filePath);
   if (!resolvedPath.startsWith(path.resolve(RESULTS_DIR))) {
     return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
@@ -37,7 +34,24 @@ export async function GET(
     return NextResponse.json({ error: 'Fichier non trouvé' }, { status: 404 });
   }
 
-  // Déterminer le type MIME
+  return filePath;
+}
+
+/**
+ * Serves result files (GET /api/results/:fileName)
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ fileName: string }> },
+) {
+  const { fileName } = await params;
+
+  const filePath = resolveResultFilePath(fileName);
+  if (filePath instanceof NextResponse) {
+    return filePath;
+  }
+
+  // Determine the MIME type
   const ext = path.extname(fileName).toLowerCase();
   const mimeTypes: Record<string, string> = {
     '.gif': 'image/gif',
@@ -55,4 +69,30 @@ export async function GET(
       'Cache-Control': 'public, max-age=31536000',
     },
   });
+}
+
+/**
+ * Deletes a result file (DELETE /api/results/:fileName)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ fileName: string }> },
+) {
+  const { fileName } = await params;
+
+  const filePath = resolveResultFilePath(fileName);
+  if (filePath instanceof NextResponse) {
+    return filePath;
+  }
+
+  try {
+    fs.unlinkSync(filePath);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(`[API Results] Failed to delete result file: ${fileName}`, error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' },
+      { status: 500 },
+    );
+  }
 }

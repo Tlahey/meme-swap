@@ -164,6 +164,9 @@ export const en = {
     subtitle: 'Your recent swaps, ready to re-download anytime.',
     empty: 'No generated results yet.',
     downloadTitle: 'Download this result',
+    deleteTitle: 'Delete this result',
+    clearAll: 'Clear all',
+    clearAllConfirm: 'Delete all results history? This cannot be undone.',
   },
   settings: {
     title: 'Application Settings',
