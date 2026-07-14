@@ -1,13 +1,33 @@
+import type { ServerResponse } from 'node:http';
 import express, { Request, Response } from 'express';
 import { Server as MCPServer } from '@modelcontextprotocol/sdk/server/index.js';
 import { SSEServerTransport } from '@modelcontextprotocol/sdk/server/sse.js';
 import { StdioServerTransport } from '@modelcontextprotocol/sdk/server/stdio.js';
-import { CallToolRequestSchema, ListToolsRequestSchema } from '@modelcontextprotocol/sdk/types.js';
+import type { Transport } from '@modelcontextprotocol/sdk/shared/transport.js';
+import {
+  CallToolRequestSchema,
+  ListToolsRequestSchema,
+  type JSONRPCMessage,
+} from '@modelcontextprotocol/sdk/types.js';
 import { runFaceswapTool } from './tools/faceswap.js';
+
+// SSEServerTransport (sse.d.ts) declares `res`, `_endpoint`, `_sessionId`,
+// and `_sseResponse` as TypeScript-private fields (not JS `#private`), so
+// they're ordinary properties at runtime but inaccessible to a subclass
+// through the compiler. This interface names exactly the fields/callback
+// that start()'s override below reads and writes, matching those private
+// declarations, so the reach-in below is scoped rather than a blanket `any`.
+interface SSEServerTransportInternals {
+  res: ServerResponse;
+  _sseResponse?: ServerResponse;
+  _endpoint: string;
+  _sessionId: string;
+  onclose?: () => void;
+}
 
 class AbsoluteSSEServerTransport extends SSEServerTransport {
   override async start(): Promise<void> {
-    const self = this as any;
+    const self = this as unknown as SSEServerTransportInternals;
     if (self._sseResponse) {
       throw new Error('SSEServerTransport already started!');
     }
@@ -210,7 +230,7 @@ export class Server {
       return new Promise<void>((resolve) => {
         let resolved = false;
 
-        const transport: any = {
+        const transport: Transport = {
           onclose: undefined,
           onerror: (err: Error) => {
             if (!resolved) {
@@ -221,7 +241,7 @@ export class Server {
           },
           onmessage: undefined,
           start: async () => {},
-          send: async (message: any) => {
+          send: async (message: JSONRPCMessage) => {
             if (!resolved) {
               resolved = true;
               res.json(message);

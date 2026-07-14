@@ -41,6 +41,17 @@ export interface GiphySearchResponse {
   };
 }
 
+// Minimal shape of the `window.electronAPI` bridge this file depends on.
+// The real bridge (apps/desktop/src/preload.ts, exposed via
+// contextBridge.exposeInMainWorld) has a much larger surface, but
+// packages/* cannot import types from apps/* (that would invert the
+// dependency graph), so this describes only the two methods actually
+// called below, matching their signatures in preload.ts.
+interface ElectronGiphyBridge {
+  searchGiphy?: (options: GiphySearchOptions) => Promise<GiphySearchResponse>;
+  getTrendingGiphy?: (options: GiphyTrendingOptions) => Promise<GiphySearchResponse>;
+}
+
 // Pre-curated high-quality, swap-friendly GIFs to fall back to
 export const CURATED_FALLBACK_GIFS: GiphyGif[] = [
   {
@@ -317,7 +328,7 @@ class GiphyClient {
       }
 
       // Check if running in Electron
-      const electronAPI = (window as any).electronAPI;
+      const electronAPI = (window as unknown as { electronAPI?: ElectronGiphyBridge }).electronAPI;
       if (electronAPI && typeof electronAPI.searchGiphy === 'function') {
         try {
           return await electronAPI.searchGiphy(options);
@@ -371,7 +382,7 @@ class GiphyClient {
       }
 
       // Electron context
-      const electronAPI = (window as any).electronAPI;
+      const electronAPI = (window as unknown as { electronAPI?: ElectronGiphyBridge }).electronAPI;
       if (electronAPI && typeof electronAPI.getTrendingGiphy === 'function') {
         try {
           return await electronAPI.getTrendingGiphy(options);
