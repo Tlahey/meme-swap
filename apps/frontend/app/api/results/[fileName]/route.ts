@@ -3,28 +3,28 @@ import path from 'node:path';
 import fs from 'node:fs';
 import os from 'node:os';
 
-// Configuration des chemins
+// Path configuration
 const PROCESS_DIR = path.join(os.homedir(), '.meme-swap', 'process');
 const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
 
 /**
- * Résout et valide le chemin d'un fichier de résultat à partir de son nom.
- * Retourne le chemin absolu, ou une NextResponse d'erreur si le nom est
- * manquant/invalide, tente un path traversal, ou que le fichier n'existe pas.
+ * Resolves and validates a result file's path from its name.
+ * Returns the absolute path, or an error NextResponse if the name is
+ * missing/invalid, attempts a path traversal, or the file doesn't exist.
  */
 function resolveResultFilePath(fileName: string | undefined): string | NextResponse {
   if (!fileName) {
     return NextResponse.json({ error: 'Nom de fichier manquant' }, { status: 404 });
   }
 
-  // Protection contre le path traversal : interdire les caractères de navigation
+  // Path traversal protection: forbid navigation characters
   if (fileName.includes('/') || fileName.includes('\\') || fileName.includes('..')) {
     return NextResponse.json({ error: 'Nom de fichier invalide' }, { status: 400 });
   }
 
   const filePath = path.join(RESULTS_DIR, fileName);
 
-  // Vérification supplémentaire : le chemin résolu doit rester dans RESULTS_DIR
+  // Extra check: the resolved path must stay inside RESULTS_DIR
   const resolvedPath = path.resolve(filePath);
   if (!resolvedPath.startsWith(path.resolve(RESULTS_DIR))) {
     return NextResponse.json({ error: 'Accès non autorisé' }, { status: 403 });
@@ -38,7 +38,7 @@ function resolveResultFilePath(fileName: string | undefined): string | NextRespo
 }
 
 /**
- * Serve les fichiers de résultat (GET /api/results/:fileName)
+ * Serves result files (GET /api/results/:fileName)
  */
 export async function GET(
   request: NextRequest,
@@ -51,7 +51,7 @@ export async function GET(
     return filePath;
   }
 
-  // Déterminer le type MIME
+  // Determine the MIME type
   const ext = path.extname(fileName).toLowerCase();
   const mimeTypes: Record<string, string> = {
     '.gif': 'image/gif',
@@ -72,7 +72,7 @@ export async function GET(
 }
 
 /**
- * Supprime un fichier de résultat (DELETE /api/results/:fileName)
+ * Deletes a result file (DELETE /api/results/:fileName)
  */
 export async function DELETE(
   request: NextRequest,

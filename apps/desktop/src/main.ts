@@ -801,7 +801,7 @@ ipcMain.handle('get-results-history', async () => {
   return { success: true, history: fileInfos };
 });
 
-// IPC : Supprimer un résultat de l'historique
+// IPC: Delete a result from history
 ipcMain.handle('delete-result', async (event, filename: string) => {
   try {
     if (
@@ -831,7 +831,7 @@ ipcMain.handle('delete-result', async (event, filename: string) => {
   }
 });
 
-// IPC : Vider entièrement l'historique des résultats
+// IPC: Clear the entire results history
 ipcMain.handle('clear-results-history', async () => {
   try {
     if (!fs.existsSync(RESULTS_DIR)) {

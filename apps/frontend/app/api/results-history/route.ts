@@ -6,9 +6,9 @@ import os from 'node:os';
 const RESULTS_DIR = path.join(os.homedir(), '.meme-swap', 'process', 'results');
 
 /**
- * Doit rester cohérent avec RESULTS_HISTORY_LIMIT dans app/api/faceswap/route.ts
- * (la purge y est déclenchée après chaque swap réussi ; celle-ci n'est qu'un
- * filet de sécurité si des fichiers s'accumulent en dehors de ce flux).
+ * Must stay in sync with RESULTS_HISTORY_LIMIT in app/api/faceswap/route.ts
+ * (the prune there runs after every successful swap; this one is just a
+ * safety net in case files pile up outside that flow).
  */
 const RESULTS_HISTORY_LIMIT = 20;
 
@@ -88,7 +88,7 @@ export async function GET() {
 }
 
 /**
- * Vide entièrement l'historique des résultats (DELETE /api/results-history)
+ * Clears the entire results history (DELETE /api/results-history)
  */
 export async function DELETE() {
   try {
