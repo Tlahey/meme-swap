@@ -33,10 +33,10 @@ export function UpdateBanner() {
 
   useEffect(() => {
     if (typeof window === 'undefined') return;
-    const electronAPI = (window as any).electronAPI;
+    const electronAPI = window.electronAPI;
     if (!electronAPI || typeof electronAPI.onUpdateAvailable !== 'function') return;
 
-    electronAPI.onUpdateAvailable((_event: any, data: { version: string; url: string }) => {
+    electronAPI.onUpdateAvailable((_event, data) => {
       setUpdateInfo(data);
     });
     // Note: unlike onFaceswapProgress, onUpdateAvailable doesn't return an
@@ -45,15 +45,14 @@ export function UpdateBanner() {
   }, []);
 
   const hasUpdateApi =
-    typeof window !== 'undefined' &&
-    typeof (window as any).electronAPI?.onUpdateAvailable === 'function';
+    typeof window !== 'undefined' && typeof window.electronAPI?.onUpdateAvailable === 'function';
 
   if (!hasUpdateApi || !updateInfo || updateInfo.version === dismissedVersion) {
     return null;
   }
 
   const handleOpenRelease = () => {
-    const electronAPI = (window as any).electronAPI;
+    const electronAPI = window.electronAPI;
     if (electronAPI && typeof electronAPI.openExternalUrl === 'function') {
       electronAPI.openExternalUrl(updateInfo.url);
     }

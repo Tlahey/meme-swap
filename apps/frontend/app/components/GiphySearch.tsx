@@ -55,7 +55,7 @@ export function GiphySearch({ onSelect, onOpenSettings, selectedGifId }: GiphySe
     }
 
     // Check Electron IPC
-    const electronAPI = (window as any).electronAPI;
+    const electronAPI = window.electronAPI;
     if (electronAPI && typeof electronAPI.isGiphyConfigured === 'function') {
       try {
         const configured = await electronAPI.isGiphyConfigured();

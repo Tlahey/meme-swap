@@ -24,9 +24,9 @@ export async function GET(request: NextRequest) {
     }
     const data = await response.json();
     return NextResponse.json(data);
-  } catch (error: any) {
+  } catch (error) {
     return NextResponse.json(
-      { error: error.message || 'Failed to fetch trending from Giphy' },
+      { error: error instanceof Error ? error.message : 'Failed to fetch trending from Giphy' },
       { status: 500 },
     );
   }
