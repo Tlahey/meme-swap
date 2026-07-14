@@ -169,7 +169,7 @@ meme-swap/
 ├── website/                  # Landing page (GitHub Pages)
 │
 ├── scripts/
-│   └── setup-facefusion.sh   # FaceFusion one-time installer
+│   └── setup-facefusion.mjs  # FaceFusion one-time installer (CLI wrapper around @meme-swap/installer-core)
 │
 ├── docs/
 │   ├── architecture.md       # Detailed architecture notes

@@ -35,10 +35,12 @@ pnpm install:facefusion
 ```
 
 This script will:
+- Check that Homebrew and Python 3 are available, and install FFmpeg via Homebrew (`brew install ffmpeg`) if it's missing
 - Clone [FaceFusion](https://github.com/facefusion/facefusion) from GitHub
 - Create a Python virtual environment at `~/.meme-swap/facefusion/venv/`
 - Install all Python dependencies
-- Copy the system `ffmpeg` / `ffprobe` binaries to `~/.meme-swap/bin/`
+
+FFmpeg is never copied into `~/.meme-swap/` — it's resolved directly from Homebrew's own bin dirs at runtime, so it stays in sync with its shared libraries across `brew upgrade`.
 
 ### 3. Configure environment
 
@@ -236,10 +238,9 @@ ls ~/.meme-swap/facefusion/venv/bin/python3
 
 ```bash
 brew install ffmpeg
-
-# Re-run setup to copy it to ~/.meme-swap/bin
-pnpm install:facefusion
 ```
+
+FFmpeg is resolved live from Homebrew's bin dirs at runtime (never copied into `~/.meme-swap/`), so once it's installed via Homebrew no further setup step is needed.
 
 ### Port already in use
 
