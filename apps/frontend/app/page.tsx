@@ -27,7 +27,7 @@ import {
 import { McpSettings } from './components/McpSettings';
 import { SettingsModal } from './components/SettingsModal';
 import { GiphySearch } from './components/GiphySearch';
-import { SetupWizard } from './components/SetupWizard';
+import { SetupWizard, DiskSpaceInfo } from './components/SetupWizard';
 import { I18nProvider, useTranslation } from '@meme-swap/i18n';
 
 interface FaceswapResult {
@@ -46,6 +46,7 @@ export default function Home() {
 
 function SetupGate() {
   const [isInstalled, setIsInstalled] = useState<boolean | null>(null);
+  const [diskSpace, setDiskSpace] = useState<DiskSpaceInfo | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -53,8 +54,11 @@ function SetupGate() {
     const checkStatus = async () => {
       try {
         const res = await fetch('/api/setup/status');
-        const data = res.ok ? await res.json() : { installed: false };
-        if (!cancelled) setIsInstalled(Boolean(data.installed));
+        const data = res.ok ? await res.json() : { installed: false, diskSpace: null };
+        if (!cancelled) {
+          setIsInstalled(Boolean(data.installed));
+          setDiskSpace(data.diskSpace ?? null);
+        }
       } catch {
         if (!cancelled) setIsInstalled(false);
       }
@@ -75,7 +79,7 @@ function SetupGate() {
   }
 
   if (!isInstalled) {
-    return <SetupWizard onComplete={() => setIsInstalled(true)} />;
+    return <SetupWizard onComplete={() => setIsInstalled(true)} diskSpace={diskSpace} />;
   }
 
   return <HomeContent />;

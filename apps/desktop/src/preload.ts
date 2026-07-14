@@ -13,6 +13,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   onFinished: (callback: (event: any, success: boolean) => void) => {
     ipcRenderer.on('setup-finished', callback);
   },
+  getSetupPreflight: () => ipcRenderer.invoke('get-setup-preflight'),
 
   // Loading APIs
   loadingReady: () => ipcRenderer.send('loading-ready'),

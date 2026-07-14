@@ -17,6 +17,9 @@
       --border: rgba(255, 255, 255, 0.08);
       --success: #10b981;
       --error: #ef4444;
+      --warning: #f59e0b;
+      --warning-bg: rgba(245, 158, 11, 0.08);
+      --warning-border: rgba(245, 158, 11, 0.3);
       --glow: rgba(99, 102, 241, 0.15);
     }
 
@@ -322,6 +325,29 @@
       transform: none;
     }
 
+    .size-estimate {
+      font-size: 11px;
+      color: var(--text-muted);
+      line-height: 1.5;
+    }
+
+    .disk-warning {
+      display: none;
+      align-items: flex-start;
+      gap: 8px;
+      padding: 10px 12px;
+      border-radius: 8px;
+      background: var(--warning-bg);
+      border: 1px solid var(--warning-border);
+      font-size: 11px;
+      color: var(--warning);
+      line-height: 1.5;
+    }
+
+    .disk-warning.visible {
+      display: flex;
+    }
+
     @keyframes spin {
       0% { transform: rotate(0deg); }
       100% { transform: rotate(360deg); }
@@ -356,8 +382,12 @@
           <div class="step-icon">4</div>
           <div class="step-label">Installation d'ONNX CoreML & Deps</div>
         </div>
-        <div class="step-item" id="step-build-monorepo">
+        <div class="step-item" id="step-verify-install">
           <div class="step-icon">5</div>
+          <div class="step-label">Vérification finale (test de swap)</div>
+        </div>
+        <div class="step-item" id="step-build-monorepo">
+          <div class="step-icon">6</div>
           <div class="step-label">Compilation du monorepo</div>
         </div>
       </div>
@@ -385,6 +415,11 @@ En attente du démarrage de la configuration.
         <div class="status-text" id="status-text">Prêt à démarrer l'installation</div>
         <button class="btn" id="start-btn">Démarrer</button>
       </div>
+      <div class="size-estimate">Télécharge environ 4 Go de modèles IA au total. Compte généralement 5 à 10 minutes selon votre connexion.</div>
+      <div class="disk-warning" id="disk-warning">
+        <span>⚠</span>
+        <span id="disk-warning-text"></span>
+      </div>
     </footer>
   </div>
 
@@ -400,6 +435,7 @@ En attente du démarrage de la configuration.
       'clone-repo',
       'setup-venv',
       'install-deps',
+      'verify-install',
       'build-monorepo'
     ];
 
@@ -433,6 +469,30 @@ En attente du démarrage de la configuration.
       logOutput.innerText += normalizedText;
       logOutput.scrollTop = logOutput.scrollHeight;
     }
+
+    function bytesToGb(bytes) {
+      return (bytes / (1024 ** 3)).toFixed(1);
+    }
+
+    // Vérification préalable (espace disque) : on ne bloque jamais le bouton
+    // "Démarrer" avec ça, on rend juste le risque visible si l'espace est faible.
+    async function runPreflightCheck() {
+      if (!window.electronAPI || !window.electronAPI.getSetupPreflight) return;
+      try {
+        const diskSpace = await window.electronAPI.getSetupPreflight();
+        const warningEl = document.getElementById('disk-warning');
+        const warningTextEl = document.getElementById('disk-warning-text');
+        if (diskSpace && diskSpace.meetsMinimum === false) {
+          warningTextEl.innerText = `Espace disque faible : seulement ${bytesToGb(diskSpace.freeBytes)} Go disponibles. Cette installation peut nécessiter jusqu'à ~8 Go — vous pouvez continuer, mais pensez à libérer de l'espace au préalable.`;
+          warningEl.classList.add('visible');
+        }
+      } catch (err) {
+        // Non bloquant : on n'affiche rien si la vérification échoue.
+        console.error('Échec de la vérification préalable (espace disque) :', err);
+      }
+    }
+
+    runPreflightCheck();
 
     // Connect to Electron APIs exposed via contextBridge
     if (window.electronAPI) {

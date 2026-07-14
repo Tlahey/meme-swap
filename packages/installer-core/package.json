@@ -10,7 +10,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@meme-swap/faceswap-core": "workspace:*"
+    "@meme-swap/faceswap-core": "workspace:*",
+    "@meme-swap/video-processor": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.19.39",

@@ -213,6 +213,10 @@ export const fr = {
         label: 'Installation des dépendances',
         desc: 'Installation d\'ONNX CoreML et des paquets Python.',
       },
+      verifyInstall: {
+        label: 'Vérification finale',
+        desc: 'Exécution d\'un échange de visages test pour confirmer que CoreML/onnxruntime fonctionne.',
+      },
     },
     logsTitle: "Journal d'installation",
     waitingLogs: "En attente du démarrage de l'installation...",
@@ -222,6 +226,10 @@ export const fr = {
     failedStatus: "Échec de l'installation. Consultez les journaux ci-dessus.",
     startButton: "Démarrer l'installation",
     retryButton: 'Réessayer',
+    sizeEstimate:
+      'Télécharge environ 4 Go de modèles IA au total. Compte généralement 5 à 10 minutes selon votre connexion.',
+    diskWarning:
+      "Espace disque faible : seulement {free} disponibles. Cette installation peut nécessiter jusqu'à ~8 Go — vous pouvez continuer, mais pensez à libérer de l'espace au préalable.",
     footerNote:
       'Cette étape installe FaceFusion et son environnement virtuel Python dans ~/.meme-swap, et FFmpeg via Homebrew.',
   },

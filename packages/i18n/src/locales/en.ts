@@ -210,6 +210,10 @@ export const en = {
         label: 'Installing Dependencies',
         desc: 'Installing ONNX CoreML and Python packages.',
       },
+      verifyInstall: {
+        label: 'Verifying Install',
+        desc: 'Running a test face swap to confirm CoreML/onnxruntime actually works.',
+      },
     },
     logsTitle: 'Installation Logs',
     waitingLogs: 'Waiting for the installation to start...',
@@ -219,6 +223,10 @@ export const en = {
     failedStatus: 'Setup failed. Check the logs above for details.',
     startButton: 'Start Setup',
     retryButton: 'Retry',
+    sizeEstimate:
+      'Downloads ~4 GB of AI models in total. Usually takes 5-10 minutes, depending on your connection.',
+    diskWarning:
+      'Low disk space: only {free} free. This install may need up to ~8 GB — you can proceed anyway, but consider freeing up space first.',
     footerNote:
       'This installs FaceFusion and its Python virtual environment into ~/.meme-swap, and FFmpeg via Homebrew.',
   },
