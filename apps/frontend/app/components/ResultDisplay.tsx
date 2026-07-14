@@ -10,6 +10,7 @@ import {
   ArrowsLeftRightIcon as ArrowsLeftRight,
 } from '@phosphor-icons/react';
 import { useTranslation } from '@meme-swap/i18n';
+import { downloadFile } from '../lib/download';
 
 interface ResultDisplayProps {
   originalUrl: string | null;
@@ -53,23 +54,8 @@ export function ResultDisplay({ originalUrl, resultUrl, isMp4, onReset }: Result
     setSliderPosition(percentage);
   };
 
-  const handleDownload = async () => {
-    try {
-      const response = await fetch(resultUrl);
-      const blob = await response.blob();
-      const url = window.URL.createObjectURL(blob);
-      const a = document.createElement('a');
-      a.href = url;
-      a.download = `faceswap-result.${isMp4 ? 'mp4' : 'gif'}`;
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      window.URL.revokeObjectURL(url);
-    } catch (err) {
-      console.error('Failed to download file', err);
-      // Fallback
-      window.open(resultUrl, '_blank');
-    }
+  const handleDownload = () => {
+    void downloadFile(resultUrl, `faceswap-result.${isMp4 ? 'mp4' : 'gif'}`);
   };
 
   /**

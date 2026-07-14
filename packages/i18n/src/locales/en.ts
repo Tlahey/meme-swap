@@ -156,6 +156,12 @@ export const en = {
     newSwap: 'New Swap',
     download: 'Download',
   },
+  resultsHistory: {
+    title: 'Results History',
+    subtitle: 'Your recent swaps, ready to re-download anytime.',
+    empty: 'No generated results yet.',
+    downloadTitle: 'Download this result',
+  },
   settings: {
     title: 'Application Settings',
     save: 'Save Configurations',

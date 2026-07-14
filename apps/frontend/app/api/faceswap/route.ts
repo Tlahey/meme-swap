@@ -37,6 +37,15 @@ const TEMP_DIR = path.join(PROCESS_DIR, 'temp');
 const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
 
 /**
+ * Nombre de résultats conservés dans RESULTS_DIR pour l'historique de
+ * re-téléchargement. Les fichiers résultats sont petits (un GIF de sortie
+ * pèse typiquement quelques centaines de Ko), donc une limite plus généreuse
+ * que celle de l'historique des visages source (5) reste peu coûteuse en
+ * espace disque tout en étant plus utile pour parcourir des essais passés.
+ */
+const RESULTS_HISTORY_LIMIT = 20;
+
+/**
  * Initialise les dossiers de travail s'ils n'existent pas
  */
 function ensureDirectories(): void {
@@ -49,7 +58,10 @@ function ensureDirectories(): void {
 }
 
 /**
- * Supprime les fichiers temporaires et les résultats précédents au début de chaque run
+ * Supprime les fichiers temporaires au début de chaque run. RESULTS_DIR
+ * n'est volontairement plus purgé ici : les résultats y persistent d'un run
+ * à l'autre pour alimenter l'historique de re-téléchargement (voir
+ * pruneResultsFiles, appelée après chaque run réussi).
  */
 function cleanupProcessDirs(): void {
   if (fs.existsSync(TEMP_DIR)) {
@@ -61,19 +73,39 @@ function cleanupProcessDirs(): void {
     }
   }
   fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
 
-  if (fs.existsSync(RESULTS_DIR)) {
-    try {
-      fs.rmSync(RESULTS_DIR, { recursive: true, force: true });
-      console.log('[API] Dossier de résultats nettoyé');
-    } catch (error) {
-      console.error(
-        '[API] Erreur de nettoyage du dossier de résultats:',
-        error,
-      );
+/**
+ * Conserve seulement les RESULTS_HISTORY_LIMIT résultats les plus récents
+ * dans RESULTS_DIR, pour permettre leur re-téléchargement ultérieur sans
+ * ré-exécuter le swap (même logique que pruneHistoryFiles côté source-history).
+ */
+function pruneResultsFiles(): void {
+  const files = fs.readdirSync(RESULTS_DIR);
+  const fileInfos = files
+    .map((name) => {
+      const filePath = path.join(RESULTS_DIR, name);
+      try {
+        const stats = fs.statSync(filePath);
+        return { name, mtime: stats.mtimeMs };
+      } catch {
+        return null;
+      }
+    })
+    .filter((info): info is { name: string; mtime: number } => info !== null);
+
+  fileInfos.sort((a, b) => b.mtime - a.mtime);
+
+  if (fileInfos.length > RESULTS_HISTORY_LIMIT) {
+    const toDelete = fileInfos.slice(RESULTS_HISTORY_LIMIT);
+    for (const info of toDelete) {
+      try {
+        fs.unlinkSync(path.join(RESULTS_DIR, info.name));
+      } catch (error) {
+        console.error(`[API] Failed to delete old result file: ${info.name}`, error);
+      }
     }
   }
-  fs.mkdirSync(RESULTS_DIR, { recursive: true });
 }
 
 /**
@@ -168,7 +200,10 @@ export async function POST(request: NextRequest) {
         const sourcePath = path.join(TEMP_DIR, sourceFileName);
         const targetPath = path.join(TEMP_DIR, targetFileName);
         const tempMp4Path = path.join(TEMP_DIR, tempMp4Name);
-        const outputMp4Path = path.join(RESULTS_DIR, outputMp4Name);
+        // outputMp4Path est un intermédiaire : cette route reconvertit toujours
+        // le résultat en GIF (étape 3 ci-dessous), le MP4 n'est jamais servi
+        // directement — il vit donc dans TEMP_DIR, pas RESULTS_DIR.
+        const outputMp4Path = path.join(TEMP_DIR, outputMp4Name);
         const outputGifPath = path.join(RESULTS_DIR, outputGifName);
 
         // Sauvegarder le fichier source ou le recuperer de l'historique
@@ -345,6 +380,8 @@ export async function POST(request: NextRequest) {
 
         console.log('[API] Conversion terminée');
         sendProgress(3, 'completed');
+
+        pruneResultsFiles();
 
         // Construire l'URL publique pour le résultat
         const resultFileName = path.basename(outputGifPath);

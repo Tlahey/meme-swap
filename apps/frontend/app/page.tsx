@@ -18,6 +18,7 @@ import {
 import { UploadZone } from './components/UploadZone';
 import { ProcessSteps, Step, FaceswapProgress } from './components/ProcessSteps';
 import { ResultDisplay } from './components/ResultDisplay';
+import { ResultsHistory } from './components/ResultsHistory';
 import {
   ModelSettings,
   ExecutionProvider,
@@ -137,6 +138,9 @@ function HomeContent() {
   const [faceswapProgress, setFaceswapProgress] = useState<FaceswapProgress | null>(
     null,
   );
+
+  // Bumped after each successful swap to trigger a ResultsHistory refetch
+  const [resultsHistoryRefreshKey, setResultsHistoryRefreshKey] = useState(0);
 
   // States for source face history
   const [historyList, setHistoryList] = useState<
@@ -710,6 +714,7 @@ function HomeContent() {
           setResult({ success: true, outputPath: data.outputPath });
           setPreviewUrl(data.outputPath ?? null);
           setIsProcessing(false);
+          setResultsHistoryRefreshKey((key) => key + 1);
           // Scroll to result
           setTimeout(() => {
             resultDisplayRef.current?.scrollIntoView({
@@ -1399,6 +1404,10 @@ function HomeContent() {
             </motion.div>
           )}
         </AnimatePresence>
+
+        {activeTab === 'generation' && (
+          <ResultsHistory refreshSignal={resultsHistoryRefreshKey} />
+        )}
 
         <footer className="text-center text-[var(--text-muted)] text-[10px] font-medium tracking-widest pt-10 pb-4">
           {t('page.footerText')}

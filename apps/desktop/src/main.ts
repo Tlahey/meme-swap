@@ -425,6 +425,15 @@ const TEMP_DIR = path.join(PROCESS_DIR, 'temp');
 const RESULTS_DIR = path.join(PROCESS_DIR, 'results');
 const HISTORY_DIR = path.join(os.homedir(), '.meme-swap', 'source-history');
 
+/**
+ * Nombre de résultats conservés dans RESULTS_DIR pour l'historique de
+ * re-téléchargement. Les fichiers résultats sont petits (un GIF de sortie
+ * pèse typiquement quelques centaines de Ko), donc une limite plus généreuse
+ * que celle de l'historique des visages source (5) reste peu coûteuse en
+ * espace disque tout en étant plus utile pour parcourir des essais passés.
+ */
+const RESULTS_HISTORY_LIMIT = 20;
+
 function ensureDirectories(): void {
   if (!fs.existsSync(TEMP_DIR)) {
     fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -469,6 +478,12 @@ function pruneHistoryFiles(): void {
   }
 }
 
+/**
+ * Supprime les fichiers temporaires au début de chaque run. RESULTS_DIR
+ * n'est volontairement plus purgé ici : les résultats y persistent d'un run
+ * à l'autre pour alimenter l'historique de re-téléchargement (voir
+ * pruneResultsFiles, appelée après chaque run réussi).
+ */
 function cleanupProcessDirs(): void {
   if (fs.existsSync(TEMP_DIR)) {
     try {
@@ -478,15 +493,43 @@ function cleanupProcessDirs(): void {
     }
   }
   fs.mkdirSync(TEMP_DIR, { recursive: true });
+}
 
-  if (fs.existsSync(RESULTS_DIR)) {
-    try {
-      fs.rmSync(RESULTS_DIR, { recursive: true, force: true });
-    } catch (error) {
-      console.error('[IPC] Erreur de nettoyage du dossier des résultats:', error);
+/**
+ * Conserve seulement les RESULTS_HISTORY_LIMIT résultats les plus récents
+ * dans RESULTS_DIR, pour permettre leur re-téléchargement ultérieur sans
+ * ré-exécuter le swap (même logique que pruneHistoryFiles côté source-history).
+ */
+function pruneResultsFiles(): void {
+  if (!fs.existsSync(RESULTS_DIR)) {
+    fs.mkdirSync(RESULTS_DIR, { recursive: true });
+  }
+  const files = fs.readdirSync(RESULTS_DIR);
+  const fileInfos = files
+    .map(name => {
+      const filePath = path.join(RESULTS_DIR, name);
+      try {
+        const stats = fs.statSync(filePath);
+        return { name, mtime: stats.mtimeMs };
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter((info): info is { name: string; mtime: number } => info !== null);
+
+  fileInfos.sort((a, b) => b.mtime - a.mtime);
+
+  if (fileInfos.length > RESULTS_HISTORY_LIMIT) {
+    const toDelete = fileInfos.slice(RESULTS_HISTORY_LIMIT);
+    for (const info of toDelete) {
+      try {
+        fs.unlinkSync(path.join(RESULTS_DIR, info.name));
+        writeToLogFile(`[Results Pruning] Deleted old result file: ${info.name}\n`);
+      } catch (e) {
+        console.error(`Failed to delete old result file: ${info.name}`, e);
+      }
     }
   }
-  fs.mkdirSync(RESULTS_DIR, { recursive: true });
 }
 
 function generateFileName(extension: string): string {
@@ -552,6 +595,33 @@ ipcMain.handle('get-source-history', async () => {
         return {
           filename: name,
           url: `/api/source-history/${name}`,
+          timestamp: stats.mtimeMs
+        };
+      } catch (e) {
+        return null;
+      }
+    })
+    .filter((info): info is { filename: string; url: string; timestamp: number } => info !== null);
+
+  fileInfos.sort((a, b) => b.timestamp - a.timestamp);
+  return { success: true, history: fileInfos };
+});
+
+// IPC : Récupérer l'historique des résultats générés
+ipcMain.handle('get-results-history', async () => {
+  if (!fs.existsSync(RESULTS_DIR)) {
+    fs.mkdirSync(RESULTS_DIR, { recursive: true });
+  }
+  pruneResultsFiles();
+  const files = fs.readdirSync(RESULTS_DIR);
+  const fileInfos = files
+    .map(name => {
+      const filePath = path.join(RESULTS_DIR, name);
+      try {
+        const stats = fs.statSync(filePath);
+        return {
+          filename: name,
+          url: `/api/results/${name}`,
           timestamp: stats.mtimeMs
         };
       } catch (e) {
@@ -678,7 +748,12 @@ ipcMain.handle('run-faceswap', async (event, options) => {
     }
 
     // 2. Exécuter FaceFusion pour le face swap
-    const outputMp4Path = path.join(RESULTS_DIR, generateFileName('mp4'));
+    // Si la cible d'origine est un GIF, ce MP4 n'est qu'un intermédiaire (il
+    // sera reconverti en GIF à l'étape 3 et n'est jamais servi tel quel) :
+    // il vit alors dans TEMP_DIR. Sinon (cible déjà MP4), c'est lui le
+    // résultat final servi via /api/results/, donc il doit rester dans
+    // RESULTS_DIR pour être visible par le protocole app:// et l'historique.
+    const outputMp4Path = path.join(isTargetGif ? TEMP_DIR : RESULTS_DIR, generateFileName('mp4'));
     writeToLogFile('[IPC] Lancement de FaceFusion...\n');
 
     const faceswapResult = await runFaceSwap({
@@ -732,6 +807,8 @@ ipcMain.handle('run-faceswap', async (event, options) => {
       finalOutputPath = outputGifPath;
       writeToLogFile('[IPC] Conversion terminée\n');
     }
+
+    pruneResultsFiles();
 
     const resultFileName = path.basename(finalOutputPath);
     const resultUrl = `/api/results/${resultFileName}`;
