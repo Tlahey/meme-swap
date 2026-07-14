@@ -370,6 +370,7 @@ The project landing page lives in [`website/`](./website) and is deployed automa
 
 More docs:
 
+- [`docs/FEATURES.md`](./docs/FEATURES.md) — summary of what the app can do
 - [`docs/architecture.md`](./docs/architecture.md) — detailed architecture notes
 - [`docs/development.md`](./docs/development.md) — local development guide
 - [`docs/adr/`](./docs/adr) — Architecture Decision Records
