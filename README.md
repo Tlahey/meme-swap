@@ -28,7 +28,7 @@ No cloud. No uploads. Just memes.
 
 | Surface | Stack | What you get |
 |---|---|---|
-| 🌐 **Web app** | Next.js 14 | Drag & drop face swap, Giphy search, model settings, live progress |
+| 🌐 **Web app** | Next.js 16 | Drag & drop face swap, Giphy search, model settings, live progress |
 | 🖥️ **Desktop app** | Electron | Native macOS app with guided first-run setup, packaged as a `.dmg` |
 | 🤖 **MCP server** | Model Context Protocol | Lets AI assistants (Claude, Cursor…) run face swaps as a tool |
 
@@ -83,7 +83,7 @@ No cloud. No uploads. Just memes.
 ```mermaid
 graph TB
     subgraph "Applications"
-        FE["Web Frontend\n(Next.js 14)"]
+        FE["Web Frontend\n(Next.js 16)"]
         DE["Desktop App\n(Electron)"]
         MCP["MCP Server\n(HTTP/SSE)"]
     end
@@ -91,7 +91,7 @@ graph TB
     subgraph "Shared Packages"
         FC["@meme-swap/faceswap-core\nFaceFusion wrapper"]
         VP["@meme-swap/video-processor\nFFmpeg wrapper"]
-        AC["@meme-swap/api-client\n(placeholder)"]
+        AC["@meme-swap/api-client\n(Giphy client)"]
         I18N["@meme-swap/i18n\nTranslations"]
     end
 
@@ -152,14 +152,14 @@ Execution providers: `coreml` (default on Apple Silicon) → `cpu` fallback, `cu
 ```
 meme-swap/
 ├── apps/
-│   ├── frontend/             # Next.js 14 web application
+│   ├── frontend/             # Next.js 16 web application
 │   ├── desktop/              # Electron desktop application
 │   └── mcp-server/           # MCP server (HTTP/SSE transport)
 │
 ├── packages/
 │   ├── faceswap-core/        # TypeScript wrapper for FaceFusion
 │   ├── video-processor/      # FFmpeg wrapper (GIF ↔ MP4)
-│   ├── api-client/           # Giphy API client (placeholder)
+│   ├── api-client/           # Giphy API client (search + trending, with localStorage/IPC/env fallback chain)
 │   └── i18n/                 # Shared translations (EN/FR)
 │
 ├── website/                  # Landing page (GitHub Pages)
@@ -347,7 +347,7 @@ await mp4ToGif({
 Copy `.env.example` to `.env.local` and configure:
 
 ```bash
-# Optional — Giphy API client (not yet active)
+# Optional — used by the Giphy API client for GIF search; falls back to a curated GIF list if unset
 GIPHY_API_KEY=your_key_here
 
 # FaceFusion execution providers (default: coreml,cpu on Apple Silicon)

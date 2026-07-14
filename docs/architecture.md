@@ -11,14 +11,14 @@ meme-swap uses **Turborepo** as the build system with **pnpm workspaces**. Packa
 ```
 meme-swap/
 ├── apps/           → runnable applications
-│   ├── frontend        (Next.js 14, port 3010)
+│   ├── frontend        (Next.js 16, port 3010)
 │   ├── desktop         (Electron)
 │   └── mcp-server      (Express + MCP SDK, port 3001)
 │
 └── packages/       → shared libraries
     ├── faceswap-core   (@meme-swap/faceswap-core)
     ├── video-processor (@meme-swap/video-processor)
-    ├── api-client      (@meme-swap/api-client, placeholder)
+    ├── api-client      (@meme-swap/api-client, Giphy client)
     └── i18n            (@meme-swap/i18n)
 ```
 
@@ -50,10 +50,10 @@ graph LR
 
 | Detail | Value |
 |---|---|
-| Framework | Next.js 14, App Router |
+| Framework | Next.js 16, App Router |
 | Port | 3010 (dev) |
-| Styling | TailwindCSS + shadcn/ui |
-| State | React hooks + Zustand |
+| Styling | TailwindCSS |
+| State | React hooks |
 
 The frontend provides the main user-facing interface. Users upload a source face image and a target GIF or MP4, configure FaceFusion parameters, and download the processed result. The processing happens server-side via Next.js API routes that call `@meme-swap/faceswap-core` and `@meme-swap/video-processor`.
 
@@ -69,10 +69,10 @@ The frontend provides the main user-facing interface. Users upload a source face
 | Framework | Electron |
 | Entry | `src/main.ts` |
 
-The desktop app wraps the processing pipeline in a native macOS application. On first launch, it runs a guided setup flow (`src/installer.ts`) to install FaceFusion into `~/.meme-swap/`. After setup, users interact with the system tray icon to trigger face swaps.
+The desktop app wraps the processing pipeline in a native macOS application. On first launch, it runs a guided setup flow (`src/installer.ts`) to install FaceFusion into `~/.meme-swap/`. After setup, users interact with a normal application window to trigger face swaps; there is no system tray icon — closing the window quits the app (`window-all-closed` → `app.quit()`).
 
 **Key files:**
-- `src/main.ts` — Electron main process, tray + window management
+- `src/main.ts` — Electron main process, window management
 - `src/installer.ts` — first-time FaceFusion setup wizard
 - `src/preload.ts` — context bridge between main and renderer
 - `src/setup.html` — setup wizard HTML UI
@@ -109,9 +109,9 @@ Exposes face-swap capabilities as MCP tools so AI clients (Cursor, Claude Deskto
 TypeScript wrapper that spawns the FaceFusion Python process.
 
 **How it works:**
-1. Resolves the Python binary at `~/.meme-swap/facefusion/venv/bin/python3`
+1. Resolves the Python binary at `~/.meme-swap/facefusion/venv/bin/python3.11` (preferred) or `python3`/`python`
 2. Resolves the FaceFusion script at `~/.meme-swap/facefusion/facefusion.py`
-3. Spawns the process with `--headless` + all CLI arguments
+3. Spawns the process with the `headless-run` subcommand + all CLI arguments
 4. Streams stdout/stderr and resolves on exit code 0
 
 **Key constraint:** The target media **must be MP4**. GIF inputs must be converted first using `@meme-swap/video-processor`.
@@ -127,7 +127,7 @@ Default output settings: 10 fps, max width 320px.
 
 ### `@meme-swap/api-client`
 
-Placeholder for a Giphy API client. Currently empty.
+A working Giphy API client (`giphy.search()`, `giphy.trending()`) used to power in-app GIF search. It resolves an API key through a fallback chain: browser `localStorage` key → Electron IPC (`window.electronAPI.searchGiphy`) → Next.js proxy route (`/api/giphy/*`) → server-side `GIPHY_API_KEY` env var → a curated static mock GIF list (`CURATED_FALLBACK_GIFS`) if nothing else is configured.
 
 ### `@meme-swap/i18n`
 
@@ -177,4 +177,4 @@ flowchart TD
 
 | ADR | Title | Status |
 |---|---|---|
-| [ADR-0001](./adr/0001-dockerization-mcp-faceswap.md) | Dockerization of MCP + FaceFusion | Accepted |
+| [ADR-0001](./adr/0001-dockerization-mcp-faceswap.md) | Dockerization of MCP + FaceFusion | Accepted (core decision — no Docker, Electron desktop app; see ADR note on the dropped tray-icon detail) |

@@ -1,9 +1,11 @@
 # ADR 0001: Choix d'architecture pour la portabilité de FaceFusion et du serveur MCP sur macOS
 
-* **Statut** : Proposé
+* **Statut** : Accepté (décision de fond : pas de Docker, application de bureau Electron)
 * **Auteur** : Antigravity (AI Agent)
 * **Date** : 2026-06-22
 * **Décision demandée par** : USER (Antoine)
+
+> **Note de mise à jour (2026-06-23)** : le choix "Electron plutôt que Docker" décrit ci-dessous a bien été implémenté et reste d'actualité — `apps/desktop` est l'application Electron. En revanche, le détail d'UI "icône dans la barre des menus (tray icon)" décrit dans l'Option 3 a été retiré par la suite (commit `7f67713`, « feat(desktop): remove tray icon and quit app on window close ») : fermer la fenêtre quitte désormais l'application, sans tray icon. Voir `apps/desktop/src/main.ts`.
 
 ---
 
