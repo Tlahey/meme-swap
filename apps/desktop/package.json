@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@meme-swap/faceswap-core": "workspace:*",
+    "@meme-swap/installer-core": "workspace:*",
     "@meme-swap/video-processor": "workspace:*"
   },
   "devDependencies": {
