@@ -44,29 +44,29 @@ export interface GiphySearchResponse {
 // Pre-curated high-quality, swap-friendly GIFs to fall back to
 export const CURATED_FALLBACK_GIFS: GiphyGif[] = [
   {
-    id: "COYGe9rVvfjlS",
-    title: "Homer Simpson backing into bushes",
-    url: "https://giphy.com/gifs/homer-simpson-the-simpsons-bush-COYGe9rVvfjlS",
+    id: "YsTs5ltWtEhnq",
+    title: "Superman (Christopher Reeve) flying",
+    url: "https://giphy.com/gifs/superman-christopher-reeve-flying-YsTs5ltWtEhnq",
     images: {
       original: {
-        url: "https://media.giphy.com/media/COYGe9rVvfjlS/giphy.gif",
-        width: "480",
-        height: "360",
+        url: "https://media.giphy.com/media/YsTs5ltWtEhnq/giphy.gif",
+        width: "400",
+        height: "259",
       },
       fixed_width: {
-        url: "https://media.giphy.com/media/COYGe9rVvfjlS/giphy.gif",
+        url: "https://media.giphy.com/media/YsTs5ltWtEhnq/giphy.gif",
         width: "200",
-        height: "150",
+        height: "130",
       },
       fixed_height: {
-        url: "https://media.giphy.com/media/COYGe9rVvfjlS/giphy.gif",
-        width: "267",
+        url: "https://media.giphy.com/media/YsTs5ltWtEhnq/giphy.gif",
+        width: "309",
         height: "200",
       },
       downsized: {
-        url: "https://media.giphy.com/media/COYGe9rVvfjlS/giphy.gif",
-        width: "480",
-        height: "360",
+        url: "https://media.giphy.com/media/YsTs5ltWtEhnq/giphy.gif",
+        width: "400",
+        height: "259",
       }
     }
   },
@@ -125,137 +125,137 @@ export const CURATED_FALLBACK_GIFS: GiphyGif[] = [
     }
   },
   {
-    id: "l46Csb29cQlaBSJqM",
-    title: "Drake Hotline Bling",
-    url: "https://giphy.com/gifs/drake-hotline-bling-l46Csb29cQlaBSJqM",
+    id: "111ebonMs90YLu",
+    title: "Kid at computer giving thumbs up",
+    url: "https://giphy.com/gifs/thumbs-up-computer-kid-111ebonMs90YLu",
     images: {
       original: {
-        url: "https://media.giphy.com/media/l46Csb29cQlaBSJqM/giphy.gif",
-        width: "480",
-        height: "270",
+        url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif",
+        width: "260",
+        height: "195",
       },
       fixed_width: {
-        url: "https://media.giphy.com/media/l46Csb29cQlaBSJqM/giphy.gif",
+        url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif",
         width: "200",
-        height: "113",
+        height: "150",
       },
       fixed_height: {
-        url: "https://media.giphy.com/media/l46Csb29cQlaBSJqM/giphy.gif",
+        url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif",
+        width: "267",
+        height: "200",
+      },
+      downsized: {
+        url: "https://media.giphy.com/media/111ebonMs90YLu/giphy.gif",
+        width: "260",
+        height: "195",
+      }
+    }
+  },
+  {
+    id: "26ufdipQqU2lhNA4g",
+    title: "Mind blown - head exploding into galaxy",
+    url: "https://giphy.com/gifs/mind-blown-26ufdipQqU2lhNA4g",
+    images: {
+      original: {
+        url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+        width: "200",
+        height: "200",
+      },
+      fixed_width: {
+        url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+        width: "200",
+        height: "200",
+      },
+      fixed_height: {
+        url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+        width: "200",
+        height: "200",
+      },
+      downsized: {
+        url: "https://media.giphy.com/media/26ufdipQqU2lhNA4g/giphy.gif",
+        width: "200",
+        height: "200",
+      }
+    }
+  },
+  {
+    id: "l0MYt5jPR6QX5pnqM",
+    title: "The Office crew celebration dance",
+    url: "https://giphy.com/gifs/the-office-dancing-celebration-l0MYt5jPR6QX5pnqM",
+    images: {
+      original: {
+        url: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
+        width: "370",
+        height: "208",
+      },
+      fixed_width: {
+        url: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
+        width: "200",
+        height: "112",
+      },
+      fixed_height: {
+        url: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
         width: "356",
         height: "200",
       },
       downsized: {
-        url: "https://media.giphy.com/media/l46Csb29cQlaBSJqM/giphy.gif",
-        width: "480",
-        height: "270",
+        url: "https://media.giphy.com/media/l0MYt5jPR6QX5pnqM/giphy.gif",
+        width: "370",
+        height: "208",
       }
     }
   },
   {
-    id: "12NUbkX6p4xOO4",
-    title: "Jim Carrey laughing and pointing",
-    url: "https://giphy.com/gifs/yes-jim-carrey-liar-12NUbkX6p4xOO4",
+    id: "d2Z9QYzA2aidiWn6",
+    title: "Awesome! Thumbs up (Bobby Moynihan)",
+    url: "https://giphy.com/gifs/awesome-thumbs-up-d2Z9QYzA2aidiWn6",
     images: {
       original: {
-        url: "https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif",
-        width: "318",
-        height: "244",
-      },
-      fixed_width: {
-        url: "https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif",
-        width: "200",
-        height: "153",
-      },
-      fixed_height: {
-        url: "https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif",
-        width: "261",
+        url: "https://media.giphy.com/media/d2Z9QYzA2aidiWn6/giphy.gif",
+        width: "356",
         height: "200",
       },
-      downsized: {
-        url: "https://media.giphy.com/media/12NUbkX6p4xOO4/giphy.gif",
-        width: "318",
-        height: "244",
-      }
-    }
-  },
-  {
-    id: "l36kU80xPf0ojG0Lm",
-    title: "Spider-Man pointing at Spider-Man",
-    url: "https://giphy.com/gifs/spiderman-pointing-l36kU80xPf0ojG0Lm",
-    images: {
-      original: {
-        url: "https://media.giphy.com/media/l36kU80xPf0ojG0Lm/giphy.gif",
-        width: "480",
-        height: "270",
-      },
       fixed_width: {
-        url: "https://media.giphy.com/media/l36kU80xPf0ojG0Lm/giphy.gif",
+        url: "https://media.giphy.com/media/d2Z9QYzA2aidiWn6/giphy.gif",
         width: "200",
-        height: "113",
+        height: "112",
       },
       fixed_height: {
-        url: "https://media.giphy.com/media/l36kU80xPf0ojG0Lm/giphy.gif",
+        url: "https://media.giphy.com/media/d2Z9QYzA2aidiWn6/giphy.gif",
         width: "356",
         height: "200",
       },
       downsized: {
-        url: "https://media.giphy.com/media/l36kU80xPf0ojG0Lm/giphy.gif",
-        width: "480",
-        height: "270",
-      }
-    }
-  },
-  {
-    id: "p8G37Llh016p2",
-    title: "Barbie waving in the car",
-    url: "https://giphy.com/gifs/barbie-margot-robbie-p8G37Llh016p2",
-    images: {
-      original: {
-        url: "https://media.giphy.com/media/p8G37Llh016p2/giphy.gif",
-        width: "480",
-        height: "270",
-      },
-      fixed_width: {
-        url: "https://media.giphy.com/media/p8G37Llh016p2/giphy.gif",
-        width: "200",
-        height: "113",
-      },
-      fixed_height: {
-        url: "https://media.giphy.com/media/p8G37Llh016p2/giphy.gif",
+        url: "https://media.giphy.com/media/d2Z9QYzA2aidiWn6/giphy.gif",
         width: "356",
         height: "200",
-      },
-      downsized: {
-        url: "https://media.giphy.com/media/p8G37Llh016p2/giphy.gif",
-        width: "480",
-        height: "270",
       }
     }
   },
   {
-    id: "3o7aD2saalFrAlzvn2",
-    title: "Distracted Boyfriend looking back",
-    url: "https://giphy.com/gifs/boyfriend-distracted-stock-photo-3o7aD2saalFrAlzvn2",
+    id: "xT9IgG50Fb7Mi0prBC",
+    title: "Forrest Gump waving from shrimp boat",
+    url: "https://giphy.com/gifs/forrest-gump-waving-xT9IgG50Fb7Mi0prBC",
     images: {
       original: {
-        url: "https://media.giphy.com/media/3o7aD2saalFrAlzvn2/giphy.gif",
-        width: "480",
-        height: "320",
+        url: "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+        width: "400",
+        height: "200",
       },
       fixed_width: {
-        url: "https://media.giphy.com/media/3o7aD2saalFrAlzvn2/giphy.gif",
+        url: "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
         width: "200",
-        height: "133",
+        height: "100",
       },
       fixed_height: {
-        url: "https://media.giphy.com/media/3o7aD2saalFrAlzvn2/giphy.gif",
-        width: "300",
+        url: "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+        width: "400",
         height: "200",
       },
       downsized: {
-        url: "https://media.giphy.com/media/3o7aD2saalFrAlzvn2/giphy.gif",
-        width: "480",
-        height: "320",
+        url: "https://media.giphy.com/media/xT9IgG50Fb7Mi0prBC/giphy.gif",
+        width: "400",
+        height: "200",
       }
     }
   }
