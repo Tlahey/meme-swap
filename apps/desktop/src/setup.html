@@ -124,6 +124,10 @@
         gap: 16px;
         padding-right: 12px;
         border-right: 1px solid var(--border);
+        min-height: 0; /* sans ça, un flex/grid item refuse de rétrécir sous la hauteur
+        intrinsèque de ses 6 items (dont certains labels passent sur 2 lignes), ce qui
+        pousse le panneau à déborder du container et à chevaucher le footer */
+        overflow-y: auto;
       }
 
       .step-item {
@@ -487,10 +491,16 @@ En attente du démarrage de la configuration.
         }
       }
 
+      // Accumulé dans une variable plutôt que lu depuis logOutput.innerText :
+      // .innerText dépend du rendu (perd les \n si l'élément est caché ou pas
+      // encore mis en page) alors que textContent préserve le texte brut.
+      let logBuffer = logOutput.textContent;
+
       function appendLog(text) {
         // Normaliser les retours à la ligne
         const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        logOutput.innerText += normalizedText;
+        logBuffer += normalizedText;
+        logOutput.textContent = logBuffer;
         logOutput.scrollTop = logOutput.scrollHeight;
       }
 
@@ -522,7 +532,8 @@ En attente du démarrage de la configuration.
       if (window.electronAPI) {
         startBtn.addEventListener('click', () => {
           startBtn.disabled = true;
-          logOutput.innerText = ''; // Clear initial message
+          logBuffer = '';
+          logOutput.textContent = ''; // Clear initial message
           statusText.innerText = 'Installation en cours...';
           window.electronAPI.startSetup();
         });
@@ -571,7 +582,8 @@ En attente du démarrage de la configuration.
         // Fallback/Mock for test in standard browser
         startBtn.addEventListener('click', () => {
           startBtn.disabled = true;
-          logOutput.innerText = '';
+          logBuffer = '';
+          logOutput.textContent = '';
           mockSetup(0);
         });
 
