@@ -19,6 +19,7 @@ No cloud. No uploads. Just memes.
 ![FaceFusion](https://img.shields.io/badge/powered_by-FaceFusion-7c5cff)
 ![PRs Welcome](https://img.shields.io/badge/PRs-welcome-35d0a5)
 [![License: MIT](https://img.shields.io/badge/license-MIT-4da6ff)](./LICENSE)
+[![Sponsor](https://img.shields.io/badge/sponsor-%E2%9D%A4-db61a2?logo=githubsponsors&logoColor=white)](https://github.com/sponsors/Tlahey)
 
 </div>
 
@@ -374,6 +375,12 @@ More docs:
 - [`docs/architecture.md`](./docs/architecture.md) — detailed architecture notes
 - [`docs/development.md`](./docs/development.md) — local development guide
 - [`docs/adr/`](./docs/adr) — Architecture Decision Records
+
+---
+
+## Support the Project
+
+Meme Swap is free, open-source, and built in my spare time. If it's useful to you, consider [sponsoring on GitHub](https://github.com/sponsors/Tlahey) — it helps keep the project maintained and moving forward.
 
 ---
 
