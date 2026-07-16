@@ -15,6 +15,7 @@ import {
   SunIcon as Sun,
   GearIcon as Gear,
   TrashIcon as Trash,
+  HeartIcon as Heart,
 } from '@phosphor-icons/react';
 import { UploadZone } from './components/UploadZone';
 import { ProcessSteps, Step, FaceswapProgress } from './components/ProcessSteps';
@@ -90,6 +91,8 @@ function parseSseChunk(buffer: string): {
 
   return { frames, remainder };
 }
+
+const SPONSOR_URL = 'https://github.com/sponsors/Tlahey';
 
 export default function Home() {
   return (
@@ -423,6 +426,22 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
 
   const toggleTheme = () => {
     setIsDarkMode((prev) => !prev);
+  };
+
+  /**
+   * In the desktop app, a plain <a target="_blank"> gets intercepted by
+   * Electron and opens a new Electron-controlled window instead of the
+   * user's actual system browser. Route through the existing
+   * openExternalUrl IPC bridge (already used by UpdateBanner) to force it
+   * into the real browser there; on the web app there's no Electron to
+   * intercept it, so the native <a> behavior is left untouched.
+   */
+  const handleSponsorClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
+    const electronAPI = window.electronAPI;
+    if (electronAPI && typeof electronAPI.openExternalUrl === 'function') {
+      e.preventDefault();
+      electronAPI.openExternalUrl(SPONSOR_URL);
+    }
   };
 
   const handleSourceChange = async (file: ElectronFile) => {
@@ -864,6 +883,18 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
           </div>
 
           <div className="flex items-center gap-4">
+            {/* Sponsor Button */}
+            <a
+              href={SPONSOR_URL}
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={handleSponsorClick}
+              className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-pink-400/40 text-pink-500 hover:bg-pink-500/10 transition-colors text-xs font-semibold"
+            >
+              <Heart size={14} weight="fill" />
+              {t('page.sponsorButton')}
+            </a>
+
             {/* Language Switcher */}
             <div className="flex bg-[var(--bg-tertiary)] p-0.5 rounded-lg border border-[var(--border-color)] text-[10px] font-mono select-none">
               <button
@@ -1457,8 +1488,18 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
 
         {activeTab === 'generation' && <ResultsHistory refreshSignal={resultsHistoryRefreshKey} />}
 
-        <footer className="text-center text-[var(--text-muted)] text-[10px] font-medium tracking-widest pt-10 pb-4">
-          {t('page.footerText')}
+        <footer className="text-center text-[var(--text-muted)] text-[10px] font-medium tracking-widest pt-10 pb-4 flex flex-col items-center gap-3">
+          <span>{t('page.footerText')}</span>
+          <a
+            href={SPONSOR_URL}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={handleSponsorClick}
+            className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-full border border-[var(--border-color)] hover:border-pink-400 hover:text-pink-500 transition-colors tracking-normal normal-case font-semibold"
+          >
+            <Heart size={12} weight="fill" />
+            {t('page.sponsorCta')}
+          </a>
         </footer>
       </div>
 

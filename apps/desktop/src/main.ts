@@ -18,7 +18,14 @@ const gotTheLock = app.requestSingleInstanceLock();
 
 if (!gotTheLock) {
   // Une autre instance tourne déjà : on quitte immédiatement celle-ci.
+  // process.exit() est indispensable ici : app.quit() planifie juste la
+  // fermeture de façon asynchrone, sans interrompre le reste du script. Sans
+  // cet arrêt immédiat, cette instance "fantôme" continuait son initialisation
+  // (jusqu'à startServers()) en parallèle de l'instance légitime, et les deux
+  // choisissaient le même port libre avant que l'une d'elles ne le bind
+  // réellement → EADDRINUSE au démarrage du frontend.
   app.quit();
+  process.exit(0);
 }
 
 // Enregistrer le protocole personnalisé 'app' comme privilégié avant le démarrage de l'application
@@ -37,15 +44,21 @@ let frontendPort: string = process.env.MEME_SWAP_PORT || process.env.PORT || '30
 let mcpPort: string = process.env.MCP_PORT || '3001';
 
 /**
- * Teste si un port TCP est libre sur 127.0.0.1.
+ * Teste si un port TCP est libre.
  * Résout avec `true` si le port est disponible, `false` s'il est occupé.
+ *
+ * Ne précise volontairement pas de `host` : Next.js (comme la plupart des
+ * serveurs dev) écoute par défaut sur toutes les interfaces (`::`, dual-stack),
+ * pas seulement `127.0.0.1`. Un check limité à `127.0.0.1` peut donner un faux
+ * "libre" pour un port déjà occupé en dual-stack par un autre process, et le
+ * vrai bind de `next dev` échoue alors juste après avec EADDRINUSE.
  */
 function isPortFree(port: number): Promise<boolean> {
   return new Promise((resolve) => {
     const server = net.createServer();
     server.unref();
     server.on('error', () => resolve(false));
-    server.listen({ host: '127.0.0.1', port }, () => {
+    server.listen({ port }, () => {
       server.close(() => resolve(true));
     });
   });
@@ -462,6 +475,26 @@ async function startServers() {
 }
 
 /**
+ * Vérifie après un court délai si `pid` (positif = process seul, négatif =
+ * groupe de process) est toujours vivant malgré le SIGTERM envoyé, et
+ * escalade vers SIGKILL si besoin. Nécessaire car certains process (un
+ * next-server orphelin observé en pratique) ignorent purement et simplement
+ * SIGTERM : sans cette escalade, ils restent orphelins et squattent leur port
+ * pour tous les lancements suivants de l'app.
+ */
+function scheduleForceKill(pid: number, label: string) {
+  setTimeout(() => {
+    try {
+      process.kill(pid, 0); // ne fait qu'un check d'existence, n'envoie rien
+      writeToLogFile(`⚠️  ${label} ignore SIGTERM → envoi de SIGKILL...\n`);
+      process.kill(pid, 'SIGKILL');
+    } catch {
+      // Le process (ou groupe) n'existe plus : SIGTERM a suffi.
+    }
+  }, 3000);
+}
+
+/**
  * Arrête tous les serveurs d'arrière-plan proprement
  */
 function stopServers() {
@@ -470,16 +503,20 @@ function stopServers() {
   if (mcpProcess) {
     writeToLogFile('Arrêt du serveur MCP...\n');
     mcpProcess.kill('SIGTERM');
+    if (mcpProcess.pid) scheduleForceKill(mcpProcess.pid, 'Serveur MCP');
     mcpProcess = null;
   }
 
   if (frontendProcess) {
     writeToLogFile('Arrêt du frontend Next.js...\n');
     if (frontendProcess.pid) {
+      const pid = frontendProcess.pid;
       try {
-        process.kill(-frontendProcess.pid, 'SIGTERM');
+        process.kill(-pid, 'SIGTERM');
+        scheduleForceKill(-pid, 'Frontend Next.js');
       } catch {
         frontendProcess.kill('SIGTERM');
+        scheduleForceKill(pid, 'Frontend Next.js');
       }
     }
     frontendProcess = null;
@@ -488,6 +525,7 @@ function stopServers() {
   if (faceswapProcess) {
     writeToLogFile('Arrêt du processus FaceFusion en cours...\n');
     faceswapProcess.kill('SIGTERM');
+    if (faceswapProcess.pid) scheduleForceKill(faceswapProcess.pid, 'Process FaceFusion');
     faceswapProcess = null;
   }
 

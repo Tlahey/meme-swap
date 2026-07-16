@@ -296,10 +296,18 @@ Initialisation de la console de logs...
 
       let logsExpanded = false;
 
+      // Accumulé dans une variable plutôt que lu depuis logOutput.innerText :
+      // tant que le panneau est caché (display: none), .innerText ne reflète
+      // pas les retours à ligne (propriété dépendante du rendu), donc un
+      // `logOutput.innerText += ...` perdait tous les \n accumulés pendant
+      // que le panneau était masqué. textContent ne dépend pas du rendu.
+      let logBuffer = logOutput.textContent;
+
       function appendLog(text) {
         // Normaliser les retours à la ligne
         const normalizedText = text.replace(/\r\n/g, '\n').replace(/\r/g, '\n');
-        logOutput.innerText += normalizedText;
+        logBuffer += normalizedText;
+        logOutput.textContent = logBuffer;
         logOutput.scrollTop = logOutput.scrollHeight;
       }
 

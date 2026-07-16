@@ -32,6 +32,8 @@ export const fr = {
       'Assurez-vous que le visage source soit bien éclairé, sans obstruction (ni lunettes, ni cheveux devant les yeux). Pour le média cible, privilégiez un fichier de courte durée.',
     tryTestData: 'Essayer avec les images de test',
     footerText: 'FACEFUSION ENGINE · DESIGN TOKENS UI',
+    sponsorCta: 'Sponsoriser ce projet',
+    sponsorButton: 'Sponsor',
   },
   upload: {
     sourceLabel: 'Visage source',
