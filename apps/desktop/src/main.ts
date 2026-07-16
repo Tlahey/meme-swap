@@ -436,9 +436,7 @@ async function startServers() {
       // et charge son contenu dans la fenêtre (déjà arrivé avec un process
       // orphelin d'une autre session laissé en tâche de fond).
       const cancelWaitForPort = waitForPort(port, () => {
-        writeToLogFile(
-          `[Next.js] Le port ${port} est actif. Chargement de l'IHM dans Electron.\n`,
-        );
+        writeToLogFile(`[Next.js] Le port ${port} est actif. Chargement de l'IHM dans Electron.\n`);
         frontendStatus = 'ready';
         sendServerStatus();
 
