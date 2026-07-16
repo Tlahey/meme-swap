@@ -49,6 +49,7 @@ export const fr = {
     deleteFile: 'Supprimer le fichier',
     recentFaces: 'Visages récents',
     noHistory: 'Aucun visage sélectionné récemment.',
+    deleteFaceTitle: 'Supprimer ce visage',
   },
   model: {
     title: 'Paramètres du modèle',

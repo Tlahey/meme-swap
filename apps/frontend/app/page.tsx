@@ -14,6 +14,7 @@ import {
   MoonIcon as Moon,
   SunIcon as Sun,
   GearIcon as Gear,
+  TrashIcon as Trash,
   HeartIcon as Heart,
 } from '@phosphor-icons/react';
 import { UploadZone } from './components/UploadZone';
@@ -521,6 +522,30 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
       URL.revokeObjectURL(sourcePreviewUrl);
     }
     setSourcePreviewUrl(`/api/source-history/${filename}`);
+  };
+
+  const handleDeleteFromHistory = async (filename: string) => {
+    const electronAPI = window.electronAPI;
+    try {
+      if (electronAPI && typeof electronAPI.deleteSourceFace === 'function') {
+        const res = await electronAPI.deleteSourceFace(filename);
+        if (!res.success) return;
+      } else {
+        const res = await fetch(`/api/source-history/${encodeURIComponent(filename)}`, {
+          method: 'DELETE',
+        });
+        if (!res.ok) return;
+      }
+      setHistoryList((prev) => prev.filter((item) => item.filename !== filename));
+      if (
+        selectedHistoryFilename === filename ||
+        sourcePreviewUrl === `/api/source-history/${filename}`
+      ) {
+        handleSourceRemove();
+      }
+    } catch (e) {
+      console.error('Failed to delete source face from history', e);
+    }
   };
 
   const handleTargetChange = (file: ElectronFile) => {
@@ -1177,31 +1202,47 @@ function HomeContent({ onRecheckInstall }: HomeContentProps) {
                             selectedHistoryFilename === item.filename ||
                             sourcePreviewUrl === `/api/source-history/${item.filename}`;
                           return (
-                            <button
+                            <div
                               key={item.filename}
-                              onClick={() => handleSelectFromHistory(item.filename)}
-                              type="button"
-                              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 group bg-[var(--bg-secondary)] flex items-center justify-center cursor-pointer hover:scale-[1.03] ${
+                              className={`relative aspect-square rounded-xl overflow-hidden border-2 transition-all duration-300 group bg-[var(--bg-secondary)] flex items-center justify-center hover:scale-[1.03] ${
                                 isSelected
                                   ? 'border-[var(--emerald-main)] shadow-[0_0_12px_var(--emerald-bg)]'
                                   : 'border-[var(--border-color)] hover:border-[var(--text-muted)]'
                               }`}
                             >
-                              {/* eslint-disable-next-line @next/next/no-img-element */}
-                              <img
-                                src={item.url}
-                                alt={`Face ${item.filename}`}
-                                className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
-                                onError={(e) => {
-                                  e.currentTarget.style.display = 'none';
-                                }}
-                              />
+                              <button
+                                onClick={() => handleSelectFromHistory(item.filename)}
+                                type="button"
+                                aria-label={`Face ${item.filename}`}
+                                className="absolute inset-0 cursor-pointer"
+                              >
+                                {/* eslint-disable-next-line @next/next/no-img-element */}
+                                <img
+                                  src={item.url}
+                                  alt={`Face ${item.filename}`}
+                                  className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                                  onError={(e) => {
+                                    e.currentTarget.style.display = 'none';
+                                  }}
+                                />
+                              </button>
                               {isSelected && (
-                                <div className="absolute top-1 right-1 w-4 h-4 bg-[var(--emerald-main)] rounded-full border border-[var(--bg-primary)] flex items-center justify-center text-[9px] text-white font-bold shadow-sm">
+                                <div className="absolute top-1 left-1 w-4 h-4 bg-[var(--emerald-main)] rounded-full border border-[var(--bg-primary)] flex items-center justify-center text-[9px] text-white font-bold shadow-sm pointer-events-none">
                                   ✓
                                 </div>
                               )}
-                            </button>
+                              <button
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  void handleDeleteFromHistory(item.filename);
+                                }}
+                                type="button"
+                                title={t('upload.deleteFaceTitle')}
+                                className="absolute top-1 right-1 z-10 p-1 rounded-full bg-black/60 text-white opacity-0 group-hover:opacity-100 hover:bg-red-600 transition-all cursor-pointer"
+                              >
+                                <Trash size={12} weight="bold" />
+                              </button>
+                            </div>
                           );
                         })
                       )}

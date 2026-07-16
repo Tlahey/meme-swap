@@ -215,9 +215,13 @@ async function checkForUpdate(): Promise<void> {
 }
 
 /**
- * Attend que le port spécifié soit actif avant d'exécuter le callback
+ * Attend que le port spécifié soit actif avant d'exécuter le callback.
+ * Retourne une fonction d'annulation : à utiliser si le processus qu'on
+ * attendait a échoué à démarrer entre-temps (sinon ce polling risque de
+ * détecter un *autre* serveur qui occuperait le même port et de charger son
+ * contenu par erreur — voir l'appelant dans startServers()).
  */
-function waitForPort(port: number, callback: () => void) {
+function waitForPort(port: number, callback: () => void): () => void {
   let called = false;
   const interval = setInterval(() => {
     const req = http.get(`http://127.0.0.1:${port}/`, () => {
@@ -231,6 +235,7 @@ function waitForPort(port: number, callback: () => void) {
     });
     req.end();
   }, 500);
+  return () => clearInterval(interval);
 }
 
 /**
@@ -377,62 +382,93 @@ async function startServers() {
       mainWindow.loadURL('app://index.html');
     }
   } else {
-    // Mode dev : on utilise le shell système pour exécuter `next dev`
-    writeToLogFile(
-      `Démarrage du frontend Next.js sur le port ${frontendPort} (next dev, shell)...\n`,
-    );
-    // `detached: true` place le process (et ses enfants next dev) dans son propre
-    // groupe de processus, ce qui permet à stopServers() de tous les tuer via
-    // process.kill(-pid, ...). Sans ça, les sous-process de next dev survivent.
-    frontendProcess = spawn('pnpm', ['--filter', 'frontend', 'dev'], {
-      cwd: root,
-      shell: true,
-      detached: true,
-      env: { ...process.env, PORT: frontendPort, MCP_PORT: mcpPort },
-    });
+    // Mode dev : on utilise le shell système pour exécuter `next dev`.
+    // MAX_PORT_RETRIES borne le nombre de tentatives si le port choisi par
+    // findFreePort() est en fait pris par un autre processus qui a démarré
+    // entre le check et le spawn ci-dessous (race inévitable en check-then-act,
+    // déjà observée en pratique avec un autre process next dev concurrent).
+    const MAX_PORT_RETRIES = 5;
 
-    frontendProcess.stdout?.on('data', (data) => {
-      const text = data.toString();
-      writeToLogFile(`[Next.js] ${text}`);
-      if (
-        text.includes('Ready in') ||
-        text.includes('ready - started') ||
-        text.includes('Local:')
-      ) {
-        // Nous gardons aussi la détection par logs en secours
-        if (frontendStatus !== 'ready') {
-          frontendStatus = 'ready';
-          sendServerStatus();
+    const spawnFrontendDev = (port: number, attempt: number) => {
+      frontendPort = port.toString();
+      writeToLogFile(`Démarrage du frontend Next.js sur le port ${port} (next dev, shell)...\n`);
+
+      // `detached: true` place le process (et ses enfants next dev) dans son propre
+      // groupe de processus, ce qui permet à stopServers() de tous les tuer via
+      // process.kill(-pid, ...). Sans ça, les sous-process de next dev survivent.
+      frontendProcess = spawn('pnpm', ['--filter', 'frontend', 'dev'], {
+        cwd: root,
+        shell: true,
+        detached: true,
+        env: { ...process.env, PORT: port.toString(), MCP_PORT: mcpPort },
+      });
+
+      let sawAddrInUse = false;
+
+      frontendProcess.stdout?.on('data', (data) => {
+        const text = data.toString();
+        writeToLogFile(`[Next.js] ${text}`);
+        if (
+          text.includes('Ready in') ||
+          text.includes('ready - started') ||
+          text.includes('Local:')
+        ) {
+          // Nous gardons aussi la détection par logs en secours
+          if (frontendStatus !== 'ready') {
+            frontendStatus = 'ready';
+            sendServerStatus();
+          }
         }
-      }
-    });
+      });
 
-    frontendProcess.stderr?.on('data', (data) => {
-      writeToLogFile(`[Next.js ERROR] ${data.toString()}`);
-    });
+      frontendProcess.stderr?.on('data', (data) => {
+        const text = data.toString();
+        writeToLogFile(`[Next.js ERROR] ${text}`);
+        if (text.includes('EADDRINUSE')) {
+          sawAddrInUse = true;
+        }
+      });
 
-    frontendProcess.on('close', (code) => {
-      writeToLogFile(`[Next.js] Processus terminé avec le code ${code}\n`);
-      if (code !== 0 && code !== null) {
-        frontendStatus = 'error';
-      } else {
-        frontendStatus = 'stopped';
-      }
-      sendServerStatus();
-    });
+      // 3. Surveiller l'ouverture du port Next.js pour charger l'IHM. On garde
+      // la fonction d'annulation : si next dev échoue à démarrer sur ce port
+      // (EADDRINUSE, cf. plus bas), il faut arrêter ce polling avant qu'il ne
+      // détecte par erreur un *autre* serveur déjà présent sur le même port
+      // et charge son contenu dans la fenêtre (déjà arrivé avec un process
+      // orphelin d'une autre session laissé en tâche de fond).
+      const cancelWaitForPort = waitForPort(port, () => {
+        writeToLogFile(`[Next.js] Le port ${port} est actif. Chargement de l'IHM dans Electron.\n`);
+        frontendStatus = 'ready';
+        sendServerStatus();
 
-    // 3. Surveiller l'ouverture du port Next.js pour charger l'IHM
-    waitForPort(parseInt(frontendPort), () => {
-      writeToLogFile(
-        `[Next.js] Le port ${frontendPort} est actif. Chargement de l'IHM dans Electron.\n`,
-      );
-      frontendStatus = 'ready';
-      sendServerStatus();
+        if (mainWindow && !mainWindow.isDestroyed()) {
+          mainWindow.loadURL(`http://localhost:${port}`);
+        }
+      });
 
-      if (mainWindow && !mainWindow.isDestroyed()) {
-        mainWindow.loadURL(`http://localhost:${frontendPort}`);
-      }
-    });
+      frontendProcess.on('close', (code) => {
+        writeToLogFile(`[Next.js] Processus terminé avec le code ${code}\n`);
+        cancelWaitForPort();
+
+        if (sawAddrInUse && attempt < MAX_PORT_RETRIES) {
+          writeToLogFile(
+            `⚠️  Port ${port} occupé par un autre processus, nouvelle tentative sur un autre port...\n`,
+          );
+          void findFreePort(port + 1).then((nextPort) => {
+            spawnFrontendDev(nextPort, attempt + 1);
+          });
+          return;
+        }
+
+        if (code !== 0 && code !== null) {
+          frontendStatus = 'error';
+        } else {
+          frontendStatus = 'stopped';
+        }
+        sendServerStatus();
+      });
+    };
+
+    spawnFrontendDev(parseInt(frontendPort), 0);
   }
 }
 
@@ -494,6 +530,26 @@ function stopServers() {
   mcpStatus = 'stopped';
   frontendStatus = 'stopped';
 }
+
+// ── Arrêt propre sur signal (Ctrl+C / kill en dev) ─────────────────────────────
+// app.on('before-quit') ne couvre que les sorties initiées par Electron
+// lui-même (fenêtre fermée, app.quit(), Cmd+Q). Si le process reçoit
+// directement SIGINT/SIGTERM — ce qui arrive en dev à chaque Ctrl+C du
+// terminal lançant `tsc && electron .` — ce hook n'est jamais déclenché et
+// les enfants détachés (next dev + son next-server, mcp-server) survivent en
+// tâche de fond, allant ensuite squatter les ports au prochain lancement.
+// SIGKILL reste bien sûr impossible à intercepter, mais SIGINT/SIGTERM
+// couvrent tous les arrêts volontaires normaux.
+let shuttingDown = false;
+function shutdownAndExit(signal: NodeJS.Signals) {
+  if (shuttingDown) return;
+  shuttingDown = true;
+  writeToLogFile(`\n[Process] Signal ${signal} reçu, arrêt propre des serveurs...\n`);
+  stopServers();
+  process.exit(0);
+}
+process.on('SIGINT', () => shutdownAndExit('SIGINT'));
+process.on('SIGTERM', () => shutdownAndExit('SIGTERM'));
 
 // IPC : Écouteur pour démarrer le processus d'installation
 ipcMain.on('start-setup', async () => {
@@ -887,6 +943,36 @@ ipcMain.handle('clear-results-history', async () => {
   } catch (err: unknown) {
     const errorMsg = err instanceof Error ? err.message : 'Erreur inconnue';
     writeToLogFile(`❌ [History] Erreur de vidage de l'historique des résultats : ${errorMsg}\n`);
+    return { success: false, error: errorMsg };
+  }
+});
+
+// IPC: Delete a source face from history
+ipcMain.handle('delete-source-face', async (event, filename: string) => {
+  try {
+    if (
+      typeof filename !== 'string' ||
+      !filename ||
+      filename.includes('/') ||
+      filename.includes('\\') ||
+      filename.includes('..')
+    ) {
+      throw new Error('Nom de fichier invalide');
+    }
+
+    const filePath = path.join(HISTORY_DIR, filename);
+    const resolvedPath = path.resolve(filePath);
+    if (!resolvedPath.startsWith(path.resolve(HISTORY_DIR))) {
+      throw new Error('Accès non autorisé');
+    }
+
+    if (fs.existsSync(filePath)) {
+      fs.unlinkSync(filePath);
+    }
+    return { success: true };
+  } catch (err: unknown) {
+    const errorMsg = err instanceof Error ? err.message : 'Erreur inconnue';
+    writeToLogFile(`❌ [History] Erreur de suppression du visage : ${errorMsg}\n`);
     return { success: false, error: errorMsg };
   }
 });

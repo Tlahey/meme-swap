@@ -6,14 +6,11 @@ import os from 'node:os';
 const HISTORY_DIR = path.join(os.homedir(), '.meme-swap', 'source-history');
 
 /**
- * Serve les fichiers de l'historique des visages source (GET /api/source-history/:fileName)
+ * Résout et valide le chemin d'un fichier de l'historique à partir de son nom.
+ * Retourne le chemin absolu, ou une NextResponse d'erreur si le nom est
+ * manquant/invalide, tente un path traversal, ou si le fichier n'existe pas.
  */
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ fileName: string }> },
-) {
-  const { fileName } = await params;
-
+function resolveHistoryFilePath(fileName: string | undefined): string | NextResponse {
   if (!fileName) {
     return NextResponse.json({ error: 'Nom de fichier manquant' }, { status: 404 });
   }
@@ -34,6 +31,23 @@ export async function GET(
     return NextResponse.json({ error: 'Fichier non trouvé' }, { status: 404 });
   }
 
+  return filePath;
+}
+
+/**
+ * Serve les fichiers de l'historique des visages source (GET /api/source-history/:fileName)
+ */
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ fileName: string }> },
+) {
+  const { fileName } = await params;
+
+  const filePath = resolveHistoryFilePath(fileName);
+  if (filePath instanceof NextResponse) {
+    return filePath;
+  }
+
   // Déterminer le type MIME
   const ext = path.extname(fileName).toLowerCase();
   const mimeTypes: Record<string, string> = {
@@ -52,4 +66,30 @@ export async function GET(
       'Cache-Control': 'public, max-age=31536000',
     },
   });
+}
+
+/**
+ * Supprime un visage de l'historique (DELETE /api/source-history/:fileName)
+ */
+export async function DELETE(
+  request: NextRequest,
+  { params }: { params: Promise<{ fileName: string }> },
+) {
+  const { fileName } = await params;
+
+  const filePath = resolveHistoryFilePath(fileName);
+  if (filePath instanceof NextResponse) {
+    return filePath;
+  }
+
+  try {
+    fs.unlinkSync(filePath);
+    return NextResponse.json({ success: true });
+  } catch (error) {
+    console.error(`[API History] Failed to delete history file: ${fileName}`, error);
+    return NextResponse.json(
+      { success: false, error: error instanceof Error ? error.message : 'Erreur inconnue' },
+      { status: 500 },
+    );
+  }
 }
