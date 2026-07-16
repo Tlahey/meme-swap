@@ -42,7 +42,7 @@ interface HistoryResult {
   history?: HistoryItem[];
 }
 
-/** Return shape of deleteResult/clearResultsHistory (preload.ts). */
+/** Return shape of deleteResult/clearResultsHistory/deleteSourceFace (preload.ts). */
 interface DeleteResultResponse {
   success: boolean;
   error?: string;
@@ -87,6 +87,8 @@ export interface ElectronAPI {
     data?: Uint8Array;
     name: string;
   }) => Promise<SaveSourceFaceResult>;
+  /** preload.ts: `deleteSourceFace: (filename: string) => ipcRenderer.invoke('delete-source-face', filename)` */
+  deleteSourceFace?: (filename: string) => Promise<DeleteResultResponse>;
   /** preload.ts: `getResultsHistory: () => ipcRenderer.invoke('get-results-history')` */
   getResultsHistory?: () => Promise<HistoryResult>;
   /** preload.ts: `deleteResult: (filename: string) => ipcRenderer.invoke('delete-result', filename)` */

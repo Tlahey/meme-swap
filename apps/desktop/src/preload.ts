@@ -95,6 +95,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getSourceHistory: () => ipcRenderer.invoke('get-source-history'),
   saveSourceFace: (options: { path?: string; data?: Uint8Array; name: string }) =>
     ipcRenderer.invoke('save-source-face', options),
+  deleteSourceFace: (filename: string) => ipcRenderer.invoke('delete-source-face', filename),
   getResultsHistory: () => ipcRenderer.invoke('get-results-history'),
   deleteResult: (filename: string) => ipcRenderer.invoke('delete-result', filename),
   clearResultsHistory: () => ipcRenderer.invoke('clear-results-history'),

@@ -47,6 +47,7 @@ export const en = {
     deleteFile: 'Delete file',
     recentFaces: 'Recent Faces',
     noHistory: 'No recently selected faces.',
+    deleteFaceTitle: 'Delete this face',
   },
   model: {
     title: 'Model Settings',
