@@ -338,6 +338,15 @@
         transform: none;
       }
 
+      .btn-quit {
+        background: var(--error);
+        box-shadow: 0 4px 12px rgba(239, 68, 68, 0.2);
+      }
+
+      .btn-quit:hover {
+        background: #dc2626;
+      }
+
       .size-estimate {
         font-size: 11px;
         color: var(--text-muted);
@@ -410,6 +419,10 @@
             <div class="step-icon">6</div>
             <div class="step-label">Compilation du monorepo</div>
           </div>
+          <div class="step-item" id="step-initialization">
+            <div class="step-icon">7</div>
+            <div class="step-label">Initialisation (démarrage des serveurs)</div>
+          </div>
         </div>
 
         <div class="terminal-panel">
@@ -438,7 +451,12 @@ En attente du démarrage de la configuration.
         </div>
         <div class="footer-actions">
           <div class="status-text" id="status-text">Prêt à démarrer l'installation</div>
-          <button class="btn" id="start-btn">Démarrer</button>
+          <div style="display: flex; gap: 10px">
+            <button class="btn btn-quit" id="quit-btn" style="display: none">
+              Fermer l'application
+            </button>
+            <button class="btn" id="start-btn">Démarrer</button>
+          </div>
         </div>
         <div class="size-estimate">
           Télécharge environ 4 Go de modèles IA au total. Compte généralement 5 à 10 minutes selon
@@ -453,12 +471,15 @@ En attente du démarrage de la configuration.
 
     <script>
       const startBtn = document.getElementById('start-btn');
+      const quitBtn = document.getElementById('quit-btn');
       const statusText = document.getElementById('status-text');
       const logOutput = document.getElementById('log-output');
       const progressBar = document.getElementById('progress-bar');
+      const sizeEstimate = document.querySelector('.size-estimate');
 
-      // List of steps
-      const steps = [
+      // The 6 FaceFusion install steps + a final initialization step
+      // (background server startup, formerly the separate loading.html screen).
+      const installSteps = [
         'system-checks',
         'clone-repo',
         'setup-venv',
@@ -466,6 +487,7 @@ En attente du démarrage de la configuration.
         'verify-install',
         'build-monorepo',
       ];
+      const steps = [...installSteps, 'initialization'];
 
       function updateStepUI(stepId, status) {
         const item = document.getElementById(`step-${stepId}`);
@@ -526,21 +548,58 @@ En attente du démarrage de la configuration.
         }
       }
 
-      runPreflightCheck();
+      // ── Étape 7 : initialisation (démarrage des serveurs) ──────────────────
+      // Branche les événements de statut/log serveur émis par le process
+      // principal (startServers → sendServerStatus/writeToLogFile) sur l'étape
+      // "initialization". La fenêtre bascule vers l'app dès que les serveurs
+      // sont prêts (côté main), donc l'état "completed" est surtout visible en
+      // cas de démarrage lent ; l'état "failed" affiche un bouton pour quitter.
+      function beginInitialization() {
+        updateStepUI('initialization', 'active');
+        statusText.innerText = 'Initialisation (démarrage des serveurs)...';
+        startBtn.style.display = 'none';
+        if (sizeEstimate) sizeEstimate.style.display = 'none';
 
-      // Connect to Electron APIs exposed via contextBridge
-      if (window.electronAPI) {
-        startBtn.addEventListener('click', () => {
-          startBtn.disabled = true;
-          logBuffer = '';
-          logOutput.textContent = ''; // Clear initial message
-          statusText.innerText = 'Installation en cours...';
-          window.electronAPI.startSetup();
+        window.electronAPI.onServerLog((event, text) => appendLog(text));
+        window.electronAPI.onServerStatus((event, status) => {
+          const { mcp, frontend } = status;
+          if (mcp === 'error' || frontend === 'error') {
+            updateStepUI('initialization', 'failed');
+            statusText.innerText = 'Échec du démarrage des serveurs.';
+            statusText.style.color = 'var(--error)';
+            appendLog(
+              '\n[ERROR] Une erreur est survenue lors du démarrage des serveurs en arrière-plan.',
+            );
+            quitBtn.style.display = 'inline-block';
+          } else if (mcp === 'ready' && frontend === 'ready') {
+            updateStepUI('initialization', 'completed');
+            progressBar.style.width = '100%';
+            statusText.innerText = 'Prêt. Ouverture de Meme Swap...';
+          }
         });
 
+        // Signale au main qu'on est prêt à recevoir le statut courant + tout
+        // l'historique de logs (ré-émission via le handler 'loading-ready').
+        window.electronAPI.loadingReady();
+      }
+
+      async function init() {
+        if (!window.electronAPI) {
+          // Fallback navigateur (pas de backend) : petite démo visuelle.
+          startBtn.addEventListener('click', () => {
+            startBtn.disabled = true;
+            logBuffer = '';
+            logOutput.textContent = '';
+            mockSetup(0);
+          });
+          return;
+        }
+
+        quitBtn.addEventListener('click', () => window.electronAPI.quitApp());
+
+        // Événements des étapes d'installation (1 → 6)
         window.electronAPI.onProgress((event, data) => {
           const { step, status, percent } = data;
-
           if (status === 'active') {
             statusText.innerText = `Étape : ${step}...`;
             updateStepUI(step, 'active');
@@ -552,23 +611,19 @@ En attente du démarrage de la configuration.
             startBtn.disabled = false;
             startBtn.innerText = 'Réessayer';
           }
-
           if (percent !== undefined) {
             progressBar.style.width = `${percent}%`;
           }
         });
 
-        window.electronAPI.onLog((event, text) => {
-          appendLog(text);
-        });
+        window.electronAPI.onLog((event, text) => appendLog(text));
 
         window.electronAPI.onFinished((event, success) => {
           if (success) {
-            progressBar.style.width = '100%';
-            statusText.innerText = 'Installation terminée avec succès ! Lancement...';
-            appendLog(
-              "\n[SUCCESS] Configuration terminée avec succès !\nFermeture de l'assistant de configuration...",
-            );
+            installSteps.forEach((s) => updateStepUI(s, 'completed'));
+            progressBar.style.width = '90%';
+            appendLog('\n[SUCCESS] Installation terminée. Démarrage des serveurs...\n');
+            beginInitialization();
           } else {
             statusText.innerText = "Échec de l'installation.";
             appendLog(
@@ -578,40 +633,58 @@ En attente du démarrage de la configuration.
             startBtn.innerText = 'Réessayer';
           }
         });
-      } else {
-        // Fallback/Mock for test in standard browser
-        startBtn.addEventListener('click', () => {
-          startBtn.disabled = true;
+
+        // Déjà installé ? On coche les 6 étapes et on passe directement à
+        // l'initialisation ; sinon on attend le clic « Démarrer » (avec la
+        // vérification d'espace disque préalable).
+        let installed = false;
+        try {
+          const state = await window.electronAPI.getInstallState();
+          installed = !!(state && state.installed);
+        } catch (err) {
+          console.error("Échec de la récupération de l'état d'installation :", err);
+        }
+
+        if (installed) {
           logBuffer = '';
           logOutput.textContent = '';
-          mockSetup(0);
-        });
-
-        function mockSetup(index) {
-          if (index >= steps.length) {
-            progressBar.style.width = '100%';
-            statusText.innerText = 'Installation terminée !';
-            appendLog('\n[SUCCESS] Terminé !');
-            return;
-          }
-
-          const step = steps[index];
-          updateStepUI(step, 'active');
-          statusText.innerText = `Étape: ${step}...`;
-          appendLog(`\n[INFO] Démarrage de l'étape : ${step}\n`);
-
-          let percent = ((index + 0.5) / steps.length) * 100;
-          progressBar.style.width = `${percent}%`;
-
-          setTimeout(() => {
-            updateStepUI(step, 'completed');
-            appendLog(`[OK] Étape ${step} validée.\n`);
-            let completedPercent = ((index + 1) / steps.length) * 100;
-            progressBar.style.width = `${completedPercent}%`;
-            setTimeout(() => mockSetup(index + 1), 600);
-          }, 1500);
+          installSteps.forEach((s) => updateStepUI(s, 'completed'));
+          progressBar.style.width = '90%';
+          beginInitialization();
+        } else {
+          runPreflightCheck();
+          startBtn.addEventListener('click', () => {
+            startBtn.disabled = true;
+            logBuffer = '';
+            logOutput.textContent = '';
+            statusText.innerText = 'Installation en cours...';
+            window.electronAPI.startSetup();
+          });
         }
       }
+
+      // Mock pour test dans un navigateur standard (sans electronAPI)
+      function mockSetup(index) {
+        if (index >= steps.length) {
+          progressBar.style.width = '100%';
+          statusText.innerText = 'Terminé !';
+          appendLog('\n[SUCCESS] Terminé !');
+          return;
+        }
+        const step = steps[index];
+        updateStepUI(step, 'active');
+        statusText.innerText = `Étape: ${step}...`;
+        appendLog(`\n[INFO] Démarrage de l'étape : ${step}\n`);
+        progressBar.style.width = `${((index + 0.5) / steps.length) * 100}%`;
+        setTimeout(() => {
+          updateStepUI(step, 'completed');
+          appendLog(`[OK] Étape ${step} validée.\n`);
+          progressBar.style.width = `${((index + 1) / steps.length) * 100}%`;
+          setTimeout(() => mockSetup(index + 1), 600);
+        }, 1500);
+      }
+
+      init();
     </script>
   </body>
 </html>

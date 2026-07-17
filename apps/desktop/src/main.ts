@@ -568,9 +568,11 @@ ipcMain.on('start-setup', async () => {
   mainWindow?.webContents.send('setup-finished', success);
 
   if (success) {
-    // Si l'installation réussit, on attend 2.5 secondes puis on bascule sur l'IHM de chargement
+    // On garde le wizard affiché : côté renderer l'étape 7 (initialisation)
+    // passe active, et la fenêtre bascule vers l'app une fois les serveurs
+    // prêts (voir startServers). Court délai pour laisser voir le succès des
+    // étapes d'installation avant de démarrer les serveurs.
     setTimeout(() => {
-      mainWindow?.loadFile(path.join(__dirname, 'loading.html'));
       startServers();
     }, 2500);
   }
@@ -579,6 +581,14 @@ ipcMain.on('start-setup', async () => {
 // IPC : Vérification préalable (espace disque) affichée avant de démarrer l'installation
 ipcMain.handle('get-setup-preflight', async () => {
   return checkDiskSpace();
+});
+
+// IPC : Indique au wizard unifié (setup.html) si FaceFusion est déjà installé.
+// Si oui, le renderer coche d'emblée les étapes d'installation et affiche
+// directement l'étape d'initialisation (démarrage des serveurs, lancé côté
+// main dans app.whenReady ci-dessous) ; sinon il attend le clic « Démarrer ».
+ipcMain.handle('get-install-state', () => {
+  return { installed: isInstalled() && !process.argv.includes('--force-setup') };
 });
 
 // IPC : Écouteurs pour l'écran de chargement
@@ -1246,15 +1256,19 @@ app.whenReady().then(() => {
 
   createMainWindow();
 
+  // Écran unique : setup.html sert à la fois d'assistant d'installation et
+  // d'écran d'initialisation. Il interroge get-install-state pour savoir quoi
+  // afficher (étapes d'install à faire, ou directement l'étape de démarrage
+  // des serveurs). loading.html a été fusionné dedans.
+  mainWindow?.loadFile(path.join(__dirname, 'setup.html'));
+
   if (isInstalled() && !process.argv.includes('--force-setup')) {
     writeToLogFile('FaceFusion est déjà installé. Démarrage des serveurs en arrière-plan.\n');
-    mainWindow?.loadFile(path.join(__dirname, 'loading.html'));
     startServers();
   } else {
     writeToLogFile(
       "FaceFusion n'est pas détecté ou setup forcé. Lancement de l'assistant d'installation.\n",
     );
-    mainWindow?.loadFile(path.join(__dirname, 'setup.html'));
   }
 
   // Vérification de mise à jour en arrière-plan : ne bloque jamais le
