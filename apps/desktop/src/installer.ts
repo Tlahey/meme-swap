@@ -1,3 +1,4 @@
+import { app } from 'electron';
 import {
   runCmd,
   runFaceFusionInstall,
@@ -38,6 +39,16 @@ export async function runInstallation(
   if (!success) return false;
 
   // ---- Step 6: Build the monorepo (80 -> 100) ----
+  // Only meaningful in a dev checkout. The packaged .dmg already ships the
+  // built/bundled JS and has no monorepo source, pnpm-workspace.yaml, or even
+  // pnpm on the user's machine — there, getWorkspaceRoot() falls back to "/" and
+  // `pnpm run build` dies with ERR_PNPM_NO_IMPORTER_MANIFEST_FOUND. Skip it.
+  if (app.isPackaged) {
+    onLog('\n=== STEP 6: Monorepo already built in the packaged app — skipping ===\n');
+    onProgress({ step: 'build-monorepo', status: 'completed', percent: 100 });
+    return true;
+  }
+
   onProgress({ step: 'build-monorepo', status: 'active', percent: 90 });
   onLog('\n=== STEP 6: Building the monorepo packages ===\n');
 
