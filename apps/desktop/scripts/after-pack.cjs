@@ -20,7 +20,7 @@ exports.default = async function afterPack(context) {
   const appName = context.packager.appInfo.productFilename;
   const appPath = path.join(context.appOutDir, `${appName}.app`);
 
-  console.log(`[afterPack] ad-hoc signing ${appPath}`);
+  console.info(`[afterPack] ad-hoc signing ${appPath}`);
   execFileSync('codesign', ['--force', '--deep', '--sign', '-', appPath], {
     stdio: 'inherit',
   });
