@@ -28,6 +28,7 @@
     "appId": "com.memeswap.desktop",
     "productName": "Meme Swap",
     "asar": true,
+    "afterPack": "scripts/after-pack.cjs",
     "mac": {
       "category": "public.app-category.video",
       "target": [
@@ -35,7 +36,7 @@
       ],
       "icon": "assets/icon.icns",
       "gatekeeperAssess": false,
-      "hardenedRuntime": true
+      "identity": null
     },
     "directories": {
       "output": "dist"
