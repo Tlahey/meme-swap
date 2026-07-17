@@ -200,7 +200,27 @@ meme-swap/
 
 Grab the latest `.dmg` (Apple Silicon) from the [**Releases page**](https://github.com/Tlahey/meme-swap/releases/latest), open it and drag **Meme Swap.app** into Applications. The guided first-run setup installs FaceFusion into `~/.meme-swap/` for you.
 
-> The app isn't notarized yet — on first launch, right-click **Meme Swap.app** → **Open** to bypass the Gatekeeper warning.
+#### ⚠️ First launch: the app is not signed or notarized
+
+The build has **no Apple Developer ID** (that's a paid Apple program), so it is only ad-hoc signed and **not notarized**. On first launch macOS will block it with a message like _"Apple could not verify 'Meme Swap' is free of malware."_ This is expected — the app is safe, macOS just can't verify an unnotarized developer. To allow it:
+
+1. Try to open **Meme Swap.app** once (double-click) — you'll get the warning. Click **Done**.
+2. Open **System Settings → Privacy & Security**.
+3. Scroll down to the **Security** section — you'll see _""Meme Swap" was blocked to protect your Mac."_
+4. Click **Open Anyway**, then confirm with your password or Touch ID.
+
+macOS remembers this, so subsequent launches open normally.
+
+<details>
+<summary>Prefer the Terminal?</summary>
+
+Removing the download quarantine flag has the same effect:
+
+```bash
+xattr -cr "/Applications/Meme Swap.app"
+```
+
+</details>
 
 ### Option 2 — Build from source
 
