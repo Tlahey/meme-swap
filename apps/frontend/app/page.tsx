@@ -110,6 +110,20 @@ function SetupGate() {
     let cancelled = false;
 
     const checkStatus = async () => {
+      // In the packaged desktop app the UI is a static export served over the
+      // app:// protocol, where the /api/* routes don't exist. The Electron
+      // shell (apps/desktop) only loads this UI after its own native setup
+      // wizard has confirmed FaceFusion is installed, so there's nothing to
+      // check here — fetching /api/setup/status would just fail with
+      // ERR_FILE_NOT_FOUND and wrongly drop the user into the web SetupWizard.
+      if (typeof window !== 'undefined' && window.electronAPI) {
+        if (!cancelled) {
+          setIsInstalled(true);
+          setDiskSpace(null);
+        }
+        return;
+      }
+
       try {
         const res = await fetch('/api/setup/status');
         const data = res.ok ? await res.json() : { installed: false, diskSpace: null };
@@ -139,6 +153,14 @@ function SetupGate() {
    * fine now" when it isn't (e.g. a transient failure).
    */
   const recheckInstall = async (): Promise<boolean> => {
+    // Under Electron the /api/* routes don't exist (see checkStatus above) and
+    // FaceFusion is guaranteed installed by the native shell — nothing to
+    // recheck, so report "nothing missing".
+    if (typeof window !== 'undefined' && window.electronAPI) {
+      setIsInstalled(true);
+      return false;
+    }
+
     try {
       const res = await fetch('/api/setup/status');
       const data = res.ok ? await res.json() : { installed: false, diskSpace: null };
