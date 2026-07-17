@@ -62,8 +62,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
     ipcRenderer.on('setup-finished', callback);
   },
   getSetupPreflight: () => ipcRenderer.invoke('get-setup-preflight'),
+  // Whether FaceFusion is already installed: lets the unified setup screen
+  // (setup.html) pre-mark the install steps as done and jump straight to the
+  // initialization step instead of showing a separate loading screen.
+  getInstallState: () => ipcRenderer.invoke('get-install-state'),
 
-  // Loading APIs
+  // Server startup APIs (initialization step of the setup screen)
   loadingReady: () => ipcRenderer.send('loading-ready'),
   onServerLog: (callback: (event: IpcRendererEvent, text: string) => void) => {
     ipcRenderer.on('server-log', callback);
