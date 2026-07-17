@@ -379,18 +379,11 @@ export async function runFaceFusionInstall(
       return false;
     }
 
-    onLog('Installing onnxruntime-silicon for CoreML GPU support...\n');
-    const onnxSiliconInstalled = await runCmd(
-      './venv/bin/pip',
-      ['install', 'onnxruntime-silicon'],
-      ffDir,
-      onLog,
-    );
-    if (!onnxSiliconInstalled) {
-      onLog('[ERROR] Failed to install onnxruntime-silicon\n');
-      onProgress({ step: 'install-deps', status: 'failed', percent: 76 });
-      return false;
-    }
+    // FaceFusion's requirements.txt already pins the official onnxruntime, which
+    // ships the CoreML execution provider for Apple Silicon out of the box. The
+    // old standalone `onnxruntime-silicon` package is unmaintained (last wheels
+    // were for Python <=3.11) and installing it here just broke setup on modern
+    // Python versions — so we rely on the official onnxruntime instead.
   }
 
   onLog('[OK] Python dependencies installed successfully.\n');
